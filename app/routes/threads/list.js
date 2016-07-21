@@ -66,6 +66,47 @@ module.exports = (logger, db) => {
         });
     }
 
+    function checkAccessAndProvision(req, filter) {
+        return userHasAccessToEntity(req.header.authorization, filter.reference, filter.referenceId).then((hasAccess) => {
+            if(!hasAccess) {
+                return Promise.reject('User doesn\'t have access to entity');
+            } else {
+                // Does the discourse user exist
+                return discourseClient.getUser(req.authUser.handle).then((user) => {
+                logger.info('Successfully got the user from Discourse');
+                    return user;
+                }).catch((error) => {
+                    logger.info('Discourse user doesn\'t exist, creating one');
+                    // User doesn't exist, create
+                    // Fetch user info from member service
+                    return getTopcoderUser(req.headers.authorization, req.authUser.handle).then((user) => {
+                        logger.info('Successfully got topcoder user');
+
+                        // Create discourse user 
+                        return discourseClient.createUser(user.firstName + ' ' + user.lastName,
+                                user.handle,
+                                user.email,
+                                config.defaultDiscoursePw).then((result) =>{
+                            if(result.data.success) {
+                                logger.info('Discourse user created');
+                                return result.data;
+                            } else {
+                                logger.error("Unable to create discourse user");
+                                logger.error(result);
+                                return Promise.reject(result);
+                            }
+                        }).catch((error) => {
+                            logger.error('Failed to create discourse user');
+                            return Promise.reject(error); 
+                        });
+                    }).catch((error) => {
+                        return Promise.reject(error);    
+                    });
+                });
+            }
+        });
+    }
+
     return (req, resp, next) => {
         // Verify required filters are present
         if(!req.query.filter) {
@@ -87,91 +128,76 @@ module.exports = (logger, db) => {
                 filter[split[0]] = split[1];
             }
         });
-    
+   
+        var pgThread;
+
         // Check if the thread exists in the pg database
         threadLookupExists(filter).then((result) => {
             if(result.length === 0) {
-                console.log('thread doesn\'t exist');
-                return userHasAccessToEntity(req.headers.authorization, filter.reference, filter.referenceId).then((hasAccess) => {
-                    if(!hasAccess) {
-                        return Promise.reject('User doesn\'t have access to entity');
-                    } else {
-                        // Does the discourse user exist
-                        return discourseClient.getUser(req.authUser.handle).then((user) => {
-                            logger.info('Successfully got the user from Discourse');
-                            return user;
-                        }).catch((error) => {
-                            logger.info('Discourse user doesn\'t exist, creating one');
-                            // User doesn't exist, create
-                            // Fetch user info from member service
-                            return getTopcoderUser(req.headers.authorization, req.authUser.handle).then((user) => {
-                                logger.info('Successfully got topcoder user');
-                                // Create discourse user 
-                                return discourseClient.createUser(user.firstName + ' ' + user.lastName,
-                                        user.handle,
-                                        user.email,
-                                        config.defaultDiscoursePw).then((result) =>{
-                                    if(result.data.success) {
-                                        logger.info('Discourse user created');
-                                        return result.data;
-                                    } else {
-                                        logger.error("Unable to create discourse user");
-                                        logger.error(result);
-                                        return Promise.reject(result);
-                                    }
-                                }).catch((error) => {
-                                    logger.error('Failed to create discourse user');
-                                    return Promise.reject(error); 
-                                });
+                logger.info('thread doesn\'t exist');
+                checkAccessAndProvision(req, filter).then(() => {
+                    return discourseClient.createPrivateMessage(
+                        'Discussion for ' + filter.reference + ' ' + filter.referenceId, 
+                        'Discussion for ' + filter.reference + ' ' + filter.referenceId, 
+                        req.authUser.handle + ',mdesiderio').then((response) => {
+                        if(response.status == 200) {
+                            pgThread = db.threads.build({
+                                reference: filter.reference,
+                                referenceId: filter.referenceId,
+                                discourseThreadId: response.data.topic_id,
+                                createdAt: new Date(),
+                                createdBy: req.authUser.handle,
+                                updatedAt: new Date(),
+                                updatedBy: req.authUser.handle
+                            });
+   
+                            return pgThread.save().then((result) => {
+                                logger.info('thread created in pg');
+                                return response.data;
                             }).catch((error) => {
-                                return Promise.reject(error);    
+                                logger.error(error);
+                                return Promise.reject(error);
                             });
-                        }).then(() => {
-                            return discourseClient.createPrivateMessage(
-                                'Discussion for ' + filter.reference + ' ' + filter.referenceId, 
-                                'Discussion for ' + filter.reference + ' ' + filter.referenceId, 
-                                req.authUser.handle + ',mdesiderio').then((response) => {
-                                if(response.status == 200) {
-                                    var thread = db.threads.build({
-                                       reference: filter.reference,
-                                       referenceId: filter.referenceId,
-                                       discourseThreadId: response.data.topic_id,
-                                       createdAt: new Date(),
-                                       createdBy: req.authUser.handle,
-                                       updatedAt: new Date(),
-                                       updatedBy: req.authUser.handle
-                                    });
-
-                                    return thread.save().then((result) => {
-                                        logger.info('thread created in pg');
-                                        return response.data;
-                                    }).catch((error) => {
-                                        logger.error(error);
-                                        return Promise.reject(error);
-                                    });
-                                } else {
-                                    return Promise.reject(response);
-                                }
-                            });
-                        }).catch((error) => {
-                            return Promise.reject(error);
-                        });
-                    }
+                        } else {
+                            return Promise.reject(response);
+                        }
+                    });
+                }).catch((error) => {
+                    return Promise.reject(error);
                 });
             } else {
                 logger.info('Thread exists in pg, fetching from discourse'); 
-                return discourseClient.getThread(result[0].discourseThreadId, req.authUser.handle).then((response) => {
+                pgThread = result[0];
+                return discourseClient.getThread(pgThread.discourseThreadId, req.authUser.handle).then((response) => {
                     logger.info('Thread received from discourse');
                     return response;
                 }).catch((error) => {
-                    logger.error('Failed to get thread from discourse');
-                    logger.error(error);
-                    Promise.reject(error);
+                    logger.info('Failed to get thread from discourse');
+
+                    // If 403, it is possible that the user simply hasn't been granted access to the thread yet
+                    if(error.response.status = 403) {
+                        logger.info('User doesn\'t have access to thread, checking access and provisioning');
+
+                        // Verify if the user has access and if so provision
+                        return checkAccessAndProvision(req, filter).then((discourseUser) => {
+                            // Grand access to the thread to the user
+                            logger.info('User entity access verified, granting access to thread');
+                            return discourseClient.grantAccess(req.authUser.handle, pgThread.discourseThreadId).then(() => {
+                                return discourseClient.getThread(pgThread.discourseThreadId, req.authUser.handle).then((response) => {
+                                    logger.info('Thread received from discourse');
+                                    return response;
+                                });
+                            });
+                        });
+                    } else {
+                        logger.error(error);
+                        return Promise.reject(error);
+                    }
                 });
             }
         }).then((thread) => {
             // Retrive the thread from Discourse
-            console.log(thread);
+            logger.info('returning thread'); 
             return resp.status(200).send(thread.data);
         }).catch((error) => {
             logger.error(error);

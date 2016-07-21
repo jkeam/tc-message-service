@@ -46,6 +46,12 @@ var Discourse = (logger) => {
         return discourseClient.get('/t/' + threadId + '.json?api_key=' + config.discourseApiKey + '&api_username=' + username);
     }
 
+    this.grantAccess = (userName, threadId) => {
+        return discourseClient.post('/t/' + threadId + '/invite?api_key=' + config.discourseApiKey + '&api_username=system', {
+            user: userName
+        });
+    }
+
     return this;
 }
 
