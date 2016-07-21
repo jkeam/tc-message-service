@@ -52,6 +52,12 @@ var Discourse = (logger) => {
         });
     }
 
+    this.createPost = (username, message, discourseThreadId) => {
+        return discourseClient.post('/posts?api_key=' + config.discourseApiKey + '&api_username=' + username, 
+            'topic_id=' + discourseThreadId +
+            '&raw=' + encodeURIComponent(message));
+    }
+
     return this;
 }
 

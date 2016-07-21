@@ -25,6 +25,9 @@ module.exports = (logger, db) => {
     
     router.route('/v4/threads')
         .get(require('./threads/list')(logger, db));
+    
+    router.route('/v4/threads/:threadId/messages')
+        .post(require('./threads/post.js')(logger, db));
     // Register all the routes
     //router.route('/v4/projects')
     //.post(require('./projects/create'))

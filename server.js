@@ -8,6 +8,7 @@ var config = require('config');
 var sequelize = require('sequelize');
 var _ = require('lodash');
 var db = require('./app/models');
+var bodyParser = require('body-parser');
 
 // init logger
 var appName = 'tc-message-service'
@@ -41,6 +42,7 @@ var port = process.env.PORT || 3000;
 // Define and configure app
 var app = express();
 
+app.use(bodyParser.json());
 app.use(routes);
 app.use(coreLib.middleware.logger(null, logger));
 
