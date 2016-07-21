@@ -1,0 +1,11 @@
+{
+  "defaultDiscoursePw": "thefakepasswordIhopenoonewillfigureout",
+  "memberServiceUrl": "http://localhost:3001/members",
+  "discourseURL": "http://talk.topcoder.com",
+  "discourseApiKey": "060d947123ba7c425d70ce4ebe01606cdf9fe434956cc916381a18a7c72b4a8d",
+  "authSecret": "secret",
+  "captureLogs": "false",
+  "dbConfig": {
+    "masterUrl": "postgres://postgres:postgres@local.topcoder-dev.com:5432/messages"
+  }
+}
