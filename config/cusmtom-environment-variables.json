@@ -1,0 +1,14 @@
+{
+  "authSecret": "AUTH_SECRET",
+  "logLevel": "LOG_LEVEL",
+  "authDomain": "AUTH_DOMAIN",
+  "version": "APP_VERSION",
+  "captureLogs": "CAPTURE_LOGS",
+  "logentriesToken": "LOGENTRIES_TOKEN",
+  "esUrl": "PROJECTS_ES_URL",
+  "rabbitmqURL": "RABBITMQ_URL",
+  "dbConfig": {
+    "masterUrl": "DB_MASTER_URL",
+  }
+}
+
