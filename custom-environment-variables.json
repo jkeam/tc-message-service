@@ -1,0 +1,10 @@
+{
+  "authDomain": "AUTH_DOMAIN",
+  "authSecret": "AUTH_SECRET",
+  "discourseURL": "DISCOURSE_URL",
+  "memberServiceUrl": "MEMBER_SERVICE_URL",
+  "dbConfig": {
+    "masterUrl": "DB_MASTER_URL",
+  }
+}
+

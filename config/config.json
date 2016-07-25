@@ -1,4 +1,12 @@
 {
+  "tc-dev": {
+    "username": "postgres",
+    "password": "Qn8TZxFFD77tzQwc",
+    "database": "messages",
+    "host": "localhost",
+    "port": "5400",
+    "dialect": "postgres"
+  },
   "development": {
     "username": "postgres",
     "password": "postgres",
