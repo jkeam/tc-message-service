@@ -23,9 +23,9 @@ module.exports = (logger, db) => {
                 id: '123',
             }).get(config.memberServiceUrl + '/' + handle, {
                 headers: {
-                    'authorization': 'bearer ' + authtoken,
-                    'accept': 'application/json',
-                    'content-type': 'application/json'
+                    'Authorization': 'Bearer ' + authToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 }
             }).then((response) => {
                 resolve(response.data.result.content);
