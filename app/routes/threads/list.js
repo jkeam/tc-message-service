@@ -22,17 +22,11 @@ module.exports = (logger, db) => {
         return new Promise((resolve, reject) => {
             axios.create({
                 headers: {
-                    'Authorization': 'Bearer ' + authToken,
+                    'Authorization': authToken,
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 }
-            }).get(config.memberServiceUrl + '/' + handle, {
-                headers: {
-                    'Authorization': 'Bearer ' + authToken,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            }).then((response) => {
+            }).get(config.memberServiceUrl + '/' + handle, ).then((response) => {
                 resolve(response.data.result.content);
             }).catch((error) => {
                 reject(error);
