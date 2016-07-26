@@ -135,11 +135,11 @@ module.exports = (logger, db) => {
         threadLookupExists(filter).then((result) => {
             if(result.length === 0) {
                 logger.info('thread doesn\'t exist');
-                checkAccessAndProvision(req, filter).then(() => {
+                return checkAccessAndProvision(req, filter).then(() => {
                     return discourseClient.createPrivateMessage(
                         'Discussion for ' + filter.reference + ' ' + filter.referenceId, 
                         'Discussion for ' + filter.reference + ' ' + filter.referenceId, 
-                        req.authUser.handle + ',mdesiderio').then((response) => {
+                        req.authUser.handle + ',system').then((response) => {
                         if(response.status == 200) {
                             pgThread = db.threads.build({
                                 reference: filter.reference,
@@ -153,7 +153,7 @@ module.exports = (logger, db) => {
    
                             return pgThread.save().then((result) => {
                                 logger.info('thread created in pg');
-                                return response.data;
+                                return response;
                             }).catch((error) => {
                                 logger.error(error);
                                 return Promise.reject(error);

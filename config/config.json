@@ -11,7 +11,7 @@
     "username": "postgres",
     "password": "postgres",
     "database": "messages",
-    "host": "192.168.99.101",
+    "host": "local.topcoder-dev.com",
     "dialect": "postgres"
   },
   "test": {
