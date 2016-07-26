@@ -4,7 +4,6 @@ var Promise = require('bluebird');
 var config = require('config');
 var axios = require('axios');
 
-
 var Discourse = (logger) => {
 
     var discourseClient = axios.create({

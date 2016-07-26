@@ -18,16 +18,16 @@ module.exports = (logger, db) => {
     }
 
     function getTopcoderUser(authToken, handle) {
-        logger.info(authToken);
         return new Promise((resolve, reject) => {
             util.getHttpClient({
                 id: '123',
+            }).get(config.memberServiceUrl + '/' + handle, {
                 headers: {
-                    'Authorization': 'Bearer ' + authToken,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
+                    'authorization': 'bearer ' + authtoken,
+                    'accept': 'application/json',
+                    'content-type': 'application/json'
                 }
-            }).get(config.memberServiceUrl + '/' + handle).then((response) => {
+            }).then((response) => {
                 resolve(response.data.result.content);
             }).catch((error) => {
                 //logger.error(error);
