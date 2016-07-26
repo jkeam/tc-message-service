@@ -8,7 +8,7 @@ var axios = require('axios');
 var Discourse = (logger) => {
 
     var discourseClient = axios.create({
-        baseURL: config.get('discourseURL');
+        baseURL: config.get('discourseURL')
     });
    
    this.getUser = (username) => {
