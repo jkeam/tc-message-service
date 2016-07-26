@@ -8,14 +8,14 @@ var axios = require('axios');
 var Discourse = (logger) => {
 
     var discourseClient = axios.create({
-        baseURL: config.discourseURL
+        baseURL: config.get('discourseURL');
     });
    
    this.getUser = (username) => {
         return new Promise((resolve, reject) => {
             discourseClient.get('/users/' + username + '.json', {
                 params: {
-                    api_key: config.discourseApiKey,
+                    api_key: config.get('discourseApiKey'),
                     api_username: username
                 }
             }).then((response) => {
@@ -27,7 +27,7 @@ var Discourse = (logger) => {
     }
 
     this.createUser = (name, username, email, password) => {
-        return discourseClient.post('/users?api_key=' + config.discourseApiKey + '&api_username=system', {
+        return discourseClient.post('/users?api_key=' + config.get('discourseApiKey') + '&api_username=system', {
             name: encodeURIComponent(name),
             username: username,
             email: email,
@@ -37,23 +37,23 @@ var Discourse = (logger) => {
     }
 
     this.createPrivateMessage = (title, message, users) => {
-        return discourseClient.post('/posts?api_key=' + config.discourseApiKey + '&api_username=system&archetype=private_message&target_usernames=' + users +
+        return discourseClient.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=system&archetype=private_message&target_usernames=' + users +
             '&title=' + encodeURIComponent(title) +
             '&raw=' + encodeURIComponent(message));
     }
 
     this.getThread = (threadId, username) => {
-        return discourseClient.get('/t/' + threadId + '.json?api_key=' + config.discourseApiKey + '&api_username=' + username);
+        return discourseClient.get('/t/' + threadId + '.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username);
     }
 
     this.grantAccess = (userName, threadId) => {
-        return discourseClient.post('/t/' + threadId + '/invite?api_key=' + config.discourseApiKey + '&api_username=system', {
+        return discourseClient.post('/t/' + threadId + '/invite?api_key=' + config.get('discourseApiKey') + '&api_username=system', {
             user: userName
         });
     }
 
     this.createPost = (username, message, discourseThreadId) => {
-        return discourseClient.post('/posts?api_key=' + config.discourseApiKey + '&api_username=' + username, 
+        return discourseClient.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=' + username, 
             'topic_id=' + discourseThreadId +
             '&raw=' + encodeURIComponent(message));
     }
