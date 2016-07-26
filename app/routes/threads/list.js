@@ -81,6 +81,7 @@ module.exports = (logger, db) => {
                     // Fetch user info from member service
                     return getTopcoderUser(req.headers.authorization, req.authUser.handle).then((user) => {
                         logger.info('Successfully got topcoder user');
+                        logger.info(user);
 
                         // Create discourse user 
                         return discourseClient.createUser(user.firstName + ' ' + user.lastName,
