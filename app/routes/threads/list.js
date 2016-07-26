@@ -18,6 +18,7 @@ module.exports = (logger, db) => {
     }
 
     function getTopcoderUser(authToken, handle) {
+        logger.info(authToken);
         return new Promise((resolve, reject) => {
             util.getHttpClient({
                 id: '123',
