@@ -139,7 +139,7 @@ module.exports = (logger, db) => {
                     return discourseClient.createPrivateMessage(
                         'Discussion for ' + filter.reference + ' ' + filter.referenceId, 
                         'Discussion for ' + filter.reference + ' ' + filter.referenceId, 
-                        req.authUser.handle + ',system').then((response) => {
+                        req.authUser.handle + ',mdesiderio').then((response) => {
                         if(response.status == 200) {
                             pgThread = db.threads.build({
                                 reference: filter.reference,
