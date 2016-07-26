@@ -5,6 +5,7 @@ var config = require('config');
 var util = require('tc-core-library-js').util(config);
 var Promise = require('bluebird');
 var Discourse = require('../../services/discourse');
+var axios = require('axios');
 
 module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
@@ -19,15 +20,13 @@ module.exports = (logger, db) => {
 
     function getTopcoderUser(authToken, handle) {
         return new Promise((resolve, reject) => {
-            util.getHttpClient({
-                id: '123',
-            }).get(config.memberServiceUrl + '/' + handle, {
+            axios.create({
                 headers: {
                     'Authorization': 'Bearer ' + authToken,
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 }
-            }).then((response) => {
+            }).get(config.memberServiceUrl + '/' + handle).then((response) => {
                 resolve(response.data.result.content);
             }).catch((error) => {
                 //logger.error(error);
