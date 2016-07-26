@@ -29,7 +29,6 @@ module.exports = (logger, db) => {
             }).get(config.memberServiceUrl + '/' + handle).then((response) => {
                 resolve(response.data.result.content);
             }).catch((error) => {
-                //logger.error(error);
                 reject(error);
             });
        }); 
