@@ -1,5 +1,10 @@
 'use strict'
 
+/**
+ * Loads and configures all sub routes of this api
+ * logger: logger
+ * db: sequelize db object containing all models
+ */
 module.exports = (logger, db) => {
     const router = require('express').Router(),
         _ = require('lodash'),

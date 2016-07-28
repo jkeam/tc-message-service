@@ -6,10 +6,15 @@ var util = require('tc-core-library-js').util(config);
 var Promise = require('bluebird');
 var Discourse = require('../../services/discourse');
 
+/**
+ * Creates a new post to a thread in Discourse
+ * logger: the logger
+ * db: sequelize db with models loaded
+ */
 module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
 
-    return (req, resp, next) => {
+    return (req, resp) => {
         console.log(req);
         return  discourseClient.createPost(req.authUser.handle, req.body.message, req.params.threadId).then((response) => {
             logger.info('Message created');

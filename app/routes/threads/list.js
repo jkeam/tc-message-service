@@ -7,9 +7,20 @@ var Promise = require('bluebird');
 var Discourse = require('../../services/discourse');
 var axios = require('axios');
 
+/**
+ * Handles listing of threads
+ * logger: the logger
+ * db: sequelize db with all models loaded
+ */
 module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
 
+    /**
+     * Checks if a thread lookup exists, if it does it means there is security 
+     * enabled for this given entity, and we should check if the user has access 
+     * to the entity before allowing access to the threads
+     * filter: {'reference': referenceName }
+     */
     function threadLookupExists(filter) {
         return db.threads.findAll({
             where: filter
@@ -18,6 +29,11 @@ module.exports = (logger, db) => {
         });
     }
 
+    /**
+     * Fetches a topcoder user from the topcoder members api
+     * authToken: The user's authentication token, will be used to call the member service api
+     * handle: handle of the user to fetch
+     */
     function getTopcoderUser(authToken, handle) {
         return new Promise((resolve, reject) => {
             axios.create({
@@ -34,6 +50,13 @@ module.exports = (logger, db) => {
        }); 
     }
 
+    /**
+     * Verifies if a user has access to a certain topcoder entity such as a project,
+     * challenge, or submission, by making a call to the api configured in the referenceLookup table
+     * authToken: user's auth token to use to call the api
+     * reference: name of the reference, used to find the endpoint in the referenceLookupTable
+     * referenceId: identifier of the reference record
+     */
     function userHasAccessToEntity(authToken, reference, referenceId) {
         return new Promise((resolve, reject)  => {
             db.referenceLookups.findOne({
@@ -65,14 +88,21 @@ module.exports = (logger, db) => {
         });
     }
 
+    /**
+     * Checks if a user has access to an entity, and if they do, provision a user in Discourse if one doesn't exist
+     * req: the express request
+     * filter: {'reference': reference, 'referenceId': referenceId}
+     */
     function checkAccessAndProvision(req, filter) {
         return userHasAccessToEntity(req.header.authorization, filter.reference, filter.referenceId).then((hasAccess) => {
+            logger.info('here');
             if(!hasAccess) {
                 return Promise.reject('User doesn\'t have access to entity');
             } else {
+                logger.info('User has access to entity');
                 // Does the discourse user exist
                 return discourseClient.getUser(req.authUser.handle).then((user) => {
-                logger.info('Successfully got the user from Discourse');
+                    logger.info('Successfully got the user from Discourse');
                     return user;
                 }).catch((error) => {
                     logger.info('Discourse user doesn\'t exist, creating one');
@@ -107,7 +137,15 @@ module.exports = (logger, db) => {
         });
     }
 
-    return (req, resp, next) => {
+    /**
+     * Gets a thread from Discourse, and in the process it does:
+     *  - Checks if the user has access to the referred entity
+     *  - Checks if a user exists in Discourse, if not, it creates one
+     *  - Checks if a thread associated with this entity exists in Discourse, if not creates one
+     *  - If the thread already exists, checks if the user has access, if not gives access
+     * params: standard express parameters
+     */
+    return (req, resp) => {
         // Verify required filters are present
         if(!req.query.filter) {
             resp.status(400).send({
@@ -139,7 +177,7 @@ module.exports = (logger, db) => {
                     return discourseClient.createPrivateMessage(
                         'Discussion for ' + filter.reference + ' ' + filter.referenceId, 
                         'Discussion for ' + filter.reference + ' ' + filter.referenceId, 
-                        req.authUser.handle + ',mdesiderio').then((response) => {
+                        req.authUser.handle).then((response) => {
                         if(response.status == 200) {
                             pgThread = db.threads.build({
                                 reference: filter.reference,
