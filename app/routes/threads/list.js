@@ -36,13 +36,13 @@ module.exports = (logger, db) => {
      */
     function getTopcoderUser(authToken, handle) {
         return new Promise((resolve, reject) => {
-            axios.create({
+            axios.get(config.memberServiceUrl + '/' + handle, {
                 headers: {
                     'Authorization': authToken,
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 }
-            }).get(config.memberServiceUrl + '/' + handle).then((response) => {
+            }).then((response) => {
                 resolve(response.data.result.content);
             }).catch((error) => {
                 reject(error);
@@ -68,17 +68,20 @@ module.exports = (logger, db) => {
                     resolve(true);
                 } else {
                     var referenceLookup = result;
-
-                    util.getHttpClient({
-                        id: '123',
+                    axios.get(referenceLookup.endpoint.replace('{id}', referenceId), {
                         headers: {
+                            'X-Request-Id': '123',
                             'Authorization': 'Bearer ' + authToken,
                             'Accept': 'application/json',
                             'Content-Type': 'application/json'
-                        }
-                    }).get(referenceLookup.endpoint.replace('{id}', referenceId)).then((response) => {
-                        if(response.data.result.status == 200 && response.data.result.content) {
+                        },
+                        timeout: 3000
+                    }).then((response) => {
+                        if(response.data && response.data.result
+                            && response.data.result.status == 200 && response.data.result.content) {
                             resolve(true);
+                        } else {
+                            resolve(false);
                         }
                     }).catch((error) => {
                         resolve(false);
@@ -95,7 +98,7 @@ module.exports = (logger, db) => {
      */
     function checkAccessAndProvision(req, filter) {
         return userHasAccessToEntity(req.header.authorization, filter.reference, filter.referenceId).then((hasAccess) => {
-            logger.info('here');
+            logger.info('hasAccess: '+hasAccess);
             if(!hasAccess) {
                 return Promise.reject('User doesn\'t have access to entity');
             } else {
@@ -146,17 +149,8 @@ module.exports = (logger, db) => {
      * params: standard express parameters
      */
     return (req, resp) => {
-        // Verify required filters are present
-        if(!req.query.filter) {
-            resp.status(400).send({
-                message: 'Please provide reference and referenceId filter parameters'
-            });
-
-            return;
-        }
-    
         // Parse filter
-        var parsedFilter = req.query.filter.split('&');
+        var parsedFilter = (req.query.filter || '').split('&');
         var filter = {};
     
         _(parsedFilter).each(value => {
@@ -166,7 +160,15 @@ module.exports = (logger, db) => {
                 filter[split[0]] = split[1];
             }
         });
-   
+        // Verify required filters are present
+        if(!filter.reference || !filter.referenceId) {
+            resp.status(400).send({
+                message: 'Please provide reference and referenceId filter parameters'
+            });
+
+            return;
+        }
+
         var pgThread;
 
         // Check if the thread exists in the pg database
@@ -213,7 +215,7 @@ module.exports = (logger, db) => {
                     logger.info('Failed to get thread from discourse');
 
                     // If 403, it is possible that the user simply hasn't been granted access to the thread yet
-                    if(error.response.status = 403) {
+                    if(error.response.status == 403) {
                         logger.info('User doesn\'t have access to thread, checking access and provisioning');
 
                         // Verify if the user has access and if so provision
@@ -221,6 +223,7 @@ module.exports = (logger, db) => {
                             // Grand access to the thread to the user
                             logger.info('User entity access verified, granting access to thread');
                             return discourseClient.grantAccess(req.authUser.handle, pgThread.discourseThreadId).then(() => {
+                                logger.info('Succeed to grant access to thread');
                                 return discourseClient.getThread(pgThread.discourseThreadId, req.authUser.handle).then((response) => {
                                     logger.info('Thread received from discourse');
                                     return response;
