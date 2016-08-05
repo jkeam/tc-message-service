@@ -62,7 +62,7 @@ var Discourse = (logger) => {
     this.createPrivateMessage = (title, message, users) => {
         return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=system&archetype=private_message&target_usernames=' + users +
             '&title=' + encodeURIComponent(title) +
-            '&raw=' + encodeURIComponent(message), discourseClientConfig);
+            '&raw=' + encodeURIComponent(message), "", discourseClientConfig);
     }
 
     /**
