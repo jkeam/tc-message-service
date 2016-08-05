@@ -15,7 +15,6 @@ module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
 
     return (req, resp) => {
-        console.log(req);
         return  discourseClient.createPost(req.authUser.handle, req.body.message, req.params.threadId).then((response) => {
             logger.info('Message created');
             resp.status(200).send({

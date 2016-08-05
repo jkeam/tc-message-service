@@ -1,5 +1,4 @@
 'use strict'
-
 var Promise = require('bluebird');
 var config = require('config');
 var axios = require('axios');
@@ -11,19 +10,20 @@ var axios = require('axios');
 var Discourse = (logger) => {
 
     /**
-     * Discourse client is an axios http client
+     * Discourse client configuration
      */
-    var discourseClient = axios.create({
+    var discourseClientConfig = {
         baseURL: config.get('discourseURL')
-    });
-   
+    };
+
    /**
     * Fetches a Discourse user by username
     * username: the Discourse user name
     */
    this.getUser = (username) => {
         return new Promise((resolve, reject) => {
-            discourseClient.get('/users/' + username + '.json', {
+            axios.get('/users/' + username + '.json', {
+                baseURL: config.get('discourseURL'),
                 params: {
                     api_key: config.get('discourseApiKey'),
                     api_username: username
@@ -44,13 +44,13 @@ var Discourse = (logger) => {
      * password: password of the user, this will be ignored since we will be using SSO
      */
     this.createUser = (name, username, email, password) => {
-        return discourseClient.post('/users?api_key=' + config.get('discourseApiKey') + '&api_username=system', {
+        return axios.post('/users?api_key=' + config.get('discourseApiKey') + '&api_username=system', {
             name: encodeURIComponent(name),
             username: username,
             email: email,
             password: password,
             active: true
-        });
+        }, discourseClientConfig);
     }
 
     /**
@@ -60,9 +60,9 @@ var Discourse = (logger) => {
      * users: comma separated list of user names that should be part of the conversation
      */
     this.createPrivateMessage = (title, message, users) => {
-        return discourseClient.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=system&archetype=private_message&target_usernames=' + users +
+        return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=system&archetype=private_message&target_usernames=' + users +
             '&title=' + encodeURIComponent(title) +
-            '&raw=' + encodeURIComponent(message));
+            '&raw=' + encodeURIComponent(message), "", discourseClientConfig);
     }
 
     /**
@@ -71,7 +71,8 @@ var Discourse = (logger) => {
      * username: the username to use to fetch the thread, for security purposes
      */
     this.getThread = (threadId, username) => {
-        return discourseClient.get('/t/' + threadId + '.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username);
+        console.log('/t/' + threadId + '.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username);
+        return axios.get('/t/' + threadId + '.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username, discourseClientConfig);
     }
 
     /**
@@ -80,9 +81,9 @@ var Discourse = (logger) => {
      * threadId: identifier of the thread to which access should be granted
      */
     this.grantAccess = (userName, threadId) => {
-        return discourseClient.post('/t/' + threadId + '/invite?api_key=' + config.get('discourseApiKey') + '&api_username=system', {
+        return axios.post('/t/' + threadId + '/invite?api_key=' + config.get('discourseApiKey') + '&api_username=system', {
             user: userName
-        });
+        }, discourseClientConfig);
     }
 
     /**
@@ -92,9 +93,9 @@ var Discourse = (logger) => {
      * discourseThreadId: the thread id to which the response is being posted
      */
     this.createPost = (username, message, discourseThreadId) => {
-        return discourseClient.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=' + username, 
+        return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=' + username,
             'topic_id=' + discourseThreadId +
-            '&raw=' + encodeURIComponent(message));
+            '&raw=' + encodeURIComponent(message), discourseClientConfig);
     }
 
     return this;
