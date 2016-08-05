@@ -191,6 +191,26 @@ describe('GET /v4/threads ', () => {
             })
     });
 
+    it('should return 500 response if error to get referenceLookup endpoint', (done) => {
+        sandbox.stub(axios, 'get').returnsPromise().rejects({});
+        request(server)
+            .get(apiPath)
+            .set({
+                'Authorization': "Bearer " + jwts.admin
+            })
+            .query({
+                filter: 'tag=notexist&reference=reference&referenceId=referenceId'
+            })
+            .expect(500)
+            .end(function(err, res) {
+                if (err) {
+                    return done(err)
+                }
+                res.body.should.have.property('message', 'Error fetching thread!');
+                done()
+            })
+    });
+
     it('should return 500 response if error to get user and create discourse user', (done) => {
         const data ={
             result: {
