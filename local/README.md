@@ -59,7 +59,7 @@ Install nodejs and npm, instructions can be found here: https://nodejs.org/en/
 
 Install the sequelize command line interface by following the instructions found here: https://github.com/sequelize/cli
 
-# Local Setup 
+# Local Setup
 
 ## Hosts
 
@@ -68,7 +68,7 @@ On Linux it is the local host itself:
 ```
 127.0.0.1	localhost local.topcoder-dev.com talk.topcoder.com
 ```
-On Windows it is the ip address of the docker machine, find it with the command "docker-machine ip", below is the default: 
+On Windows it is the ip address of the docker machine, find it with the command "docker-machine ip", below is the default:
 C:\Windows\System32\drivers\etc\hosts
 ```
 192.168.99.100	local.topcoder-dev.com talk.topcoder.com
@@ -140,7 +140,7 @@ insert into "referenceLookups" (reference, endpoint, "createdAt", "updatedAt") v
 We need to set the following 2 environment variables:
 
 ```
-export DISCOURSE_API_KEY=<<SYSTEM USER API KEY>> 
+export DISCOURSE_API_KEY=<<SYSTEM USER API KEY>>
 export DEFAULT_DISCOURSE_PW=supersecretpw
 ```
 
@@ -170,7 +170,7 @@ npm start
 
 JWT is used to authenticate calls to the service, and a unexpired JWT token is required to be passed in the Authorization header for any calls made to the service.
 
-This JWT token can be used to impersonate the user magrathean: 
+This JWT token can be used to impersonate the user magrathean:
 
 ```
 eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiIxMzI0NTYiLCJpYXQiOjE0NTA5MjkyNDYsImVtYWlsIjpudWxsLCJqdGkiOiIxMzY5YzYwMC1lMGExLTQ1MjUtYTdjNy01NmJlN2Q4MTNmNTEifQ.n_gFPaAVca300AZqjVdHETzNGexcsJsh1ePSAaMtJxk
@@ -188,12 +188,12 @@ The following curl command will check if the user has access to the submission 4
 curl -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiIxMzI0NTYiLCJpYXQiOjE0NTA5MjkyNDYsImVtYWlsIjpudWxsLCJqdGkiOiIxMzY5YzYwMC1lMGExLTQ1MjUtYTdjNy01NmJlN2Q4MTNmNTEifQ.n_gFPaAVca300AZqjVdHETzNGexcsJsh1ePSAaMtJxk" "http://localhost:3000/v4/threads?filter=reference%3Dsubmission%26referenceId%3D455"
 ```
 
-You can also create messages in existing threads by doing the following:
+You can also create posts in existing threads by doing the following:
 
 First, Create `payload` file in the current directory, where the file content is like following:
 ```
 {
-    "message": "This is my response to the thread"
+    "post": "This is my response to the thread"
 }
 ```
 

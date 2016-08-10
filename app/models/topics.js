@@ -1,12 +1,12 @@
 'user strict' 
 
 /**
- * Represents a mapping between a Discourse thread and a 
+ * Represents a mapping between a Discourse topic and a 
  * topcoder entity such as project, challenge, or submission
  */
 module.exports = (Sequelize, DataTypes) => {
-    // Threads represents the data that links topcoder entities with discourse threads 
-    var Thread = Sequelize.define('threads', {
+    // Topics represents the data that links topcoder entities with discourse topics 
+    var Topic = Sequelize.define('topics', {
         // The primary key
         id: {  
             type: DataTypes.BIGINT,
@@ -23,8 +23,8 @@ module.exports = (Sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false
         },
-        // The id of the Discourse thread
-        discourseThreadId: {  
+        // The id of the Discourse topic
+        discourseTopicId: {  
             type: DataTypes.BIGINT,
             allowNull: false
         },
@@ -50,6 +50,6 @@ module.exports = (Sequelize, DataTypes) => {
         }
     });
 
-    return Thread;
+    return Topic;
 }
 
