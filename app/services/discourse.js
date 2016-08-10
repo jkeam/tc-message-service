@@ -54,34 +54,34 @@ var Discourse = (logger) => {
     }
 
     /**
-     * Creates a private message in discourse
-     * title: the title of the message
-     * message: the body of the message, html markup is allowed
+     * Creates a private post in discourse
+     * title: the title of the post
+     * post: the body of the post, html markup is allowed
      * users: comma separated list of user names that should be part of the conversation
      */
-    this.createPrivateMessage = (title, message, users) => {
-        return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=system&archetype=private_message&target_usernames=' + users +
+    this.createPrivatePost = (title, post, users) => {
+        return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=system&archetype=private_post&target_usernames=' + users +
             '&title=' + encodeURIComponent(title) +
-            '&raw=' + encodeURIComponent(message), "", discourseClientConfig);
+            '&raw=' + encodeURIComponent(post), "", discourseClientConfig);
     }
 
     /**
-     * Gets a thread in Discourse
-     * threadId: the id of the thread
-     * username: the username to use to fetch the thread, for security purposes
+     * Gets a topic in Discourse
+     * topicId: the id of the topic
+     * username: the username to use to fetch the topic, for security purposes
      */
-    this.getThread = (threadId, username) => {
-        console.log('/t/' + threadId + '.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username);
-        return axios.get('/t/' + threadId + '.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username, discourseClientConfig);
+    this.getTopic = (topicId, username) => {
+        console.log('/t/' + topicId + '.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username);
+        return axios.get('/t/' + topicId + '.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username, discourseClientConfig);
     }
 
     /**
-     * Grants access to a user by adding that user to the Discrouse thread (or private message)
+     * Grants access to a user by adding that user to the Discrouse topic (or private post)
      * userName: identifies the user that should receive access
-     * threadId: identifier of the thread to which access should be granted
+     * topicId: identifier of the topic to which access should be granted
      */
-    this.grantAccess = (userName, threadId) => {
-        return axios.post('/t/' + threadId + '/invite?api_key=' + config.get('discourseApiKey') + '&api_username=system', {
+    this.grantAccess = (userName, topicId) => {
+        return axios.post('/t/' + topicId + '/invite?api_key=' + config.get('discourseApiKey') + '&api_username=system', {
             user: userName
         }, discourseClientConfig);
     }
@@ -89,13 +89,13 @@ var Discourse = (logger) => {
     /**
      * Creates a post (reply) to a threa
      * username: user creating the post
-     * message: body of the message, html markup is permitted
-     * discourseThreadId: the thread id to which the response is being posted
+     * post: body of the post, html markup is permitted
+     * discourseTopicId: the topic id to which the response is being posted
      */
-    this.createPost = (username, message, discourseThreadId) => {
+    this.createPost = (username, post, discourseTopicId) => {
         return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=' + username,
-            'topic_id=' + discourseThreadId +
-            '&raw=' + encodeURIComponent(message), discourseClientConfig);
+            'topic_id=' + discourseTopicId +
+            '&raw=' + encodeURIComponent(post), discourseClientConfig);
     }
 
     return this;

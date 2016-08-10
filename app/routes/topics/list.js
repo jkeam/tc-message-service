@@ -8,7 +8,7 @@ var Discourse = require('../../services/discourse');
 var axios = require('axios');
 
 /**
- * Handles listing of threads
+ * Handles listing of topics
  * logger: the logger
  * db: sequelize db with all models loaded
  */
@@ -16,13 +16,13 @@ module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
 
     /**
-     * Checks if a thread lookup exists, if it does it means there is security 
-     * enabled for this given entity, and we should check if the user has access 
-     * to the entity before allowing access to the threads
+     * Checks if a topic lookup exists, if it does it means there is security
+     * enabled for this given entity, and we should check if the user has access
+     * to the entity before allowing access to the topics
      * filter: {'reference': referenceName }
      */
-    function threadLookupExists(filter) {
-        return db.threads.findAll({
+    function topicLookupExists(filter) {
+        return db.topics.findAll({
             where: filter
         }).then((result) => {
             return result;
@@ -47,7 +47,7 @@ module.exports = (logger, db) => {
             }).catch((error) => {
                 reject(error);
             });
-       }); 
+       });
     }
 
     /**
@@ -62,7 +62,7 @@ module.exports = (logger, db) => {
             db.referenceLookups.findOne({
                 where: {
                     reference: reference
-                } 
+                }
             }).then((result) => {
                 if(!result) {
                     resolve(true);
@@ -115,7 +115,7 @@ module.exports = (logger, db) => {
                         logger.info('Successfully got topcoder user');
                         logger.info(user);
 
-                        // Create discourse user 
+                        // Create discourse user
                         return discourseClient.createUser(user.firstName + ' ' + user.lastName,
                                 user.handle,
                                 user.email,
@@ -130,10 +130,10 @@ module.exports = (logger, db) => {
                             }
                         }).catch((error) => {
                             logger.error('Failed to create discourse user');
-                            return Promise.reject(error); 
+                            return Promise.reject(error);
                         });
                     }).catch((error) => {
-                        return Promise.reject(error);    
+                        return Promise.reject(error);
                     });
                 });
             }
@@ -141,21 +141,21 @@ module.exports = (logger, db) => {
     }
 
     /**
-     * Gets a thread from Discourse, and in the process it does:
+     * Gets a topic from Discourse, and in the process it does:
      *  - Checks if the user has access to the referred entity
      *  - Checks if a user exists in Discourse, if not, it creates one
-     *  - Checks if a thread associated with this entity exists in Discourse, if not creates one
-     *  - If the thread already exists, checks if the user has access, if not gives access
+     *  - Checks if a topic associated with this entity exists in Discourse, if not creates one
+     *  - If the topic already exists, checks if the user has access, if not gives access
      * params: standard express parameters
      */
     return (req, resp) => {
         // Parse filter
         var parsedFilter = (req.query.filter || '').split('&');
         var filter = {};
-    
+
         _(parsedFilter).each(value => {
             let split = value.split('=');
-            
+
             if(split.length == 2) {
                 filter[split[0]] = split[1];
             }
@@ -169,30 +169,30 @@ module.exports = (logger, db) => {
             return;
         }
 
-        var pgThread;
+        var pgTopic;
 
-        // Check if the thread exists in the pg database
-        threadLookupExists(filter).then((result) => {
+        // Check if the topic exists in the pg database
+        topicLookupExists(filter).then((result) => {
             if(result.length === 0) {
-                logger.info('thread doesn\'t exist');
+                logger.info('topic doesn\'t exist');
                 return checkAccessAndProvision(req, filter).then(() => {
-                    return discourseClient.createPrivateMessage(
-                        'Discussion for ' + filter.reference + ' ' + filter.referenceId, 
-                        'Discussion for ' + filter.reference + ' ' + filter.referenceId, 
+                    return discourseClient.createPrivatePost(
+                        'Discussion for ' + filter.reference + ' ' + filter.referenceId,
+                        'Discussion for ' + filter.reference + ' ' + filter.referenceId,
                         req.authUser.handle).then((response) => {
                         if(response.status == 200) {
-                            pgThread = db.threads.build({
+                            pgTopic = db.topics.build({
                                 reference: filter.reference,
                                 referenceId: filter.referenceId,
-                                discourseThreadId: response.data.topic_id,
+                                discourseTopicId: response.data.topic_id,
                                 createdAt: new Date(),
                                 createdBy: req.authUser.handle,
                                 updatedAt: new Date(),
                                 updatedBy: req.authUser.handle
                             });
-   
-                            return pgThread.save().then((result) => {
-                                logger.info('thread created in pg');
+
+                            return pgTopic.save().then((result) => {
+                                logger.info('topic created in pg');
                                 return response;
                             }).catch((error) => {
                                 logger.error(error);
@@ -206,26 +206,26 @@ module.exports = (logger, db) => {
                     return Promise.reject(error);
                 });
             } else {
-                logger.info('Thread exists in pg, fetching from discourse'); 
-                pgThread = result[0];
-                return discourseClient.getThread(pgThread.discourseThreadId, req.authUser.handle).then((response) => {
-                    logger.info('Thread received from discourse');
+                logger.info('Topic exists in pg, fetching from discourse');
+                pgTopic = result[0];
+                return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.handle).then((response) => {
+                    logger.info('Topic received from discourse');
                     return response;
                 }).catch((error) => {
-                    logger.info('Failed to get thread from discourse');
+                    logger.info('Failed to get topic from discourse');
 
-                    // If 403, it is possible that the user simply hasn't been granted access to the thread yet
+                    // If 403, it is possible that the user simply hasn't been granted access to the topic yet
                     if(error.response.status == 403) {
-                        logger.info('User doesn\'t have access to thread, checking access and provisioning');
+                        logger.info('User doesn\'t have access to topic, checking access and provisioning');
 
                         // Verify if the user has access and if so provision
                         return checkAccessAndProvision(req, filter).then((discourseUser) => {
-                            // Grand access to the thread to the user
-                            logger.info('User entity access verified, granting access to thread');
-                            return discourseClient.grantAccess(req.authUser.handle, pgThread.discourseThreadId).then(() => {
-                                logger.info('Succeed to grant access to thread');
-                                return discourseClient.getThread(pgThread.discourseThreadId, req.authUser.handle).then((response) => {
-                                    logger.info('Thread received from discourse');
+                            // Grand access to the topic to the user
+                            logger.info('User entity access verified, granting access to topic');
+                            return discourseClient.grantAccess(req.authUser.handle, pgTopic.discourseTopicId).then(() => {
+                                logger.info('Succeed to grant access to topic');
+                                return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.handle).then((response) => {
+                                    logger.info('Topic received from discourse');
                                     return response;
                                 });
                             });
@@ -236,14 +236,14 @@ module.exports = (logger, db) => {
                     }
                 });
             }
-        }).then((thread) => {
-            // Retrive the thread from Discourse
-            logger.info('returning thread'); 
-            return resp.status(200).send(thread.data);
+        }).then((topic) => {
+            // Retrive the topic from Discourse
+            logger.info('returning topic');
+            return resp.status(200).send(topic.data);
         }).catch((error) => {
             logger.error(error);
             resp.status(500).send({
-                message: 'Error fetching thread!'
+                message: 'Error fetching topic!'
             });
         });
     }
