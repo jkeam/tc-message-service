@@ -15,7 +15,7 @@ module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
 
     return (req, resp) => {
-        return  discourseClient.createPost(req.authUser.handle, req.body.post, req.params.topicId).then((response) => {
+        return  discourseClient.createPost(req.authUser.handle, req.body.post, req.params.topicId, req.body.responseTo).then((response) => {
             logger.info('Post created');
             resp.status(200).send({
                 message: 'Post created'
