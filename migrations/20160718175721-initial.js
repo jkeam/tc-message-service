@@ -3,7 +3,7 @@
 module.exports = {
   up: function (queryInterface, Sequelize) {
     queryInterface.createTable(
-        'threads',
+        'topics',
         {
             id: {  
                 type: Sequelize.BIGINT,
@@ -18,7 +18,7 @@ module.exports = {
                 type: Sequelize.STRING,
                 allowNull: false
             },
-            discourseThreadId: {  
+            discourseTopicId: {  
                 type: Sequelize.BIGINT,
                 allowNull: false
             },
@@ -62,7 +62,7 @@ module.exports = {
   },
 
   down: function (queryInterface, Sequelize) {
-    queryInterface.dropTable('threads');
+    queryInterface.dropTable('topics');
     queryInterface.dropTable('referenceLookups');
   }
 };

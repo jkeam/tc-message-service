@@ -9,13 +9,13 @@ module.exports = (logger, db) => {
     const router = require('express').Router(),
         _ = require('lodash'),
     ev = require('express-validation')
-    
+
     ev.options({
     status: 422,
     flatten: true,
     allowUnknownBody: false
     })
-    
+
     // health check
     router.get('/_health', (req, res, next) => {
         // TODO more checks
@@ -29,32 +29,32 @@ module.exports = (logger, db) => {
     
     // All project service endpoints need authentication
     var jwtAuth = require('tc-core-library-js').middleware.jwtAuthenticator
-    router.all('/v4/threads*', jwtAuth())
-    
-    router.route('/v4/threads')
-        .get(require('./threads/list')(logger, db));
-    
-    router.route('/v4/threads/:threadId/messages')
-        .post(require('./threads/post.js')(logger, db));
+    router.all('/v4/topics*', jwtAuth())
+
+    router.route('/v4/topics')
+        .get(require('./topics/list')(logger, db));
+
+    router.route('/v4/topics/:topicId/posts')
+        .post(require('./topics/post.js')(logger, db));
     // Register all the routes
     //router.route('/v4/projects')
     //.post(require('./projects/create'))
     //.get(require('./projects/list'))
-    
+
     //router.route('/v4/projects/:projectId(\\d+)')
     //.get(require('./projects/get'))
     //.patch(require('./projects/update'))
-    
+
     // register error handler
     router.use((err, req, res, next) => {
     let content = {}
     let httpStatus = 500
     // specific for validation errors
     if (err instanceof ev.ValidationError) {
-        content.message = err.message + ": " + err.toJSON()
+        content.post = err.message + ": " + err.toJSON()
         httpStatus = err.status
     } else {
-        content.message = err.message
+        content.post = err.message
     }
     var body = {
         id: req.id,
@@ -64,7 +64,7 @@ module.exports = (logger, db) => {
         content: content
         }
     }
-    
+
     // development error handler
     // will print stacktrace
     if (_.indexOf(['development', 'test', 'qa'], process.env.ENVIRONMENT) > -1) {
@@ -76,7 +76,7 @@ module.exports = (logger, db) => {
         .status(err.status)
         .send(body)
     })
-    
+
     // catch 404 and forward to error handler
     router.use((req, res, next) => {
     var err = new Error('Not Found')
@@ -85,4 +85,4 @@ module.exports = (logger, db) => {
     })
 
     return router;
-} 
+}
