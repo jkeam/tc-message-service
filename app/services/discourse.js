@@ -60,7 +60,7 @@ var Discourse = (logger) => {
      * users: comma separated list of user names that should be part of the conversation
      */
     this.createPrivatePost = (title, post, users) => {
-        return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=system&archetype=private_post&target_usernames=' + users +
+        return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=system&archetype=private_message&target_usernames=' + users +
             '&title=' + encodeURIComponent(title) +
             '&raw=' + encodeURIComponent(post), "", discourseClientConfig);
     }
