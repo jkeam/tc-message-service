@@ -2,10 +2,16 @@
   "defaultDiscoursePw": "fakepw",
   "memberServiceUrl": "http://local.topcoder-dev.com:3001/members",
   "discourseURL": "http://talk.topcoder.com",
-  "discourseApiKey": "",
+  "discourseApiKey": "b57d89a887ee71b9514b2cec13ab15b42cfdb5c3cda0c96502ce6f8a5b956bf6",
   "authSecret": "secret",
   "captureLogs": "false",
   "dbConfig": {
     "masterUrl": "postgres://postgres:postgres@local.topcoder-dev.com:5432/messages"
+  },
+  "userServiceUrl": "http://local.topcoder-dev.com:3001/users",
+  "discourseSSO": {
+    "secret": "secret12345",
+    "loginCookieName": "jwtToken",
+    "loginUrl": "http://192.168.1.100:3000"
   }
 }

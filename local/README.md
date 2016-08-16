@@ -135,26 +135,88 @@ And execute the following statement:
 insert into "referenceLookups" (reference, endpoint, "createdAt", "updatedAt") values ('submission', 'http://local.topcoder-dev.com:3001/submissions/{id}', now(), now());
 ```
 
+## Setup Discourse and Enable SSO
+Here are the commands that you can follow to setup the discourse and enable sso:
+```
+# setup
+sudo -s
+mkdir /var/discourse
+git clone https://github.com/discourse/discourse_docker.git /var/discourse
+cd /var/discourse
+./discourse-setup
+
+# Answer the following questions when prompted:
+#   Hostname for your Discourse? [discourse.example.com]: localhost
+#   Email address for admin account? [me@example.com]: myname@gmail.com
+#   SMTP server address? [smtp.example.com]: smtp.gmail.com
+#   SMTP user name? [postmaster@discourse.example.com]: myname@gmail.com
+#   SMTP port [587]: 587
+#   SMTP password? []: mygmailpassword
+# This will generate an app.yml configuration file on your behalf, and then kicks off bootstrap.
+# Bootstrapping takes between 2-8 minutes to set up your Discourse.
+
+sudo /var/discourse/launcher enter app
+
+# install sso plugin
+rake plugin:install["https://github.com/FutureProofGames/discourse_sso_redirect.git"]
+
+# create admin acount
+rake admin:create
+
+# answer the following questions:
+#   Email: admin@example.com
+#   Password: password
+#   Repeat password: password
+#
+#   Ensuring account is active!
+#
+#   Account created successfully with username example
+#   Do you want to grant Admin privileges to this account? (Y/n) Y
+#
+#   Your account now has Admin privileges!
+
+# get an api key
+rake api_key:get
+
+The `config/default.json` file contains the following discourse and sso related properties:
+* discourseURL - this is the disource host url, no need to change. 
+* discourseApiKey - this is the discourse api key, set to the api-key obtained above.
+* discourseSSO
+** secret - the discourse sso secret, need to be the same as the value on discouse settings page
+** loginCookieName - the login cookie name to obtain the jwt token
+** loginUrl - the login url to redirect to
+
+To enable sso in discourse, login discourse with the admin account created above. 
+Click on the menu icon (top right corner) and select Admin.
+Click on the Settings tab and then on the Login menu item
+Scroll down and do as below:
+* activate 'enable sso', 
+* activate 'sso overrides email'
+* activate 'sso overrides username'
+* activate 'sso overrides name'
+* set 'sso url' to the sso endpoint of this message service. e.g. http://127.0.0.1:3000/sso
+* set 'sso secret' to the same value as the `discourseSSO.secret` in the `config/default.json` file, e.g. secret12345
+
+Still on the settings tab, click the 'Users' menu and set 'logout redirect' to a logout endpoint. 
+Still on the settings tab, click the 'SSO Redirect' menu and add host of sso-url to the 'sso redirect domain whitelist'
+
+Note that the 'SSO Redirect' menu appeared after restarting the docker container in /var/discourse directory:
+```
+sudo ./launcher stop app
+sudo ./launcher start app
+```
+
 ## Setting up Environment Variables
 
 We need to set the following 2 environment variables:
 
 ```
-export DISCOURSE_API_KEY=<<SYSTEM USER API KEY>>
+export DISCOURSE_API_KEY=<<SYSTEM USER API KEY>> 
 export DEFAULT_DISCOURSE_PW=supersecretpw
 ```
 
-To obtain the system user's API key, connect to your discourse container:
+The system user's API key is obtained in the last step from discourse. 
 
-```
-/var/discourse/launcher enter app
-```
-
-And issue the following command:
-
-```
-rake api_key:get
-```
 
 # Running the Service
 

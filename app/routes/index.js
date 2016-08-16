@@ -24,6 +24,9 @@ module.exports = (logger, db) => {
         })
     })
 
+    // register discourse sso endpoint (no auth is needed)
+    router.route('/sso').get(require('./sso/sso.js')(logger));
+    
     // All project service endpoints need authentication
     var jwtAuth = require('tc-core-library-js').middleware.jwtAuthenticator
     router.all('/v4/topics*', jwtAuth())
