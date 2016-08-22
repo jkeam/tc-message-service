@@ -11,7 +11,7 @@
   "referenceLookupTimeout": 3000,
   "createTopicRetryDelay": 2000,
   "createTopicTimeout": 180000,
-  "version": "v4"
+  "version": "v4",
   "userServiceUrl": "http://local.topcoder-dev.com:3001/users",
   "discourseSSO": {
     "secret": "secret12345",

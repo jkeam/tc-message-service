@@ -22,8 +22,8 @@ module.exports = (logger, db) => {
     /**
      * Create a new topic for the specified entity.
      *  - Verify if the user has access to the entity (userHasAccessToEntity function), if the user doesn't have access return 403;
-     *  - Try to create a private post in Discourse (createPrivatePost in discourse.js);
-     *  - If it fails, check if the user exists in Discourse, if the user doesn't exist, provision it, and try to create the private post again;
+     *  - Try to create a private message in Discourse (createPrivatePost in discourse.js);
+     *  - If it fails, check if the user exists in Discourse, if the user doesn't exist, provision it, and try to create the private message again;
      *  - Set system, and the current user as the users in the post;
      *  - Return the newly created topic.
      * params: standard express parameters

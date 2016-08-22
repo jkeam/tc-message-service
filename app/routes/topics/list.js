@@ -47,7 +47,7 @@ module.exports = (logger, db) => {
         
         // Verify required filters are present
         if(!filter.reference || !filter.referenceId) {
-            return next(new errors.HttpStatusError(400, 'Please provide reference and referenceId filter parameters'))
+            return next(new errors.HttpStatusError(400, 'Please provide reference and referenceId filter parameters'));
         }
 
         // Get topics from the Postgres database
