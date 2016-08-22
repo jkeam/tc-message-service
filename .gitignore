@@ -37,6 +37,7 @@ jspm_packages
 # Optional REPL history
 .node_repl_history
 
+# vi temp files
 *.swp
 *.swo
 
@@ -52,3 +53,6 @@ local/env.sh
 *.iws
 *.ipr
 *.iml
+
+# Env config
+env.sh
