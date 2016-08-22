@@ -47,3 +47,8 @@ jspm_packages
 !.elasticbeanstalk/*.global.yml
 
 local/env.sh
+
+#project file
+*.iws
+*.ipr
+*.iml

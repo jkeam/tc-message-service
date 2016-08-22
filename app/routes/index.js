@@ -6,80 +6,66 @@
  * db: sequelize db object containing all models
  */
 module.exports = (logger, db) => {
-    const router = require('express').Router(),
-        _ = require('lodash'),
-    ev = require('express-validation')
-
-    ev.options({
-    status: 422,
-    flatten: true,
-    allowUnknownBody: false
-    })
+    const router = require('express').Router();
+    const config = require('config');
+    const util = require('tc-core-library-js').util(config);
 
     // health check
     router.get('/_health', (req, res, next) => {
         // TODO more checks
         res.status(200).send({
             message: "All-is-well"
-        })
-    })
+        });
+    });
 
-    // All project service endpoints need authentication
-    var jwtAuth = require('tc-core-library-js').middleware.jwtAuthenticator
-    router.all('/v4/topics*', jwtAuth())
+    // all project service endpoints need authentication
+    const jwtAuth = require('tc-core-library-js').middleware.jwtAuthenticator
+    router.all('/v4/topics*', jwtAuth(), (req, res, next) => {
+        req.authToken = req.get('authorization').split(' ')[1];
+        next();
+    });
 
+    // Register all the routes
     router.route('/v4/topics')
+        .post(require('./topics/create')(logger, db))
         .get(require('./topics/list')(logger, db));
 
     router.route('/v4/topics/:topicId/posts')
         .post(require('./topics/post.js')(logger, db));
-    // Register all the routes
-    //router.route('/v4/projects')
-    //.post(require('./projects/create'))
-    //.get(require('./projects/list'))
-
-    //router.route('/v4/projects/:projectId(\\d+)')
-    //.get(require('./projects/get'))
-    //.patch(require('./projects/update'))
 
     // register error handler
     router.use((err, req, res, next) => {
-    let content = {}
-    let httpStatus = 500
-    // specific for validation errors
-    if (err instanceof ev.ValidationError) {
-        content.post = err.message + ": " + err.toJSON()
-        httpStatus = err.status
-    } else {
-        content.post = err.message
-    }
-    var body = {
-        id: req.id,
-        result: {
-        success: false,
-        status: httpStatus,
-        content: content
-        }
-    }
+        logger.error(err);
 
-    // development error handler
-    // will print stacktrace
-    if (_.indexOf(['development', 'test', 'qa'], process.env.ENVIRONMENT) > -1) {
-        body.result.debug = err.stack
-    }
-    err.status = err.status || 500
-    logger.error(err)
-    res
-        .status(err.status)
-        .send(body)
+        let httpStatus = err.status || 500;
+        let message;
+        
+        // specific for validation errors
+        if (err.isJoi && err.details && err.details.length > 0) {
+            logger.debug(err.message);
+            logger.debug(err.details);
+            message = 'Validation error: ' + err.details.map(error => error.message).join(', ');
+            httpStatus = 400;
+        } else {
+            message = err.message;
+        }
+        
+        const body = util.wrapErrorResponse(req.id, httpStatus, message);
+
+        // add stack trace if development environment
+        if (process.env.ENVIRONMENT in ['development', 'test', 'qa']) {
+            body.result.debug = err.stack;
+        }
+        
+        res.status(httpStatus).send(body);
     })
 
     // catch 404 and forward to error handler
     router.use((req, res, next) => {
-    var err = new Error('Not Found')
-    err.status = 404
-    next(err)
+        const err = new Error('Not Found');
+        err.status = 404;
+        next(err);
     })
 
     return router;
-}
+};

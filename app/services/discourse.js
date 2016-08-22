@@ -21,19 +21,13 @@ var Discourse = (logger) => {
     * username: the Discourse user name
     */
    this.getUser = (username) => {
-        return new Promise((resolve, reject) => {
-            axios.get('/users/' + username + '.json', {
-                baseURL: config.get('discourseURL'),
-                params: {
-                    api_key: config.get('discourseApiKey'),
-                    api_username: username
-                }
-            }).then((response) => {
-                resolve(response.data);
-            }).catch((error) => {
-                reject(error);
-            });
-        });
+        return axios.get('/users/' + username + '.json', {
+            baseURL: config.get('discourseURL'),
+            params: {
+                api_key: config.get('discourseApiKey'),
+                api_username: username
+            }
+        }).then((response) => response.data);
     }
 
     /**
@@ -60,9 +54,9 @@ var Discourse = (logger) => {
      * users: comma separated list of user names that should be part of the conversation
      */
     this.createPrivatePost = (title, post, users) => {
-        return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=system&archetype=private_post&target_usernames=' + users +
+        return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=system&archetype=private_message&target_usernames=' + users +
             '&title=' + encodeURIComponent(title) +
-            '&raw=' + encodeURIComponent(post), "", discourseClientConfig);
+            '&raw=' + encodeURIComponent(post), '', discourseClientConfig);
     }
 
     /**
@@ -71,8 +65,8 @@ var Discourse = (logger) => {
      * username: the username to use to fetch the topic, for security purposes
      */
     this.getTopic = (topicId, username) => {
-        console.log('/t/' + topicId + '.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username);
-        return axios.get('/t/' + topicId + '.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username, discourseClientConfig);
+        return axios.get('/t/' + topicId + '.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username,
+            discourseClientConfig).then((response) => response.data);
     }
 
     /**
@@ -87,7 +81,7 @@ var Discourse = (logger) => {
     }
 
     /**
-     * Creates a post (reply) to a threa
+     * Creates a post (reply) to a topic
      * username: user creating the post
      * post: body of the post, html markup is permitted
      * discourseTopicId: the topic id to which the response is being posted

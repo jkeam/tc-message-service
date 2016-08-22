@@ -5,6 +5,7 @@ var config = require('config');
 var util = require('tc-core-library-js').util(config);
 var Promise = require('bluebird');
 var Discourse = require('../../services/discourse');
+var errors = require('common-errors');
 
 /**
  * Creates a new post to a topic in Discourse
@@ -14,17 +15,17 @@ var Discourse = require('../../services/discourse');
 module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
 
-    return (req, resp) => {
+    return (req, resp, next) => {
         return  discourseClient.createPost(req.authUser.handle, req.body.post, req.params.topicId).then((response) => {
             logger.info('Post created');
-            resp.status(200).send({
+            resp.status(200).send(util.wrapResponse(req.id, {
                 message: 'Post created'
-            });
+            }));
         }).catch((error) => {
             logger.error(error);
-            return resp.status(error.response.status).send({
-                message: 'Error creating topic'
-            });
+            logger.debug(error.response && error.response.status);
+            logger.debug(error.response && error.response.data);
+            next(new errors.HttpStatusError(error.response.status, 'Error creating post'));
         });
     }
 

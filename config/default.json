@@ -1,5 +1,5 @@
 {
-  "defaultDiscoursePw": "fakepw",
+  "defaultDiscoursePw": "supersecretpw",
   "memberServiceUrl": "http://local.topcoder-dev.com:3001/members",
   "discourseURL": "http://talk.topcoder.com",
   "discourseApiKey": "",
@@ -7,5 +7,9 @@
   "captureLogs": "false",
   "dbConfig": {
     "masterUrl": "postgres://postgres:postgres@local.topcoder-dev.com:5432/messages"
-  }
+  },
+  "referenceLookupTimeout": 3000,
+  "createTopicRetryDelay": 2000,
+  "createTopicTimeout": 180000,
+  "version": "v4"
 }

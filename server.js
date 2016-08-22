@@ -42,9 +42,9 @@ var port = process.env.PORT || 3000;
 // Define and configure app
 var app = express();
 
+app.use(coreLib.middleware.logger(null, logger));
 app.use(bodyParser.json());
 app.use(routes);
-app.use(coreLib.middleware.logger(null, logger));
 
 // Define the server
 var server = app.listen(port, () => {});

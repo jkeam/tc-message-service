@@ -43,19 +43,24 @@ https://docs.docker.com/compose/install/
 
 The following page describes how to install and setup a Discourse instance. It suggest the use of a cloud server, but this setup can be easily done locally as well. Feel free to use either approach, just make sure to set the appropriate hosts entries, since this guide assumes you will be running Discourse locally.
 
+If you setup Discourse locally, use talk.topcoder.com as a hostname for Discourse.
+
 Also, the setup requires an email server, you can use your own SMTP server running locally or any cloud service such as SendGrid which has a free tier, GMail, etc.
 
 Discourse setup: https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md
+
+If you have problems with deploying Discourse on OS X, note that you need to change /var to /private/var in app.yml and need to set read&write permissions for /private/var/discourse/shared.
+If error happens, can restart with ./launcher bootstrap app.
 
 Next you will need to establish an admin account. You can do that by registering an account with the same email you provided in the Discourse setup, or alternatively use the discourse command line tools as described here:
 
 https://meta.discourse.org/t/create-admin-account-from-console/17274
 
-# Nodejs and Npm
+## Nodejs and Npm
 
 Install nodejs and npm, instructions can be found here: https://nodejs.org/en/
 
-# Sequelize cli
+## Sequelize cli
 
 Install the sequelize command line interface by following the instructions found here: https://github.com/sequelize/cli
 
@@ -78,6 +83,7 @@ On Mac OS X it is the ip address of the docker virtual machine, find it with the
 ```
 192.168.99.100	 local.topcoder-dev.com talk.topcoder.com
 ```
+If docker runs no machine, then map to 127.0.0.1 as on Linux.
 
 We will use talk.topcoder.com to access Discourse, and local.topcoder-dev.com to access all other services and database.
 
@@ -89,13 +95,15 @@ Unzip the zip file with the source code for the message service locally, we will
 
 ## Running the Dependencies
 
-Go into the message-service folder of this repository and start the docker services:
+Go into the tc-message-service/local folder of this repository and start the docker services:
 
 ```
 docker-compose up
 ```
+
 ## Install Dependent Packages
-In the tc-message-service folder and issue the following command:
+
+In the tc-message-service folder issue the following command:
 ```
 npm install
 ```
@@ -156,6 +164,8 @@ And issue the following command:
 rake api_key:get
 ```
 
+DEFAULT_DISCOURSE_PW defines the default password for users which will be created in Discourse automatically.
+
 # Running the Service
 
 To run the service, go into the tc-message-service folder and issue the following command:
@@ -164,11 +174,16 @@ To run the service, go into the tc-message-service folder and issue the followin
 npm start
 ```
 
+To see pretty logging on local development use the following command instead:
+```
+npm run local-start
+```
+
 # Testing the service
 
 ## Obtaining a JWT token
 
-JWT is used to authenticate calls to the service, and a unexpired JWT token is required to be passed in the Authorization header for any calls made to the service.
+JWT is used to authenticate calls to the service, and an unexpired JWT token is required to be passed in the Authorization header for any calls made to the service.
 
 This JWT token can be used to impersonate the user magrathean:
 
@@ -185,7 +200,7 @@ Note: The signature key used for the local environment is "secret", which is con
 The following curl command will check if the user has access to the submission 455, fetch a thread, creating the thread if necessary, and provisioning a new user in discourse if necessary:
 
 ```
-curl -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiIxMzI0NTYiLCJpYXQiOjE0NTA5MjkyNDYsImVtYWlsIjpudWxsLCJqdGkiOiIxMzY5YzYwMC1lMGExLTQ1MjUtYTdjNy01NmJlN2Q4MTNmNTEifQ.n_gFPaAVca300AZqjVdHETzNGexcsJsh1ePSAaMtJxk" "http://localhost:3000/v4/threads?filter=reference%3Dsubmission%26referenceId%3D455"
+curl -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiIxMzI0NTYiLCJpYXQiOjE0NTA5MjkyNDYsImVtYWlsIjpudWxsLCJqdGkiOiIxMzY5YzYwMC1lMGExLTQ1MjUtYTdjNy01NmJlN2Q4MTNmNTEifQ.n_gFPaAVca300AZqjVdHETzNGexcsJsh1ePSAaMtJxk" "http://localhost:3000/v4/topics?filter=reference%3Dsubmission%26referenceId%3D455"
 ```
 
 You can also create posts in existing threads by doing the following:
@@ -203,7 +218,7 @@ curl -X POST -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJy
 ```
 
 
-# Unit test
+## Unit tests
 Please update test environment configurations in `config/config.json`.
 ```
 export NODE_ENV=test
@@ -211,3 +226,6 @@ sequelize db:migrate
 npm test
 ```
 Then you can check coverage report in coverage folder.
+
+## Postman
+You can also verify the service using Postman. For this load files from the local/postman directory into Postman.

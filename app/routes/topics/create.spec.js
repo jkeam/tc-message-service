@@ -55,29 +55,27 @@ function prepareDB(done) {
             discourseTopicId: 1,
             tag:'tag'
         }))
-        .then(()=> models.topics.create({
-            id:2,
-            reference: 'notexist',
-            referenceId: 'referenceId',
-            discourseTopicId: 2,
-            tag:'tag'
-        }))
         .then(()=> models.referenceLookups.create({
             reference: 'reference',
             endpoint:'endpoint{id}'
         }))
         .then(() => done())
 }
-describe('GET /v4/topics ', () => {
+describe('POST /v4/topics ', () => {
     var apiPath = '/v4/topics';
-    var testQuery = {
-        filter: 'tag=tag&reference=reference&referenceId=referenceId'
+    var testBody = {
+        reference: 'reference',
+        referenceId: '1',
+        tag: 'tag',
+        title: 'title',
+        body: 'body'
     };
-    var testQuery2 = {
-        filter: 'tag=notexist&reference=notexist&referenceId=notexist'
-    };
-    var testQuery3 = {
-        filter: 'tag=tag&reference=notexist&referenceId=referenceId'
+    var testBody2 = {
+        reference: 'notexist',
+        referenceId: 'notexist',
+        tag: 'tag',
+        title: 'not exist',
+        body: 'not exist'
     };
     var sandbox;
     beforeEach((done) => {
@@ -90,22 +88,22 @@ describe('GET /v4/topics ', () => {
     });
     it('should return 403 response without a jwt token', (done) => {
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .expect(403, done);
     });
 
     it('should return 403 response with invalid jwt token', (done) => {
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .set({
                 'Authorization': "Bearer wrong"
             })
             .expect(403, done);
     });
 
-    it('should return 400 response without filter', (done) => {
+    it('should return 400 response without body', (done) => {
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .set({
                 'Authorization': "Bearer " + jwts.admin
             })
@@ -118,74 +116,41 @@ describe('GET /v4/topics ', () => {
             })
     });
 
-    it('should return 400 response without reference filter', (done) => {
-        request(server)
-            .get(apiPath)
-            .set({
-                'Authorization': "Bearer " + jwts.admin
-            })
-            .query({
-                filter: 'referenceId=1'
-            })
-            .expect(400)
-            .end(function(err, res) {
-                if (err) {
-                    return done(err)
-                }
-                done()
-            })
+    Object.keys(testBody).forEach(key => {
+        it(`should return 400 response without ${key} parameter`, (done) => {
+            const body = _.cloneDeep(testBody);
+            delete body[key];
+            request(server)
+                .post(apiPath)
+                .set({
+                    'Authorization': "Bearer " + jwts.admin
+                })
+                .send(body)
+                .expect(400)
+                .end(function(err, res) {
+                    if (err) {
+                        return done(err)
+                    }
+                    res.body.should.have.propertyByPath('result', 'content', 'message')
+                        .eql(`Validation error: "${key}" is required`);
+                    done()
+                })
+        });
     });
 
-    it('should return 400 response without referenceId filter', (done) => {
-        request(server)
-            .get(apiPath)
-            .set({
-                'Authorization': "Bearer " + jwts.admin
-            })
-            .query({
-                filter: 'reference=1'
-            })
-            .expect(400)
-            .end(function(err, res) {
-                if (err) {
-                    return done(err)
-                }
-                done()
-            })
-    });
-
-    it('should return 500 response with invalid filter', (done) => {
-        request(server)
-            .get(apiPath)
-            .set({
-                'Authorization': "Bearer " + jwts.admin
-            })
-            .query({
-                filter: 'reference=reference&referenceId=referenceId&wrong=1'
-            })
-            .expect(500)
-            .end(function(err, res) {
-                if (err) {
-                    return done(err)
-                }
-                console.log(res.body);
-                done()
-            })
-    });
-
-    it('should return 404 response if no matching topics', (done) => {
+    it('should return 403 response with invalid access', (done) => {
         sandbox.stub(axios, 'get').returnsPromise().resolves({
             data: {
                 result: {}
             }
         });
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .set({
                 'Authorization': "Bearer " + jwts.admin
             })
-            .query(testQuery2)
-            .expect(404)
+            .send(testBody)
+            .expect(403)
             .end(function(err, res) {
                 if (err) {
                     return done(err)
@@ -194,20 +159,48 @@ describe('GET /v4/topics ', () => {
             })
     });
 
-    it('should return 404 response if error to get user and create discourse user', (done) => {
-        sandbox.stub(axios, 'get').returnsPromise().rejects({ response: {
-            status: 403
-        } });
+    it('should return 403 response if error to get referenceLookup endpoint', (done) => {
+        sandbox.stub(axios, 'get').returnsPromise().rejects({});
+        request(server)
+            .post(apiPath)
+            .set({
+                'Authorization': "Bearer " + jwts.admin
+            })
+            .send(testBody)
+            .expect(403)
+            .end(function(err, res) {
+                if (err) {
+                    return done(err)
+                }
+                done()
+            })
+    });
+
+    it('should return 500 response if error to get user and create discourse user', (done) => {
+        const data ={
+            result: {
+                status: 200,
+                content: 'content'
+            }
+        };
+        var stub = sandbox.stub(axios, 'get');
+        stub.withArgs('/users/' + username + '.json', sinon.match.any)
+            .returnsPromise().rejects({});
+        stub.withArgs(config.memberServiceUrl + '/' + username, sinon.match.any)
+            .returnsPromise().resolves({
+            data: data
+        });
+        stub.returnsPromise().resolves({
+            data: data
+        });
         sandbox.stub(axios, 'post').returnsPromise().rejects({});
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .set({
                 'Authorization': "Bearer " + jwts.admin
             })
-            .query({
-                filter: 'tag=notexist&reference=reference&referenceId=referenceId'
-            })
-            .expect(404)
+            .send(testBody)
+            .expect(500)
             .end(function(err, res) {
                 if (err) {
                     return done(err)
@@ -216,7 +209,7 @@ describe('GET /v4/topics ', () => {
             })
     });
 
-    it('should return 404 response if error to get user and get topcoder user', (done) => {
+    it('should return 500 response if error to get user and get topcoder user', (done) => {
         const data ={
             result: {
                 status: 200,
@@ -228,18 +221,16 @@ describe('GET /v4/topics ', () => {
             .returnsPromise().rejects({});
         stub.withArgs(config.memberServiceUrl + '/' + username, sinon.match.any)
             .returnsPromise().rejects({});
-        stub.returnsPromise().rejects({ response: {
-            status: 403
-        } });
+        stub.returnsPromise().resolves({
+            data: data
+        });
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .set({
                 'Authorization': "Bearer " + jwts.admin
             })
-            .query({
-                filter: 'tag=notexist&reference=reference&referenceId=referenceId'
-            })
-            .expect(404)
+            .send(testBody)
+            .expect(500)
             .end(function(err, res) {
                 if (err) {
                     return done(err)
@@ -248,7 +239,7 @@ describe('GET /v4/topics ', () => {
             })
     });
 
-    it('should return 404 response if error to get user and failed to create discourse user', (done) => {
+    it('should return 500 response if error to get user and failed to create discourse user', (done) => {
         const data ={
             result: {
                 status: 200,
@@ -271,14 +262,12 @@ describe('GET /v4/topics ', () => {
             }
         });
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .set({
                 'Authorization': "Bearer " + jwts.admin
             })
-            .query({
-                filter: 'tag=notexist&reference=reference&referenceId=referenceId'
-            })
-            .expect(404)
+            .send(testBody)
+            .expect(500)
             .end(function(err, res) {
                 if (err) {
                     return done(err)
@@ -287,12 +276,13 @@ describe('GET /v4/topics ', () => {
             })
     });
 
-    it('should return 404 response if error to get user and succeed to create discourse user', (done) => {
+    it('should return 200 response if error to get user and success to create discourse user', (done) => {
         const data ={
             result: {
                 status: 200,
                 content: 'content'
-            }
+            },
+            topic_id: 1
         };
         var stub = sandbox.stub(axios, 'get');
         stub.withArgs('/users/' + username + '.json', sinon.match.any)
@@ -304,20 +294,29 @@ describe('GET /v4/topics ', () => {
         stub.returnsPromise().resolves({
             data: data
         });
-        sandbox.stub(axios, 'post').returnsPromise().resolves({
+        const postStub = sandbox.stub(axios, 'post');
+        postStub.onFirstCall().returnsPromise = postStub.returnsPromise;
+        postStub.onSecondCall().returnsPromise = postStub.returnsPromise;
+        postStub.onFirstCall().returnsPromise().rejects({
+            response: {
+                status: 403
+            }
+        });
+        postStub.onSecondCall().returnsPromise().resolves({
             data: {
                 success: true
             }
         });
+        postStub.returnsPromise().resolves({
+            data: data
+        });
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .set({
                 'Authorization': "Bearer " + jwts.admin
             })
-            .query({
-                filter: 'tag=notexist&reference=reference&referenceId=referenceId'
-            })
-            .expect(404)
+            .send(testBody)
+            .expect(200)
             .end(function(err, res) {
                 if (err) {
                     return done(err)
@@ -327,36 +326,45 @@ describe('GET /v4/topics ', () => {
     });
 
     it('should return 200 response with no matching referenceLookup', (done) => {
+        sandbox.stub(axios, 'get').returnsPromise().resolves({});
         const data = {
-            topic_id: 2
+            topic_id: 1
         };
-        sandbox.stub(axios, 'get').returnsPromise().resolves({ status: 200, data : data});
+        sandbox.stub(axios, 'post').returnsPromise().resolves({ status: 200, data : data});
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .set({
                 'Authorization': "Bearer " + jwts.admin
             })
-            .query(testQuery3)
+            .send(testBody2)
             .expect(200)
             .end(function(err, res) {
                 if (err) {
                     return done(err)
                 }
-                res.body.should.have.propertyByPath('result', 'content', 0, 'topic_id').eql(data.topic_id);
+                res.body.should.have.propertyByPath('result', 'content', 'topic_id').eql(data.topic_id);
                 done()
             })
     });
 
-    it('should return 404 response if error to grantAccess to post with reject', (done) => {
-        sandbox.stub(axios, 'get').returnsPromise().resolves({});
+    it('should return 500 response if error to createPrivatePost with reject', (done) => {
+        const data ={
+            result: {
+                status: 200,
+                content: 'content'
+            }
+        };
+        sandbox.stub(axios, 'get').returnsPromise().resolves({
+            data: data
+        });
         sandbox.stub(axios, 'post').returnsPromise().rejects({});
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .set({
                 'Authorization': "Bearer " + jwts.admin
             })
-            .query(testQuery2)
-            .expect(404)
+            .send(testBody)
+            .expect(500)
             .end(function(err, res) {
                 if (err) {
                     return done(err)
@@ -365,18 +373,24 @@ describe('GET /v4/topics ', () => {
             })
     });
 
-
-
-    it('should return 404 response if error to grantAccess to post with invalid status', (done) => {
-        sandbox.stub(axios, 'get').returnsPromise().resolves({});
+    it('should return 500 response if error to createPrivatePost with invalid status', (done) => {
+        const data ={
+            result: {
+                status: 200,
+                content: 'content'
+            }
+        };
+        sandbox.stub(axios, 'get').returnsPromise().resolves({
+            data: data
+        });
         sandbox.stub(axios, 'post').returnsPromise().resolves({ status: 500});
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .set({
                 'Authorization': "Bearer " + jwts.admin
             })
-            .query(testQuery2)
-            .expect(404)
+            .send(testBody)
+            .expect(500)
             .end(function(err, res) {
                 if (err) {
                     return done(err)
@@ -385,20 +399,22 @@ describe('GET /v4/topics ', () => {
             })
     });
 
-    it('should return 200 response with matching topicLookup', (done) => {
+    it('should return 200 response if success to createPrivatePost', (done) => {
         const data ={
             result: {
                 status: 200,
                 content: 'content'
-            }
+            },
+            topic_id: 1
         };
         sandbox.stub(axios, 'get').returnsPromise().resolves({ data: data });
+        sandbox.stub(axios, 'post').returnsPromise().resolves({ data: data });
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .set({
                 'Authorization': "Bearer " + jwts.admin
             })
-            .query(testQuery)
+            .send(testBody)
             .expect(200)
             .end(function(err, res) {
                 if (err) {
@@ -408,77 +424,99 @@ describe('GET /v4/topics ', () => {
             })
     });
 
-    it('should return 404 response if error to get topic', (done) => {
-        sandbox.stub(axios, 'get').returnsPromise().rejects({ response: {
-            status: 500
-        } });
-        request(server)
-            .get(apiPath)
-            .set({
-                'Authorization': "Bearer " + jwts.admin
-            })
-            .query(testQuery)
-            .expect(404)
-            .end(function(err, res) {
-                if (err) {
-                    return done(err)
-                }
-                done()
-            })
-    });
-
-    it('should return 403 response if forbidden to get topic and error to checkAccessAndProvision', (done) => {
-        sandbox.stub(axios, 'get').returnsPromise().rejects({ response: {
-            status: 403
-        } });
-        request(server)
-            .get(apiPath)
-            .set({
-                'Authorization': "Bearer " + jwts.admin
-            })
-            .query(testQuery)
-            .expect(403)
-            .end(function(err, res) {
-                if (err) {
-                    return done(err)
-                }
-                done()
-            })
-    });
-
-    it('should return 200 response if forbidden to get topic and succeed to checkAccessAndProvision', (done) => {
+    it('should return 200 response if error on first createPrivatePost, success to create user and success on second createPrivatePost', (done) => {
         const data ={
             result: {
                 status: 200,
                 content: 'content'
-            }
+            },
+            topic_id: 1
         };
-        var stub = sandbox.stub(axios, 'get');
-        const rejected = new Promise((_, r) => r({
+        const stub = sandbox.stub(axios, 'get');
+        stub.withArgs('/users/' + username + '.json', sinon.match.any)
+            .returnsPromise().resolves({});
+        stub.withArgs(config.memberServiceUrl + '/' + username, sinon.match.any)
+            .returnsPromise().resolves({
+            data: data
+        });
+        stub.returnsPromise().resolves({
+            data: data
+        });
+        const postStub = sandbox.stub(axios, 'post');
+        postStub.onFirstCall().returnsPromise = postStub.returnsPromise;
+        postStub.onFirstCall().returnsPromise().rejects({
             response: {
-            status: 403
-        } }));
-        var url = '/t/1.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username;
-        stub.withArgs(url,sinon.match.any).onFirstCall()
-            .returns(rejected);
-        stub.withArgs(url,sinon.match.any).onSecondCall()
-            .returns(new Promise((s,_) => s({
-                data: data
-            })));
-        stub.returnsPromise().resolves({ data: data });
-        sandbox.stub(axios, 'post').returnsPromise().resolves({});
+                status: 403
+            }
+        });
+        postStub.returnsPromise().resolves({
+            data: data
+        });
         request(server)
-            .get(apiPath)
+            .post(apiPath)
             .set({
                 'Authorization': "Bearer " + jwts.admin
             })
-            .query(testQuery)
+            .send(testBody)
             .expect(200)
             .end(function(err, res) {
                 if (err) {
                     return done(err)
                 }
                 done()
-            });
+            })
+    });
+
+    it('should return 200 response if error on first createPrivatePost, success to create user and success on third createPrivatePost', (done) => {
+        const data ={
+            result: {
+                status: 200,
+                content: 'content'
+            },
+            topic_id: 1
+        };
+        const stub = sandbox.stub(axios, 'get');
+        stub.withArgs('/users/' + username + '.json', sinon.match.any)
+            .returnsPromise().resolves({});
+        stub.withArgs(config.memberServiceUrl + '/' + username, sinon.match.any)
+            .returnsPromise().resolves({
+            data: data
+        });
+        stub.returnsPromise().resolves({
+            data: data
+        });
+        const postStub = sandbox.stub(axios, 'post');
+        postStub.onFirstCall().returnsPromise = postStub.returnsPromise;
+        postStub.onSecondCall().returnsPromise = postStub.returnsPromise;
+        postStub.onFirstCall().returnsPromise().rejects({
+            response: {
+                status: 403
+            }
+        });
+        postStub.onSecondCall().returnsPromise().rejects({
+            response: {
+                status: 403
+            }
+        });
+        postStub.returnsPromise().resolves({
+            data: data
+        });
+        const configStub = sandbox.stub(config, 'get');
+        configStub.withArgs('createTopicRetryDelay').returns(0);
+        configStub.withArgs('createTopicTimeout').returns(2000);
+
+        request(server)
+            .post(apiPath)
+            .set({
+                'Authorization': "Bearer " + jwts.admin
+            })
+            .send(testBody)
+            .expect(200)
+            .end(function(err, res) {
+                if (err) {
+                    return done(err)
+                }
+                done()
+            })
     });
 });
