@@ -9,6 +9,7 @@ var sequelize = require('sequelize');
 var _ = require('lodash');
 var db = require('./app/models');
 var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
 
 // init logger
 var appName = 'tc-message-service'
@@ -44,6 +45,7 @@ var app = express();
 
 app.use(coreLib.middleware.logger(null, logger));
 app.use(bodyParser.json());
+app.use(cookieParser());
 app.use(routes);
 
 // Define the server

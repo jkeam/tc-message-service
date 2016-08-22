@@ -65,6 +65,25 @@ describe('POST /v4/topics/:topicId/posts ', () => {
             })
     });
 
+    it('should return 200 response with valid jwt token and payload with responseTo', (done) => {
+        var body = Object.assign({}, testBody, {responseTo: 1});
+        sandbox.stub(axios, 'post').returnsPromise().resolves({});
+        request(server)
+            .post(apiPath)
+            .set({
+                'Authorization': "Bearer " + jwts.admin
+            })
+            .send(body)
+            .expect(200)
+            .end(function(err, res) {
+                if (err) {
+                    return done(err)
+                }
+                res.body.should.have.property('message', 'Post created');
+                done()
+            })
+    });
+
     it('should return 500 response with error response', (done) => {
         sandbox.stub(axios, 'post').returnsPromise().rejects({
             response: {

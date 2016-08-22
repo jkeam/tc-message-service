@@ -86,10 +86,13 @@ var Discourse = (logger) => {
      * post: body of the post, html markup is permitted
      * discourseTopicId: the topic id to which the response is being posted
      */
-    this.createPost = (username, post, discourseTopicId) => {
+    this.createPost = (username, post, discourseTopicId, responseTo) => {
+        var data = 'topic_id=' + discourseTopicId + '&raw=' + encodeURIComponent(post);
+        if(responseTo) {
+          data += '&reply_to_post_number=' + responseTo;
+        }
         return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=' + username,
-            'topic_id=' + discourseTopicId +
-            '&raw=' + encodeURIComponent(post), discourseClientConfig);
+            data, discourseClientConfig);
     }
 
     return this;

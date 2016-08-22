@@ -84,6 +84,42 @@ paths:
           $ref: "#/responses/NotFound"
         '500':
           $ref: "#/responses/UnexpectedFailure"
+  "/topics/:topicId/posts":
+    get:
+      summary: Add a Post to a Discourse Topic
+      description: Adds a Post to a Discourse Topic, optionally as a reply to an existing post
+      parameters:
+        - in: header
+          name: Authorization
+          description: Authorization token
+          required: true
+          type: string
+        - name: topicId
+          in: query
+          description: Topic ID
+          required: true
+          type: number
+        - name: body
+          in: body
+          description: The Post content
+          required: true
+          schema:
+            $ref: '#/definitions/PostBody'
+      tags:
+        - Topics
+      responses:
+        200:
+          description: Confirmation
+          schema:
+            $ref: '#/definitions/ObjectWithMessage'
+        500:
+          description: Response Had Error
+          schema:
+            $ref: '#/definitions/ObjectWithMessage'
+        403:
+          description: Invalid JWT Token
+          schema:
+            $ref: '#/definitions/ObjectWithMessage'
 
 definitions:
   NewTopicBodyParam:
@@ -201,6 +237,23 @@ definitions:
             type: string
             description: error message
 
+  PostBody:
+    type: object
+    required: [post]
+    properties:
+      post:
+        description: The Post Content
+        type: string
+      responseTo:
+        description: The Post Number to respond to
+        type: number
+  ObjectWithMessage:
+    type: object
+    properties:
+      message:
+        description: The Error Message
+        type: string
+
 responses:
   InvalidAccess:
     description: Invalid token or user does not have access to requested entity
@@ -218,4 +271,3 @@ responses:
     description: Unexpected Failure
     schema:
       $ref: "#/definitions/ErrorResponse"
-
