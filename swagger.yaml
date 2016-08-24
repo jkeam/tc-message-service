@@ -84,6 +84,38 @@ paths:
           $ref: "#/responses/NotFound"
         '500':
           $ref: "#/responses/UnexpectedFailure"
+  /topics/{topicId}:
+    get:
+      tags:
+        - topic
+      operationId: getTopic
+      security:
+        - Bearer: []
+      summary: Get topic
+      description: Get topic and its posts
+      parameters:
+        - in: header
+          name: Authorization
+          description: Authorization token
+          required: true
+          type: string
+        - name: topicId
+          in: path
+          description: Topic ID
+          required: true
+          type: number
+      responses:
+        '200':
+          description: Success. Returns the topic
+          schema:
+            $ref: "#/definitions/TopicResponse"
+        '403':
+          $ref: "#/responses/InvalidAccess"
+        '404':
+          $ref: "#/responses/NotFound"
+        '500':
+          $ref: "#/responses/UnexpectedFailure"
+
   "/topics/:topicId/posts":
     get:
       summary: Add a Post to a Discourse Topic
@@ -199,6 +231,31 @@ definitions:
             description: list of topic objects
             items:
               $ref: "#/definitions/TopicObject"
+  
+  TopicResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        description: unique id identifying the request
+      version:
+        type: string
+        description: the api version
+      result:
+        type: object
+        properties:
+          success:
+            type: boolean
+            description: whether the result is successful
+          status:
+            description: http status code
+            type: integer
+            format: int32
+          metadata:
+            type: object
+            description: result metadata
+          content:
+              $ref: "#/definitions/TopicFullObject"
 
   TopicObject:
     type: object
@@ -213,6 +270,68 @@ definitions:
       reads:
         type: integer
         description: topic read count
+  
+  TopicFullObject:
+    type: object
+    description: Discourse topic object
+    properties:
+      topic_id:
+        type: string
+        description: identifier for topic in Discourse
+      username:
+        type: string
+        description: user created the topic
+      reads:
+        type: integer
+        description: topic read count
+      post_stream:
+        type: object
+        properties:
+          posts:
+            type: array
+            items:
+              $ref: "#/definitions/PostObject"
+
+  PostObject:
+    type: object
+    description: Discourse post object
+    properties:
+      id:
+        type: integer
+        description: identifier for post in Discourse
+      name:
+        type: string
+        description: post name
+      username:
+        type: string
+        description: post user name
+      created_at:
+        type: string
+        description: created timestamp
+      post_number:
+        type: integer
+        description: post number
+      post_type:
+        type: integer
+        description: post type
+      updated_at:
+        type: string
+        description: updated timestamp
+      reply_count:
+        type: integer
+        description: reply type
+      reply_to_post_number:
+        type: integer
+        description: reply to post number
+      cooked:
+        type: string
+        description: post body
+      reads:
+        type: integer
+        description: post read count
+      score:
+        type: number
+        description: post score
 
   ErrorResponse:
     type: object
