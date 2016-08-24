@@ -26,7 +26,8 @@ module.exports = (Sequelize, DataTypes) => {
         // The id of the Discourse topic
         discourseTopicId: {  
             type: DataTypes.BIGINT,
-            allowNull: false
+            allowNull: false,
+            unique: true
         },
         // A tag for filtering
         tag: {  

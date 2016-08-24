@@ -31,9 +31,15 @@ module.exports = (logger, db) => {
         var topicId = req.params.topicId;
 
         // Get topic from the Postgres database
-        db.topics.findById(topicId).then((pgTopic) => {
-            if(!pgTopic) {
+        db.topics.findAll({
+            where: {
+                discourseTopicId: topicId
+            }
+        }).then((pgTopic) => {
+            if(!pgTopic || pgTopic.length == 0) {
                 throw new errors.HttpStatusError(404, 'Topic does not exist');
+            } else {
+                pgTopic = pgTopic[0];
             }
 
             logger.info('Topics exist in pg, fetching from discourse');
