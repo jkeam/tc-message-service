@@ -127,6 +127,19 @@ module.exports = (logger, db) => {
             }
             logger.debug(topics);
             logger.info('returning topics');
+
+            // Mark all unread topics as read.
+            Promise.all(topics.filter(topic => !topic.read).map(topic => {
+                if(topic.post_stream && topic.post_stream.posts && topic.post_stream.posts.length > 0) {
+                    var postIds = topic.post_stream.posts.map(post => post.id);
+                    return discourseClient.markTopicPostsRead(req.authUser.handle, topic.id, postIds);
+                } else {
+                    return Promise.resolve();
+                }
+            })).catch((error) => {
+                logger.error('error marking topic posts read', error);
+            });
+
             return resp.status(200).send(util.wrapResponse(req.id, topics));
         }).catch((error) => {
             next(error);

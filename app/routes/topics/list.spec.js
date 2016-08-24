@@ -386,13 +386,17 @@ describe('GET /v4/topics ', () => {
     });
 
     it('should return 200 response with matching topicLookup', (done) => {
-        const data ={
-            result: {
-                status: 200,
-                content: 'content'
+        const data = {
+            post_stream: {
+                posts: [{
+                    id: 1
+                }]
             }
         };
-        sandbox.stub(axios, 'get').returnsPromise().resolves({ data: data });
+        var get = sandbox.stub(axios, 'get').returnsPromise().resolves({ data: data });
+        var post = sandbox.stub(axios, 'post')
+                       .withArgs(sinon.match(/^\/topics\/timings\.json/), sinon.match.any, sinon.match.any)
+                       .returnsPromise().resolves({ data: data });
         request(server)
             .get(apiPath)
             .set({
@@ -402,10 +406,15 @@ describe('GET /v4/topics ', () => {
             .expect(200)
             .end(function(err, res) {
                 if (err) {
-                    return done(err)
+                    return done(err);
                 }
-                done()
-            })
+                // Wait a second as this endpoint will be called asynchronously,
+                // which may be after the HTTP request above has returned.
+                setTimeout(function() {
+                    sinon.assert.called(post);
+                    done();
+                }, 1000);
+            });
     });
 
     it('should return 404 response if error to get topic', (done) => {
