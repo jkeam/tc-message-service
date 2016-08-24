@@ -1,4 +1,4 @@
-FROM node:5.10.1
+FROM node:6
 LABEL version="1.0"
 LABEL description="Messages Microservice"
 
