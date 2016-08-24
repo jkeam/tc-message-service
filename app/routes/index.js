@@ -29,9 +29,13 @@ module.exports = (logger, db) => {
     });
 
     // Register all the routes
+    router.route('/v4/topics/:topicId')
+        .get(require('./topics/get')(logger, db));
+
     router.route('/v4/topics')
         .post(require('./topics/create')(logger, db))
         .get(require('./topics/list')(logger, db));
+
 
     router.route('/v4/topics/:topicId/posts')
         .post(require('./topics/post.js')(logger, db));

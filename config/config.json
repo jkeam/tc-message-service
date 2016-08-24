@@ -9,8 +9,8 @@
   "test": {
     "username": "postgres",
     "password": "postgres",
-    "database": "messages",
-    "host": "127.0.0.1",
+    "database": "messages_test",
+    "host": "local.topcoder-dev.com",
     "dialect": "postgres"
   },
   "production": {
