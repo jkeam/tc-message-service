@@ -95,6 +95,16 @@ var Discourse = (logger) => {
             data, discourseClientConfig);
     }
 
+    this.markTopicPostsRead = (username, topicId, postIds) => {
+        var parts = ['topic_id=' + topicId, 'topic_time=' + topicId];
+        postIds.forEach(postId => {
+            parts.push(encodeURIComponent('timings[' + postId + ']') + '=1000');
+        });
+        return axios.post('/topics/timings.json?api_key=' + config.get('discourseApiKey') +
+                          '&api_username=' + username,
+                          parts.join('&'), discourseClientConfig);
+    }
+
     return this;
 }
 

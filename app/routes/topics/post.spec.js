@@ -79,7 +79,7 @@ describe('POST /v4/topics/:topicId/posts ', () => {
                 if (err) {
                     return done(err)
                 }
-                res.body.should.have.property('message', 'Post created');
+                res.body.should.have.propertyByPath('result', 'content', 'message').eql('Post created');
                 done()
             })
     });
