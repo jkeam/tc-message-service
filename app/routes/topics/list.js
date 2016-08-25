@@ -44,7 +44,7 @@ module.exports = (logger, db) => {
                 filter[parts[0]] = parts[1];
             }
         });
-        
+
         // Verify required filters are present
         if(!filter.reference || !filter.referenceId) {
             return next(new errors.HttpStatusError(400, 'Please provide reference and referenceId filter parameters'));
@@ -59,7 +59,7 @@ module.exports = (logger, db) => {
             logger.info('Topics exist in pg, fetching from discourse');
 
             let checkAccessAndProvisionPromise = null;
-            
+
             const topicPromises = result.map(pgTopic => {
                 logger.debug(pgTopic.dataValues);
                 return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.handle).then((response) => {
@@ -131,7 +131,7 @@ module.exports = (logger, db) => {
             // Mark all unread topics as read.
             Promise.all(topics.filter(topic => !topic.read).map(topic => {
                 if(topic.post_stream && topic.post_stream.posts && topic.post_stream.posts.length > 0) {
-                    var postIds = topic.post_stream.posts.map(post => post.id);
+                    var postIds = topic.post_stream.posts.map(post => post.post_number);
                     return discourseClient.markTopicPostsRead(req.authUser.handle, topic.id, postIds);
                 } else {
                     return Promise.resolve();
