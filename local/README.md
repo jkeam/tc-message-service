@@ -58,7 +58,7 @@ https://meta.discourse.org/t/create-admin-account-from-console/17274
 
 ## Nodejs and Npm
 
-Install nodejs and npm, instructions can be found here: https://nodejs.org/en/
+Install nodejs and npm, instructions can be found here: https://nodejs.org/en/, please use 6.4.x version
 
 ## Sequelize cli
 
