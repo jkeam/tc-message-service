@@ -9,6 +9,7 @@ var HelperService = require('../../services/helper');
 var axios = require('axios');
 var errors = require('common-errors');
 var Joi = require('joi');
+var Adapter = require('../../services/adapter'); 
 
 /**
  * Get specific topic
@@ -18,6 +19,7 @@ var Joi = require('joi');
 module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
     var helper = HelperService(logger, db);
+    var adapter = new Adapter(logger);
 
     /**
      * Gets topic from Discourse for the specified entity, and in the process it does:
@@ -96,7 +98,9 @@ module.exports = (logger, db) => {
             }
             logger.debug(topic);
             logger.info('returning topic');
-            return resp.status(200).send(util.wrapResponse(req.id, topic));
+            return adapter.adaptTopics(topic, req.authToken).then(result => {
+                return resp.status(200).send(util.wrapResponse(req.id, result));
+            });
         }).catch((error) => {
             next(error);
         });

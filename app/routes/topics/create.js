@@ -48,7 +48,7 @@ module.exports = (logger, db) => {
         }).then(() => {
             logger.info('User has access to entity, creating topic in Discourse');
             const users = req.authUser.handle + ',system';
-            return discourseClient.createPrivatePost(params.title, params.body, users).then((response) => {
+            return discourseClient.createPrivatePost(params.title, params.body, users, req.authUser.handle).then((response) => {
                 return response;
             }).catch((error) => {
                 logger.debug(error);

@@ -65,14 +65,14 @@ module.exports = (logger, db) => {
         }
         
         res.status(httpStatus).send(body);
-    })
+    });
 
     // catch 404 and forward to error handler
-    router.use((req, res, next) => {
-        const err = new Error('Not Found');
-        err.status = 404;
-        next(err);
-    })
+    //router.use((req, res, next) => {
+        //const err = new Error('Not Found');
+        ////err.status = 404;
+        //next(err);
+    //})
 
     return router;
 };

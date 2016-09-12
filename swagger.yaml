@@ -177,7 +177,7 @@ definitions:
         description: title of the topic
       body:
         type: string
-        description: body of the topic message
+        description: body of the topic message, supports markup 
 
   NewTopicResponse:
     type: object

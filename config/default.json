@@ -2,7 +2,7 @@
   "defaultDiscoursePw": "supersecretpw",
   "memberServiceUrl": "http://local.topcoder-dev.com:3001/members",
   "discourseURL": "http://talk.topcoder.com",
-  "discourseApiKey": "b57d89a887ee71b9514b2cec13ab15b42cfdb5c3cda0c96502ce6f8a5b956bf6",
+  "discourseApiKey": "060d947123ba7c425d70ce4ebe01606cdf9fe434956cc916381a18a7c72b4a8d",
   "authSecret": "secret",
   "captureLogs": "false",
   "dbConfig": {
