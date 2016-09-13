@@ -27,6 +27,27 @@ function Adapter(logger) {
         });
     }
 
+    this.adaptPosts = function(input, authToken) {
+        var discoursePosts = input;
+        var result = [];
+
+        if(!(discoursePosts instanceof Array)) {
+            discoursePosts = [discoursePosts]; 
+        }
+
+        return Promise.each(discoursePosts, discoursePost => {
+            var post = {
+                id: discoursePost.topic_id 
+            };
+            console.log(discoursePost);
+
+            result.push(post); 
+        }).then(() => { 
+            console.log(result);
+            return result;
+        });
+    }
+
     this.adaptTopics = function(input, authToken) {
         var topics = [];
         var discourseTopics = input; 

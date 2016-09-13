@@ -9,6 +9,7 @@ var HelperService = require('../../services/helper');
 var axios = require('axios');
 var errors = require('common-errors');
 var Joi = require('joi');
+var Adapter = require('../../services/adapter');
 
 /**
  * Handles creation of topics
@@ -18,6 +19,7 @@ var Joi = require('joi');
 module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
     var helper = HelperService(logger, db);
+    var adapter = new Adapter(logger);
 
     /**
      * Create a new topic for the specified entity.
@@ -124,7 +126,9 @@ module.exports = (logger, db) => {
             });
         }).then((topic) => {
             logger.info('returning topic');
-            return resp.status(200).send(util.wrapResponse(req.id, topic));
+            return adapter.adaptPosts(topic).then(result => {
+                return resp.status(200).send(util.wrapResponse(req.id, result));
+            });
         }).catch((error) => {
             next(error);
         });
