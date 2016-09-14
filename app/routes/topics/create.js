@@ -126,9 +126,11 @@ module.exports = (logger, db) => {
             });
         }).then((topic) => {
             logger.info('returning topic');
-            return adapter.adaptPosts(topic).then(result => {
-                return resp.status(200).send(util.wrapResponse(req.id, result));
-            });
+            return discourseClient.getTopic(topic.topic_id, req.authUser.handle).then(fullTopic => {
+                return adapter.adaptTopics(fullTopic).then(result => {
+                    return resp.status(200).send(util.wrapResponse(req.id, result));
+                });
+            }); 
         }).catch((error) => {
             next(error);
         });
