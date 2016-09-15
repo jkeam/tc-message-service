@@ -27,6 +27,20 @@ function Adapter(logger) {
         });
     }
 
+    this.adaptPost = function(input, authToken) {
+        var handle = input.username;
+
+        return userIdLookup(authToken, handle).then(userId => {
+            return {
+                id: input.id,
+                date: input.created_at,
+                userId: userId,
+                read: true,
+                body: input.cooked
+            } 
+        });
+    }
+
     this.adaptTopics = function(input, authToken) {
         var topics = [];
         var discourseTopics = input; 
@@ -77,7 +91,6 @@ function Adapter(logger) {
                 return topics;
             });
         }).then(() => {
-            console.log(topics); 
             return topics;
         });
     }

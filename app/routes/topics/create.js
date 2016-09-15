@@ -128,6 +128,9 @@ module.exports = (logger, db) => {
             logger.info('returning topic');
             return discourseClient.getTopic(topic.topic_id, req.authUser.handle).then(fullTopic => {
                 return adapter.adaptTopics(fullTopic).then(result => {
+                    if((result instanceof Array) && result.length == 1) {
+                        result = result[0];
+                    }
                     return resp.status(200).send(util.wrapResponse(req.id, result));
                 });
             }); 
