@@ -59,7 +59,7 @@ module.exports = (logger, db) => {
                 logger.info('Failed to create topic in Discourse');
 
                 // If 403 or 422, it is possible that the user simply hasn't been created in Discourse yet
-                if(error.response && (error.response.status == 403 || error.response.status == 422)) {
+                if(error.response && (error.response.status == 500 || error.response.status == 403 || error.response.status == 422)) {
                     logger.info('Failed to create topic in Discourse, checking user exists in Discourse and provisioning');
                     return helper.getUserOrProvision(req.authToken, req.authUser.handle).then((user) => {
                         logger.debug(user);

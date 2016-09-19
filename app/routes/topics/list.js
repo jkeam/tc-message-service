@@ -74,7 +74,7 @@ module.exports = (logger, db) => {
                     logger.info(`Failed to get topic from discourse: ${pgTopic.discourseTopicId}`);
 
                     // If 403, it is possible that the user simply hasn't been granted access to the topic yet
-                    if(error.response && error.response.status == 403) {
+                    if(error.response && (error.response.status == 500 || error.response.status == 403 || error.response.status == 422)) {
                         logger.info(`User doesn\'t have access to topic ${pgTopic.discourseTopicId}, checking access and provisioning`);
 
                         if(!checkAccessAndProvisionPromise) {
