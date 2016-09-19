@@ -59,6 +59,7 @@ function Adapter(logger) {
                     title: discourseTopic.title,
                     read: discourseTopic.post_stream.posts[0].read,
                     userId: userId,
+                    tag: discourseTopic.tag,
                     posts: []
                 };
                 
