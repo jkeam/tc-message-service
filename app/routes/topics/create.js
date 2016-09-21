@@ -127,6 +127,7 @@ module.exports = (logger, db) => {
         }).then((topic) => {
             logger.info('returning topic');
             return discourseClient.getTopic(topic.topic_id, req.authUser.handle).then(fullTopic => {
+                fullTopic.tag = params.tag;
                 return adapter.adaptTopics(fullTopic).then(result => {
                     if((result instanceof Array) && result.length == 1) {
                         result = result[0];
