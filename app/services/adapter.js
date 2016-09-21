@@ -73,13 +73,23 @@ function Adapter(logger) {
                         var postHandle = discoursePost.username;
 
                         return userIdLookup(authToken, postHandle).then(userId => {
-                            result.topic.posts.push({
-                                id: discoursePost.id,
-                                date: discoursePost.created_at,
-                                userId: userId,
-                                read: discoursePost.read,
-                                body: discoursePost.cooked
-                            }); 
+                            if(discoursePost.action_code == 'invited_user' && discoursePost.action_code_who) {
+                                result.topic.posts.push({
+                                    id: discoursePost.id,
+                                    date: discoursePost.created_at,
+                                    userId: userId,
+                                    read: true,
+                                    body: discoursePost.action_code_who + ' joined the discussion'
+                                }); 
+                            } else {
+                                result.topic.posts.push({
+                                    id: discoursePost.id,
+                                    date: discoursePost.created_at,
+                                    userId: userId,
+                                    read: discoursePost.read,
+                                    body: discoursePost.cooked
+                                }); 
+                            }
                         });
                     }).then(() => {
                         return result;
