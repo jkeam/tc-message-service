@@ -66,6 +66,7 @@ module.exports = (logger, db) => {
                 logger.debug(pgTopic.dataValues);
                 return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.handle).then((response) => {
                     logger.info(`Topic received from discourse: ${pgTopic.discourseTopicId}`);
+                    response.tag = pgTopic.tag;
                     return response;
                 }).catch((error) => {
                     logger.debug(error);
@@ -95,6 +96,7 @@ module.exports = (logger, db) => {
                             return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.handle);
                         }).then((response) => {
                             logger.info(`Topic received from discourse ${pgTopic.discourseTopicId}`);
+                            response.tag = pgTopic.tag;
                             return response;
                         }).catch((error) => {
                             logger.debug(error);

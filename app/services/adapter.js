@@ -36,7 +36,8 @@ function Adapter(logger) {
                 date: input.created_at,
                 userId: userId,
                 read: true,
-                body: input.cooked
+                body: input.cooked,
+                type: 'post'
             } 
         });
     }
@@ -79,7 +80,8 @@ function Adapter(logger) {
                                     date: discoursePost.created_at,
                                     userId: userId,
                                     read: true,
-                                    body: discoursePost.action_code_who + ' joined the discussion'
+                                    body: discoursePost.action_code_who + ' joined the discussion',
+                                    type: 'user-joined'
                                 }); 
                             } else {
                                 result.topic.posts.push({
@@ -87,7 +89,8 @@ function Adapter(logger) {
                                     date: discoursePost.created_at,
                                     userId: userId,
                                     read: discoursePost.read,
-                                    body: discoursePost.cooked
+                                    body: discoursePost.cooked,
+                                    type: 'post'
                                 }); 
                             }
                         });
