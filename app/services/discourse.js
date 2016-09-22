@@ -2,6 +2,7 @@
 var Promise = require('bluebird');
 var config = require('config');
 var axios = require('axios');
+var _ = require('lodash');
 
 /**
  * Service to facilitate communication with the discourse api
@@ -95,6 +96,34 @@ var Discourse = (logger) => {
             data, discourseClientConfig);
     }
 
+    /**
+     * Fetches posts from discourse
+     * username: the name of the user to use to access the Discourse API
+     * topicId: the id of the topic that is parent to the posts
+     * postIds: array containing the list of posts that should be retrieved
+     */
+     this.getPosts = (username, topicId, postIds) => {
+        
+        var postIdsFilter = '';
+        var separator = '';
+        _(postIds).each(postId => {
+            postIdsFilter += `${separator}${encodeURIComponent('post_ids[]')}=${postId}`;
+            separator = '&'; 
+        });
+
+        console.log(`/t/${topicId}/posts.json?${postIdsFilter}` +
+            `&api_username=${username}&api_key=${config.get('discourseApiKey')}`);
+        return axios.get(`/t/${topicId}/posts.json?${postIdsFilter}` +
+            `&api_username=${username}&api_key=${config.get('discourseApiKey')}`, discourseClientConfig);
+     }
+
+
+    /**
+     * Marks a topic and posts are read in discourse
+     * username: the name of the user who read the topic
+     * topicId: the id of the topic the user read
+     * postIds: array of post ids representing the posts the user read
+     */
     this.markTopicPostsRead = (username, topicId, postIds) => {
         var parts = ['topic_id=' + topicId, 'topic_time=' + topicId];
         postIds.forEach(postId => {

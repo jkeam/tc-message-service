@@ -27,18 +27,37 @@ function Adapter(logger) {
         });
     }
 
+    function convertPost(userId, input) {
+        return {
+            id: input.id,
+            date: input.created_at,
+            userId: userId,
+            read: true,
+            body: input.cooked,
+            type: 'post'
+        } 
+    }
+
+    this.adaptPosts = function(authToken, input) {
+        var handle = input.username;
+        var result = [];
+
+        return Promise.each(input.post_stream.posts, (post) => {
+            return userIdLookup(authToken, post.username).then(userId => {
+                result.push(convertPost(userId, post));
+
+                return result;
+            });
+        }).then(() => {
+            return result;
+        });
+    }
+
     this.adaptPost = function(input, authToken) {
         var handle = input.username;
 
         return userIdLookup(authToken, handle).then(userId => {
-            return {
-                id: input.id,
-                date: input.created_at,
-                userId: userId,
-                read: true,
-                body: input.cooked,
-                type: 'post'
-            } 
+            return convertPost(userId, input); 
         });
     }
 
@@ -61,6 +80,9 @@ function Adapter(logger) {
                     read: discourseTopic.post_stream.posts[0].read,
                     userId: userId,
                     tag: discourseTopic.tag,
+                    totalPosts: discourseTopic.post_stream.stream.length,
+                    retrievedPosts: discourseTopic.post_stream.posts.length,
+                    postIds: discourseTopic.post_stream.stream,
                     posts: []
                 };
                 

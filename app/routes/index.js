@@ -38,7 +38,8 @@ module.exports = (logger, db) => {
 
 
     router.route('/v4/topics/:topicId/posts')
-        .post(require('./topics/post.js')(logger, db));
+        .post(require('./topics/post.js')(logger, db))
+        .get(require('./topics/get-post.js')(logger, db));
 
     // register error handler
     router.use((err, req, res, next) => {
