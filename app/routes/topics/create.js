@@ -49,7 +49,7 @@ module.exports = (logger, db) => {
                 throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
         }).then(() => {
             logger.info('User has access to entity, creating topic in Discourse');
-            const users = req.authUser.handle + ',system';
+            const users = req.authUser.handle + (req.authUser.handle.toLowerCase() == 'system' ? '' : ',system');
             return discourseClient.createPrivatePost(params.title, params.body, users, req.authUser.handle).then((response) => {
                 return response;
             }).catch((error) => {

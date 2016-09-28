@@ -28,6 +28,8 @@ module.exports = (logger, db) => {
         next();
     });
 
+    router.use(require('../middleware/system-user-filter.js')(logger));
+
     // Register all the routes
     router.route('/v4/topics/:topicId')
         .get(require('./topics/get')(logger, db));
