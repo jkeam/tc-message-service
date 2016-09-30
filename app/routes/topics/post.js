@@ -15,7 +15,7 @@ var Adapter = require('../../services/adapter');
  */
 module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
-    var adapter = new Adapter(logger);
+    var adapter = new Adapter(logger, db);
 
     return (req, resp, next) => {
         return  discourseClient.createPost(req.authUser.handle, req.body.post, req.params.topicId, req.body.responseTo).then((response) => {

@@ -19,7 +19,7 @@ var Adapter = require('../../services/adapter');
 module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
     var helper = HelperService(logger, db);
-    var adapter = new Adapter(logger);
+    var adapter = new Adapter(logger, db);
 
     /**
      * Create a new topic for the specified entity.

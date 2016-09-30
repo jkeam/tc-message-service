@@ -19,7 +19,7 @@ var Adapter = require('../../services/adapter');
 module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
     var helper = HelperService(logger, db);
-    var adapter = new Adapter(logger);
+    var adapter = new Adapter(logger, db);
 
     /**
      * Gets topic from Discourse for the specified entity, and in the process it does:

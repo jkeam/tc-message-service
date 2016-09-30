@@ -4,7 +4,7 @@ var _ = require('lodash');
 var Helper = require('./helper.js');
 var Promise = require('bluebird');
 
-function Adapter(logger) {
+function Adapter(logger, db) {
     var helper = Helper(logger);
     var handleMap = {
         system: 'system' 
@@ -73,23 +73,31 @@ function Adapter(logger) {
             var handle = discourseTopic.post_stream.posts[0].username;
 
             return userIdLookup(authToken, handle).then((userId) => {
-                var topic = {
-                    id: discourseTopic.id,
-                    date: discourseTopic.created_at,
-                    title: discourseTopic.title,
-                    read: discourseTopic.post_stream.posts[0].read,
-                    userId: userId,
-                    tag: discourseTopic.tag,
-                    totalPosts: discourseTopic.post_stream.stream.length,
-                    retrievedPosts: discourseTopic.post_stream.posts.length,
-                    postIds: discourseTopic.post_stream.stream,
-                    posts: []
-                };
-                
-                return {
-                    discourseTopic: discourseTopic,
-                    topic: topic
-                };
+                return db.topics.find({
+                    where: {
+                        discourseTopicId: discourseTopic.id
+                    }
+                }).then(pgTopic => {
+                    var topic = {
+                        id: discourseTopic.id,
+                        reference: pgTopic ? pgTopic.reference : undefined,
+                        referenceId: pgTopic ? pgTopic.referenceId : undefined,
+                        date: discourseTopic.created_at,
+                        title: discourseTopic.title,
+                        read: discourseTopic.post_stream.posts[0].read,
+                        userId: userId,
+                        tag: discourseTopic.tag,
+                        totalPosts: discourseTopic.post_stream.stream.length,
+                        retrievedPosts: discourseTopic.post_stream.posts.length,
+                        postIds: discourseTopic.post_stream.stream,
+                        posts: []
+                    };
+                    
+                    return {
+                        discourseTopic: discourseTopic,
+                        topic: topic
+                    };
+                });
             }).then(result => {
                 if(result.discourseTopic.post_stream && result.discourseTopic.post_stream.posts) {
                     return Promise.each(result.discourseTopic.post_stream.posts, discoursePost => {
