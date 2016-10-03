@@ -101,7 +101,7 @@ module.exports = (logger, db) => {
                 logger.debug(user);
                 logger.info('Successfully got topcoder user');
                 // Create discourse user
-                return discourseClient.createUser(user.firstName + ' ' + user.lastName,
+                return discourseClient.createUser(encodeURIComponent(user.firstName) + ' ' + encodeURIComponent(user.lastName),
                         user.handle,
                         user.email,
                         config.defaultDiscoursePw);

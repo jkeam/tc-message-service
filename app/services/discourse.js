@@ -40,7 +40,7 @@ var Discourse = (logger) => {
      */
     this.createUser = (name, username, email, password) => {
         return axios.post('/users?api_key=' + config.get('discourseApiKey') + '&api_username=system', {
-            name: encodeURIComponent(name),
+            name: name,
             username: username,
             email: email,
             password: password,
