@@ -105,6 +105,7 @@ function Adapter(logger, db) {
 
                         return userIdLookup(authToken, postHandle).then(userId => {
                             if(discoursePost.action_code == 'invited_user' && discoursePost.action_code_who) {
+                                result.topic.totalPosts--;
                                 result.topic.posts.push({
                                     id: discoursePost.id,
                                     date: discoursePost.created_at,
