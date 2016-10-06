@@ -83,6 +83,7 @@ function Adapter(logger, db) {
                         reference: pgTopic ? pgTopic.reference : undefined,
                         referenceId: pgTopic ? pgTopic.referenceId : undefined,
                         date: discourseTopic.created_at,
+                        lastActivityAt: discourseTopic.created_at,
                         title: discourseTopic.title,
                         read: discourseTopic.post_stream.posts[0].read,
                         userId: userId,
@@ -104,6 +105,9 @@ function Adapter(logger, db) {
                         var postHandle = discoursePost.username;
 
                         return userIdLookup(authToken, postHandle).then(userId => {
+                            if(discoursePost.created_at > result.topic.lastActivityAt) {
+                                result.topic.lastActivityAt = discoursePost.created_at;
+                            }
                             if(discoursePost.action_code == 'invited_user' && discoursePost.action_code_who) {
                                 result.topic.retrievedPosts--;
                                 result.topic.posts.push({
