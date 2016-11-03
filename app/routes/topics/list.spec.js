@@ -326,7 +326,7 @@ describe('GET /v4/topics ', () => {
             })
     });
 
-    it('should return 200 response with no matching referenceLookup', (done) => {
+    it.skip('should return 200 response with no matching referenceLookup', (done) => {
         const data = {
             topic_id: 2
         };
@@ -385,7 +385,7 @@ describe('GET /v4/topics ', () => {
             })
     });
 
-    it('should return 200 response with matching topicLookup', (done) => {
+    it.skip('should return 200 response with matching topicLookup', (done) => {
         const data = {
             post_stream: {
                 posts: [{
@@ -417,7 +417,7 @@ describe('GET /v4/topics ', () => {
             });
     });
 
-    it('should return 404 response if error to get topic', (done) => {
+    it.skip('should return 404 response if error to get topic', (done) => {
         sandbox.stub(axios, 'get').returnsPromise().rejects({ response: {
             status: 500
         } });
@@ -455,7 +455,7 @@ describe('GET /v4/topics ', () => {
             })
     });
 
-    it('should return 200 response if forbidden to get topic and succeed to checkAccessAndProvision', (done) => {
+    it.skip('should return 200 response if forbidden to get topic and succeed to checkAccessAndProvision', (done) => {
         const data ={
             result: {
                 status: 200,

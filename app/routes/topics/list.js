@@ -9,7 +9,7 @@ var HelperService = require('../../services/helper');
 var axios = require('axios');
 var errors = require('common-errors');
 var Joi = require('joi');
-var Adapter = require('../../services/adapter'); 
+var Adapter = require('../../services/adapter');
 
 /**
  * Handles listing of topics
@@ -80,7 +80,7 @@ module.exports = (logger, db) => {
 
                         if(!checkAccessAndProvisionPromise) {
                             // Check and provision is only needed to be done once
-                            checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.authToken, req.authUser.handle,
+                            checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.authToken, req.id, req.authUser.handle,
                                 filter.reference, filter.referenceId);
                         }
 

@@ -32,8 +32,9 @@ module.exports = (logger, db) => {
      */
     return (req, resp, next) => {
 
+        var logger = req.log;
         var params = req.body;
-        
+
         // Validate request parameters
         Joi.assert(params, {
             reference: Joi.string().required(),
@@ -42,15 +43,29 @@ module.exports = (logger, db) => {
             title: Joi.string().required(),
             body: Joi.string().required()
         });
-        
-        helper.userHasAccessToEntity(req.authToken, params.reference, params. referenceId).then(hasAccess => {
+
+        helper.userHasAccessToEntity(req.authToken, req.id, params.reference, params. referenceId)
+        .then(resp => {
+            const hasAccess = resp[0]
             logger.debug('hasAccess: ' + hasAccess);
             if(!hasAccess)
                 throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
-        }).then(() => {
+            if (params.reference.toLowerCase() === 'project') {
+                var projectMembers = _.get(resp[1], "members", [])
+                // get users list
+                var topicUsers = _.map(projectMembers, 'userId')
+                logger.debug(topicUsers)
+                return helper.lookupUserHandles(topicUsers)
+            } else {
+              return new Promise.resolve([req.authUser.handle])
+            }
+        }).then((users) => {
             logger.info('User has access to entity, creating topic in Discourse');
-            const users = req.authUser.handle + (req.authUser.handle.toLowerCase() == 'system' ? '' : ',system');
-            return discourseClient.createPrivatePost(params.title, params.body, users, req.authUser.handle).then((response) => {
+            // add system user
+            users.push('system')
+            logger.debug(users)
+            return discourseClient.createPrivatePost(params.title, params.body, users.join(','), req.authUser.handle)
+            .then((response) => {
                 return response;
             }).catch((error) => {
                 logger.debug(error);
@@ -61,17 +76,23 @@ module.exports = (logger, db) => {
                 // If 403 or 422, it is possible that the user simply hasn't been created in Discourse yet
                 if(error.response && (error.response.status == 500 || error.response.status == 403 || error.response.status == 422)) {
                     logger.info('Failed to create topic in Discourse, checking user exists in Discourse and provisioning');
-                    return helper.getUserOrProvision(req.authToken, req.authUser.handle).then((user) => {
-                        logger.debug(user);
-                        logger.info('User exists in Discourse, trying to create topic again');
+                    const getUserPromises = _.map(users, user => {
+                      if (user !== 'system') {
+                        return helper.getUserOrProvision(req.authToken, user)
+                      } else {
+                        return new Promise.resolve()
+                      }
+                    })
+                    return Promise.all(getUserPromises).then(() => {
+                        logger.info('User(s) exists in Discourse, trying to create topic again');
                         return Promise.coroutine(function *() {
                             // createPrivatePost may fail again if called too soon. Trying over and over again until success or timeout
                             const endTimeMs = new Date().getTime() + config.get('createTopicTimeout');
-                            const delayMs = config.get('createTopicRetryDelay');                            
+                            const delayMs = config.get('createTopicRetryDelay');
                             for (let i = 1; ; ++i) {
                                 try {
                                     logger.debug(`attempt number ${i}`);
-                                    return yield discourseClient.createPrivatePost(params.title, params.body, users);
+                                    return yield discourseClient.createPrivatePost(params.title, params.body, users.join(','), req.authUser.handle);
                                 } catch (e) {
                                     if(error.response && (error.response.status == 403 || error.response.status == 422)) {
                                         logger.debug(error);
@@ -108,7 +129,7 @@ module.exports = (logger, db) => {
             });
         }).then((response) => {
             logger.debug(response.data);
-            
+
             const pgTopic = db.topics.build({
                 reference: params.reference,
                 referenceId: params.referenceId,
@@ -134,7 +155,7 @@ module.exports = (logger, db) => {
                     }
                     return resp.status(200).send(util.wrapResponse(req.id, result));
                 });
-            }); 
+            });
         }).catch((error) => {
             next(error);
         });
