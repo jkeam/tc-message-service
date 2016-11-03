@@ -7,10 +7,12 @@ var Promise = require('bluebird');
 function Adapter(logger, db) {
     var helper = Helper(logger);
     var handleMap = {
-        system: 'system' 
+        system: 'system'
     };
 
     function userIdLookup(authToken, handle) {
+        // FIXME: (parth) this map will grow eventually as more users are added,
+        // consider using external cache instead
         return new Promise((resolve, reject) => {
             if(handleMap[handle]) {
                 resolve(handleMap[handle]);
@@ -35,7 +37,7 @@ function Adapter(logger, db) {
             read: true,
             body: input.cooked,
             type: 'post'
-        } 
+        }
     }
 
     this.adaptPosts = function(authToken, input) {
@@ -57,18 +59,18 @@ function Adapter(logger, db) {
         var handle = input.username;
 
         return userIdLookup(authToken, handle).then(userId => {
-            return convertPost(userId, input); 
+            return convertPost(userId, input);
         });
     }
 
     this.adaptTopics = function(input, authToken) {
         var topics = [];
-        var discourseTopics = input; 
-        
+        var discourseTopics = input;
+
         if(!(discourseTopics instanceof Array)) {
-            discourseTopics = [discourseTopics]; 
+            discourseTopics = [discourseTopics];
         }
-        
+
         return Promise.each(discourseTopics, discourseTopic => {
             var handle = discourseTopic.post_stream.posts[0].username;
 
@@ -93,7 +95,7 @@ function Adapter(logger, db) {
                         postIds: discourseTopic.post_stream.stream,
                         posts: []
                     };
-                    
+
                     return {
                         discourseTopic: discourseTopic,
                         topic: topic
@@ -117,7 +119,7 @@ function Adapter(logger, db) {
                                     read: true,
                                     body: discoursePost.action_code_who + ' joined the discussion',
                                     type: 'user-joined'
-                                }); 
+                                });
                             } else {
                                 result.topic.posts.push({
                                     id: discoursePost.id,
@@ -126,7 +128,7 @@ function Adapter(logger, db) {
                                     read: discoursePost.read,
                                     body: discoursePost.cooked,
                                     type: 'post'
-                                }); 
+                                });
                             }
                         });
                     }).then(() => {

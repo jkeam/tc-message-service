@@ -16,6 +16,26 @@ module.exports = (logger, db) => {
     var discourseClient = Discourse(logger);
 
     /**
+     * [lookupUserHandles description]
+     * @param  {[type]} userIds [description]
+     * @return {[type]}         [description]
+     */
+    function lookupUserHandles(userIds) {
+      return axios.get(`${config.get('memberSearchServiceUrl')}/_search`, {
+        params: {
+          fields: 'handle',
+          query: _.map(userIds, i => { return `userId:${i}` }).join(' OR ')
+        }
+      }).then(response => {
+        logger.debug(response.data)
+        var data = _.get(response, 'data.result.content', null)
+        if (!data)
+          throw new Error('Response does not have result.content');
+        return _.map(data, 'handle').filter(i => i)
+      })
+    }
+
+    /**
      * Fetches a topcoder user from the topcoder members api
      * authToken: The user's authentication token, will be used to call the member service api
      * handle: handle of the user to fetch
@@ -86,11 +106,11 @@ module.exports = (logger, db) => {
     function getUserOrProvision(authToken, userHandle) {
         return discourseClient.getUser(userHandle).then((user) => {
             logger.debug(user);
-            logger.info('Successfully got the user from Discourse');
+            logger.info('Successfully got the user from Discourse', userHandle);
             return user;
         }).catch((error) => {
             logger.debug(error);
-            logger.info('Discourse user doesn\'t exist, creating one');
+            logger.info('Discourse user doesn\'t exist, creating one', userHandle);
             // User doesn't exist, create
             // Fetch user info from member service
             return this.getTopcoderUser(authToken, userHandle)
@@ -144,6 +164,7 @@ module.exports = (logger, db) => {
 
     return {
         getTopcoderUser: getTopcoderUser,
+        lookupUserHandles: lookupUserHandles,
         userHasAccessToEntity: userHasAccessToEntity,
         getUserOrProvision: getUserOrProvision,
         checkAccessAndProvision: checkAccessAndProvision

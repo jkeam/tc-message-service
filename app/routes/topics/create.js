@@ -32,6 +32,7 @@ module.exports = (logger, db) => {
      */
     return (req, resp, next) => {
 
+        var logger = req.log;
         var params = req.body;
 
         // Validate request parameters
@@ -43,23 +44,27 @@ module.exports = (logger, db) => {
             body: Joi.string().required()
         });
 
-        var topicUsers = []
-        helper.userHasAccessToEntity(req.authToken, req.id, params.reference, params. referenceId).then(resp => {
+        helper.userHasAccessToEntity(req.authToken, req.id, params.reference, params. referenceId)
+        .then(resp => {
             const hasAccess = resp[0]
             logger.debug('hasAccess: ' + hasAccess);
             if(!hasAccess)
                 throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
-            logger.debug("REFERENCE:", params.reference)
             if (params.reference.toLowerCase() === 'project') {
                 var projectMembers = _.get(resp[1], "members", [])
-                topicUsers = _.map(projectMembers, 'userId')
+                // get users list
+                var topicUsers = _.map(projectMembers, 'userId')
                 logger.debug(topicUsers)
+                return helper.lookupUserHandles(topicUsers)
+            } else {
+              return new Promise.resolve([req.authUser.handle])
             }
-        }).then(() => {
+        }).then((users) => {
             logger.info('User has access to entity, creating topic in Discourse');
-            // include system user
-            topicUsers.push('system')
-            return discourseClient.createPrivatePost(params.title, params.body, topicUsers.join(','), req.authUser.handle)
+            // add system user
+            users.push('system')
+            logger.debug(users)
+            return discourseClient.createPrivatePost(params.title, params.body, users.join(','), req.authUser.handle)
             .then((response) => {
                 return response;
             }).catch((error) => {
@@ -71,9 +76,15 @@ module.exports = (logger, db) => {
                 // If 403 or 422, it is possible that the user simply hasn't been created in Discourse yet
                 if(error.response && (error.response.status == 500 || error.response.status == 403 || error.response.status == 422)) {
                     logger.info('Failed to create topic in Discourse, checking user exists in Discourse and provisioning');
-                    return helper.getUserOrProvision(req.authToken, req.authUser.handle).then((user) => {
-                        logger.debug(user);
-                        logger.info('User exists in Discourse, trying to create topic again');
+                    const getUserPromises = _.map(users, user => {
+                      if (user !== 'system') {
+                        return helper.getUserOrProvision(req.authToken, user)
+                      } else {
+                        return new Promise.resolve()
+                      }
+                    })
+                    return Promise.all(getUserPromises).then(() => {
+                        logger.info('User(s) exists in Discourse, trying to create topic again');
                         return Promise.coroutine(function *() {
                             // createPrivatePost may fail again if called too soon. Trying over and over again until success or timeout
                             const endTimeMs = new Date().getTime() + config.get('createTopicTimeout');
@@ -81,7 +92,7 @@ module.exports = (logger, db) => {
                             for (let i = 1; ; ++i) {
                                 try {
                                     logger.debug(`attempt number ${i}`);
-                                    return yield discourseClient.createPrivatePost(params.title, params.body, users);
+                                    return yield discourseClient.createPrivatePost(params.title, params.body, users.join(','), req.authUser.handle);
                                 } catch (e) {
                                     if(error.response && (error.response.status == 403 || error.response.status == 422)) {
                                         logger.debug(error);
