@@ -9,6 +9,6 @@ services:
         ports:
             - '5432:5432'
         environment:
-            POSTGRES_USER: 'postgres'
-            POSTGRES_PASSWORD: 'postgres'
+            POSTGRES_USER: 'coder'
+            POSTGRES_PASSWORD: 'mysecretpassword'
             POSTGRES_DB: 'messages'
