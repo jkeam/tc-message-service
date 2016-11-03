@@ -5,6 +5,7 @@
   "authSecret": "AUTH_SECRET",
   "discourseURL": "DISCOURSE_URL",
   "memberServiceUrl": "MEMBER_SERVICE_URL",
+  "systemUserIds": "SYSTEM_USER_ID",
   "dbConfig": {
     "masterUrl": "DB_MASTER_URL"
   }

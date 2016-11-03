@@ -33,7 +33,7 @@ module.exports = (logger, db) => {
     return (req, resp, next) => {
 
         var params = req.body;
-        
+
         // Validate request parameters
         Joi.assert(params, {
             reference: Joi.string().required(),
@@ -42,15 +42,25 @@ module.exports = (logger, db) => {
             title: Joi.string().required(),
             body: Joi.string().required()
         });
-        
-        helper.userHasAccessToEntity(req.authToken, params.reference, params. referenceId).then(hasAccess => {
+
+        var topicUsers = []
+        helper.userHasAccessToEntity(req.authToken, req.id, params.reference, params. referenceId).then(resp => {
+            const hasAccess = resp[0]
             logger.debug('hasAccess: ' + hasAccess);
             if(!hasAccess)
                 throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
+            logger.debug("REFERENCE:", params.reference)
+            if (params.reference.toLowerCase() === 'project') {
+                var projectMembers = _.get(resp[1], "members", [])
+                topicUsers = _.map(projectMembers, 'userId')
+                logger.debug(topicUsers)
+            }
         }).then(() => {
             logger.info('User has access to entity, creating topic in Discourse');
-            const users = req.authUser.handle + (req.authUser.handle.toLowerCase() == 'system' ? '' : ',system');
-            return discourseClient.createPrivatePost(params.title, params.body, users, req.authUser.handle).then((response) => {
+            // include system user
+            topicUsers.push('system')
+            return discourseClient.createPrivatePost(params.title, params.body, topicUsers.join(','), req.authUser.handle)
+            .then((response) => {
                 return response;
             }).catch((error) => {
                 logger.debug(error);
@@ -67,7 +77,7 @@ module.exports = (logger, db) => {
                         return Promise.coroutine(function *() {
                             // createPrivatePost may fail again if called too soon. Trying over and over again until success or timeout
                             const endTimeMs = new Date().getTime() + config.get('createTopicTimeout');
-                            const delayMs = config.get('createTopicRetryDelay');                            
+                            const delayMs = config.get('createTopicRetryDelay');
                             for (let i = 1; ; ++i) {
                                 try {
                                     logger.debug(`attempt number ${i}`);
@@ -108,7 +118,7 @@ module.exports = (logger, db) => {
             });
         }).then((response) => {
             logger.debug(response.data);
-            
+
             const pgTopic = db.topics.build({
                 reference: params.reference,
                 referenceId: params.referenceId,
@@ -134,7 +144,7 @@ module.exports = (logger, db) => {
                     }
                     return resp.status(200).send(util.wrapResponse(req.id, result));
                 });
-            }); 
+            });
         }).catch((error) => {
             next(error);
         });

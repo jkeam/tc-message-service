@@ -9,7 +9,7 @@ var HelperService = require('../../services/helper');
 var axios = require('axios');
 var errors = require('common-errors');
 var Joi = require('joi');
-var Adapter = require('../../services/adapter'); 
+var Adapter = require('../../services/adapter');
 
 /**
  * Get specific topic
@@ -47,7 +47,7 @@ module.exports = (logger, db) => {
             logger.info('Topics exist in pg, fetching from discourse');
 
             let checkAccessAndProvisionPromise = null;
-            
+
             logger.debug(pgTopic.dataValues);
             return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.handle).then((response) => {
                 logger.info(`Topic received from discourse: ${pgTopic.discourseTopicId}`);
@@ -65,7 +65,7 @@ module.exports = (logger, db) => {
 
                     if(!checkAccessAndProvisionPromise) {
                         // Check and provision is only needed to be done once
-                        checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.authToken, req.authUser.handle,
+                        checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.authToken, req.id, req.authUser.handle,
                             filter.reference, filter.referenceId);
                     }
 

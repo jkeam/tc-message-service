@@ -10,6 +10,7 @@ var _ = require('lodash');
 var db = require('./app/models');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
+var expressRequestId = require('express-request-id')
 
 // init logger
 var appName = 'tc-message-service'
@@ -42,6 +43,10 @@ var port = process.env.PORT || 3000;
 
 // Define and configure app
 var app = express();
+
+// add request Id
+var addRequestId = expressRequestId()
+app.use(addRequestId)
 
 app.use(coreLib.middleware.logger(null, logger));
 app.use(bodyParser.json());

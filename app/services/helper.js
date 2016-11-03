@@ -42,7 +42,7 @@ module.exports = (logger, db) => {
      * reference: name of the reference, used to find the endpoint in the referenceLookupTable
      * referenceId: identifier of the reference record
      */
-    function userHasAccessToEntity(authToken, reference, referenceId) {
+    function userHasAccessToEntity(authToken, requestId, reference, referenceId) {
         return db.referenceLookups.findOne({
             where: {
                 reference: reference
@@ -57,7 +57,7 @@ module.exports = (logger, db) => {
             var referenceLookup = result;
             return axios.get(referenceLookup.endpoint.replace('{id}', referenceId), {
                 headers: {
-                    'X-Request-Id': '123',
+                    'X-Request-Id': requestId,
                     'Authorization': 'Bearer ' + authToken,
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
@@ -67,9 +67,9 @@ module.exports = (logger, db) => {
                 logger.debug(response.data);
                 if(response.data && response.data.result
                     && response.data.result.status == 200 && response.data.result.content) {
-                    return true;
+                    return [true, response.data.result.content];
                 } else {
-                    return false;
+                    return [false, null];
                 }
             }).catch((error) => {
                 logger.debug(error);
@@ -121,7 +121,7 @@ module.exports = (logger, db) => {
             });
         });
     }
-    
+
     /**
      * Checks if a user has access to an entity, and if they do, provision a user in Discourse if one doesn't exist
      * authToken: user's auth token to use to call the Topcoder api to get user info for provisioning
@@ -129,8 +129,9 @@ module.exports = (logger, db) => {
      * reference: name of the reference, used to find the endpoint in the referenceLookupTable
      * referenceId: identifier of the reference record
      */
-    function checkAccessAndProvision(authToken, userHandle, reference, referenceId) {
-        return this.userHasAccessToEntity(authToken, reference, referenceId).then((hasAccess) => {
+    function checkAccessAndProvision(authToken, requestId, userHandle, reference, referenceId) {
+        return this.userHasAccessToEntity(authToken, requestId, reference, referenceId).then((resp) => {
+            var hasAccess = resp[0]
             logger.debug('hasAccess: ' + hasAccess);
             if(!hasAccess) {
                 throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
