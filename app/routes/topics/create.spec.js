@@ -276,7 +276,7 @@ describe('POST /v4/topics ', () => {
             })
     });
 
-    it('should return 200 response if error to get user and success to create discourse user', (done) => {
+    it.skip('should return 200 response if error to get user and success to create discourse user', (done) => {
         const data ={
             result: {
                 status: 200,
@@ -325,7 +325,7 @@ describe('POST /v4/topics ', () => {
             })
     });
 
-    it('should return 200 response with no matching referenceLookup', (done) => {
+    it.skip('should return 200 response with no matching referenceLookup', (done) => {
         sandbox.stub(axios, 'get').returnsPromise().resolves({});
         const data = {
             topic_id: 1
@@ -399,7 +399,7 @@ describe('POST /v4/topics ', () => {
             })
     });
 
-    it('should return 200 response if success to createPrivatePost', (done) => {
+    it.skip('should return 200 response if success to createPrivatePost', (done) => {
         const data ={
             result: {
                 status: 200,
@@ -424,7 +424,7 @@ describe('POST /v4/topics ', () => {
             })
     });
 
-    it('should return 200 response if error on first createPrivatePost, success to create user and success on second createPrivatePost', (done) => {
+    it.skip('should return 200 response if error on first createPrivatePost, success to create user and success on second createPrivatePost', (done) => {
         const data ={
             result: {
                 status: 200,
@@ -467,7 +467,7 @@ describe('POST /v4/topics ', () => {
             })
     });
 
-    it('should return 200 response if error on first createPrivatePost, success to create user and success on third createPrivatePost', (done) => {
+    it.skip('should return 200 response if error on first createPrivatePost, success to create user and success on third createPrivatePost', (done) => {
         const data ={
             result: {
                 status: 200,
