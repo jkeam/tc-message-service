@@ -30,6 +30,7 @@ module.exports = (logger, db) => {
      * params: standard express parameters
      */
     return (req, resp, next) => {
+        var logger = req.log 
         var topicId = req.params.topicId;
 
         // Get topic from the Postgres database

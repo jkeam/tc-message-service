@@ -43,7 +43,9 @@ jspm_packages
 
 # Elastic Beanstalk Files
 .ebextensions/*
+!.ebextensions/*.config
 .elasticbeanstalk/*
+!.elasticbeanstalk/*.yml
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 

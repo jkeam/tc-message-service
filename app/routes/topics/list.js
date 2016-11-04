@@ -30,6 +30,7 @@ module.exports = (logger, db) => {
      * params: standard express parameters
      */
     return (req, resp, next) => {
+        var logger = req.log
         // Validate request parameters
         Joi.assert(req.query, {
             filter: Joi.string().required()

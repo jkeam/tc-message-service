@@ -18,6 +18,7 @@ module.exports = (logger, db) => {
     var adapter = new Adapter(logger, db);
 
    return (req, resp, next) => {
+     var logger = req.log
         if(!req.query.postIds) {
             return resp.status(400).send('Post ids parameter is required');
         }

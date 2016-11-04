@@ -1,0 +1,18 @@
+branch-defaults:
+  add-users-to-topic:
+    environment: tc-message-api-v4-dev
+  dev:
+    environment: tc-message-service
+    group_suffix: null
+    profile: tc-dev
+  master:
+    environment: tc-message-service
+    group_suffix: null
+    profile: tc-prod
+global:
+  application_name: tc-message-service
+  default_ec2_keyname: topcoder-dev-vpc-app
+  default_platform: Docker 1.11.2
+  default_region: us-east-1
+  profile: null
+  sc: git
