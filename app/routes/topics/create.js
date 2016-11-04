@@ -44,7 +44,7 @@ module.exports = (logger, db) => {
             body: Joi.string().required()
         });
 
-        helper.userHasAccessToEntity(req.authToken, req.id, params.reference, params. referenceId)
+        return helper.userHasAccessToEntity(req.authToken, req.id, params.reference, params. referenceId)
         .then(resp => {
             const hasAccess = resp[0]
             logger.debug('hasAccess: ' + hasAccess);
