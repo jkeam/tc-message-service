@@ -1,6 +1,6 @@
 {
   "development": {
-    "username": "postgres",
+    "username": "coder",
     "password": "postgres",
     "database": "messages",
     "host": "local.topcoder-dev.com",

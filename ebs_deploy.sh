@@ -15,7 +15,7 @@ export AWS_SECRET_ACCESS_KEY=$(eval "echo \$${ENV}_AWS_SECRET_ACCESS_KEY")
 eb init -r us-east-1 $SERVICE
 EB_OUTPUT="$(eb deploy -l $TAG -r us-east-1)"
 echo $EB_OUTPUT
-if [[ $EB_OUTPUT =~ .*ERROR.* ]]
+if [[ $EB_OUTPUT =~ .*Error.* ]]
 then
  exit 1
 fi

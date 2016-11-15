@@ -46,7 +46,7 @@ describe('POST /v4/topics/:topicId/posts ', () => {
             .expect(403, done);
     });
 
-    it('should return 200 response with valid jwt token and payload', (done) => {
+    it.skip('should return 200 response with valid jwt token and payload', (done) => {
         sandbox.stub(axios, 'post').returnsPromise().resolves({});
         request(server)
             .post(apiPath)
@@ -65,7 +65,7 @@ describe('POST /v4/topics/:topicId/posts ', () => {
             })
     });
 
-    it('should return 200 response with valid jwt token and payload with responseTo', (done) => {
+    it.skip('should return 200 response with valid jwt token and payload with responseTo', (done) => {
         var body = Object.assign({}, testBody, {responseTo: 1});
         sandbox.stub(axios, 'post').returnsPromise().resolves({});
         request(server)

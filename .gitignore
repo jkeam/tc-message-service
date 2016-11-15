@@ -43,7 +43,9 @@ jspm_packages
 
 # Elastic Beanstalk Files
 .ebextensions/*
+!.ebextensions/*.config
 .elasticbeanstalk/*
+!.elasticbeanstalk/*.yml
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 
@@ -56,6 +58,7 @@ local/env.sh
 
 # Env config
 env.sh
+config/local.js
 
 # Deployment scripts
 aws-deploy

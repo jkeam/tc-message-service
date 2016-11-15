@@ -1,5 +1,6 @@
 {
   "dbConfig": {
-    "masterUrl": "postgres://postgres:postgres@local.topcoder-dev.com:5432/messages"
-  }
+    "masterUrl": "postgres://coder:mysecretpassword@local.topcoder-dev.com:5432/messages"
+  },
+  "systemUserIds": "0"
 }
