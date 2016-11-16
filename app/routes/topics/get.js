@@ -30,7 +30,7 @@ module.exports = (logger, db) => {
      * params: standard express parameters
      */
     return (req, resp, next) => {
-        var logger = req.log 
+        var logger = req.log
         var topicId = req.params.topicId;
 
         // Get topic from the Postgres database
@@ -66,7 +66,7 @@ module.exports = (logger, db) => {
 
                     if(!checkAccessAndProvisionPromise) {
                         // Check and provision is only needed to be done once
-                        checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.authToken, req.id, req.authUser.handle,
+                        checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.logger, req.authToken, req.id, req.authUser.handle,
                             filter.reference, filter.referenceId);
                     }
 

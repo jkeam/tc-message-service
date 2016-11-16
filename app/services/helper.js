@@ -5,6 +5,7 @@ var config = require('config');
 var Discourse = require('./discourse');
 var axios = require('axios');
 var errors = require('common-errors');
+var util = require('../util')
 
 /**
  * Returns helper service containing common functions used in route handlers
@@ -13,21 +14,23 @@ var errors = require('common-errors');
  */
 module.exports = (logger, db) => {
 
-    var discourseClient = Discourse(logger);
+    var discourseClient = Discourse();
 
     /**
      * [lookupUserHandles description]
      * @param  {[type]} userIds [description]
+     * @param  {[type]} userIds [description]
      * @return {[type]}         [description]
      */
-    function lookupUserHandles(userIds) {
+    function lookupUserHandles(logger, userIds) {
+
       return axios.get(`${config.get('memberSearchServiceUrl')}/_search`, {
         params: {
           fields: 'handle',
           query: _.map(userIds, i => { return `userId:${i}` }).join(' OR ')
         }
       }).then(response => {
-        logger.debug(response.data)
+        logger.debug('UserHandle response', response.data)
         var data = _.get(response, 'data.result.content', null)
         if (!data)
           throw new Error('Response does not have result.content');
@@ -37,22 +40,29 @@ module.exports = (logger, db) => {
 
     /**
      * Fetches a topcoder user from the topcoder members api
-     * authToken: The user's authentication token, will be used to call the member service api
+     * logger: request logger that logs along with request id for tracing
      * handle: handle of the user to fetch
      */
-    function getTopcoderUser(authToken, handle) {
-        return axios.get(config.memberServiceUrl + '/' + handle, {
-            headers: {
-                'Authorization': 'Bearer ' + authToken,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        }).then((response) => {
-            logger.debug(response.data);
+    function getTopcoderUser(logger, handle) {
+        // get admin user token and make the call to member service endpoint
+        logger.debug('retrieving userToken')
+        return util.getSystemUserToken(logger)
+          .then(token => {
+            logger.debug('retrieved token invoking member service')
+            return axios.get(config.memberServiceUrl + '/' + handle, {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+          })
+          .then(response => {
+            logger.debug('retrieved user', response.data);
             if (!_.get(response, 'data.result.content'))
                 throw new Error('Response does not have result.content');
             return response.data.result.content;
-        });
+          });
     }
 
     /**
@@ -73,7 +83,6 @@ module.exports = (logger, db) => {
                 return true; // if nothing exists in the referenceLookup table, the entity should be open,
                              // and anyone should be able to see the threads
             }
-            logger.debug(result.dataValues);
             var referenceLookup = result;
             return axios.get(referenceLookup.endpoint.replace('{id}', referenceId), {
                 headers: {
@@ -103,40 +112,36 @@ module.exports = (logger, db) => {
      * authToken: user's auth token to use to call the Topcoder api to get user info for provisioning
      * userHandle: handle of the user to fetch
      */
-    function getUserOrProvision(authToken, userHandle) {
+    function getUserOrProvision(logger, userHandle) {
         return discourseClient.getUser(userHandle).then((user) => {
-            logger.debug(user);
+            // logger.debug(user);
             logger.info('Successfully got the user from Discourse', userHandle);
             return user;
         }).catch((error) => {
-            logger.debug(error);
             logger.info('Discourse user doesn\'t exist, creating one', userHandle);
             // User doesn't exist, create
             // Fetch user info from member service
-            return this.getTopcoderUser(authToken, userHandle)
+            return this.getTopcoderUser(logger, userHandle)
             .catch((error) => {
-                logger.debug(error);
+                logger.error('Error retrieving topcoder user', error);
                 throw new errors.HttpStatusError(500, 'Failed to get topcoder user info');
             }).then((user) => {
-                logger.debug(user);
                 logger.info('Successfully got topcoder user');
                 // Create discourse user
-                return discourseClient.createUser(encodeURIComponent(user.firstName) + ' ' + encodeURIComponent(user.lastName),
+                return discourseClient.createUser(logger, encodeURIComponent(user.firstName) + ' ' + encodeURIComponent(user.lastName),
                         user.handle,
                         user.email,
                         config.defaultDiscoursePw);
             }).then((result) =>{
-                logger.debug(result.data);
                 if(result.data.success) {
                     logger.info('Discourse user created');
                     return result.data;
                 } else {
-                    logger.error('Unable to create discourse user');
+                    logger.error('Unable to create discourse user', result);
                     throw new errors.HttpStatusError(500, 'Unable to create discourse user');
                 }
             }).catch((error) => {
-                logger.debug(error);
-                logger.error('Failed to create discourse user');
+                logger.error('Failed to create discourse user', error);
                 throw error;
             });
         });
@@ -144,12 +149,13 @@ module.exports = (logger, db) => {
 
     /**
      * Checks if a user has access to an entity, and if they do, provision a user in Discourse if one doesn't exist
+     * logger: request logger that logs request id with each log
      * authToken: user's auth token to use to call the Topcoder api to get user info for provisioning
      * userHandle: handle of the user
      * reference: name of the reference, used to find the endpoint in the referenceLookupTable
      * referenceId: identifier of the reference record
      */
-    function checkAccessAndProvision(authToken, requestId, userHandle, reference, referenceId) {
+    function checkAccessAndProvision(logger, authToken, requestId, userHandle, reference, referenceId) {
         return this.userHasAccessToEntity(authToken, requestId, reference, referenceId).then((resp) => {
             var hasAccess = resp[0]
             logger.debug('hasAccess: ' + hasAccess);
@@ -158,7 +164,7 @@ module.exports = (logger, db) => {
             }
         }).then(() => {
             logger.info('User has access to entity');
-            return this.getUserOrProvision(authToken, userHandle);
+            return this.getUserOrProvision(logger, userHandle);
         });
     }
 

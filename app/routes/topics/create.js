@@ -11,6 +11,8 @@ var errors = require('common-errors');
 var Joi = require('joi');
 var Adapter = require('../../services/adapter');
 
+
+const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername')
 /**
  * Handles creation of topics
  * logger: the logger
@@ -46,6 +48,7 @@ module.exports = (logger, db) => {
 
         return helper.userHasAccessToEntity(req.authToken, req.id, params.reference, params. referenceId)
         .then(resp => {
+            logger.info('Checking if user has access to identity');
             const hasAccess = resp[0]
             logger.debug('hasAccess: ' + hasAccess);
             if(!hasAccess)
@@ -55,30 +58,30 @@ module.exports = (logger, db) => {
                 // get users list
                 var topicUsers = _.map(projectMembers, 'userId')
                 logger.debug(topicUsers)
-                return helper.lookupUserHandles(topicUsers)
+                return helper.lookupUserHandles(logger, topicUsers)
             } else {
               return new Promise.resolve([req.authUser.handle])
             }
         }).then((users) => {
             logger.info('User has access to entity, creating topic in Discourse');
             // add system user
-            users.push('system')
-            logger.debug(users)
+            users.push(DISCOURSE_SYSTEM_USERNAME)
+            logger.debug('Users that should be added to topic: ', users)
             return discourseClient.createPrivatePost(params.title, params.body, users.join(','), req.authUser.handle)
             .then((response) => {
                 return response;
             }).catch((error) => {
-                logger.debug(error);
-                logger.debug(error.response && error.response.status);
-                logger.debug(error.response && error.response.data);
-                logger.info('Failed to create topic in Discourse');
+                // logger.debug('Error creating private post', error);
+                // logger.debug(error.response && error.response.status);
+                // logger.debug(error.response && error.response.data);
+                logger.info('Failed to create topic in Discourse', error);
 
                 // If 403 or 422, it is possible that the user simply hasn't been created in Discourse yet
                 if(error.response && (error.response.status == 500 || error.response.status == 403 || error.response.status == 422)) {
                     logger.info('Failed to create topic in Discourse, checking user exists in Discourse and provisioning');
                     const getUserPromises = _.map(users, user => {
-                      if (user !== 'system') {
-                        return helper.getUserOrProvision(req.authToken, user)
+                      if (user !== DISCOURSE_SYSTEM_USERNAME) {
+                        return helper.getUserOrProvision(logger, user)
                       } else {
                         return new Promise.resolve()
                       }
@@ -95,9 +98,9 @@ module.exports = (logger, db) => {
                                     return yield discourseClient.createPrivatePost(params.title, params.body, users.join(','), req.authUser.handle);
                                 } catch (e) {
                                     if(error.response && (error.response.status == 403 || error.response.status == 422)) {
-                                        logger.debug(error);
-                                        logger.debug(error.response && error.response.status);
-                                        logger.debug(error.response && error.response.data);
+                                        logger.debug(`Failed to create create private post. (attempt #${i}, error: ${error})`);
+                                        // logger.debug(error.response && error.response.status);
+                                        // logger.debug(error.response && error.response.data);
                                         const timeLeftMs = endTimeMs - new Date().getTime();
                                         if (timeLeftMs > 0) {
                                             logger.info(`Create topic failed. Trying again after delay (${~~(timeLeftMs / 1000)} seconds left until timeout).`);
@@ -112,7 +115,7 @@ module.exports = (logger, db) => {
                             }
                         })();
                     }).catch((error) => {
-                        logger.debug(error);
+                        logger.debug('Some error', error);
                         logger.debug(error.response && error.response.status);
                         logger.debug(error.response && error.response.data);
                         throw error;
