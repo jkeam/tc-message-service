@@ -1,5 +1,6 @@
 {
   "defaultDiscoursePw": "supersecretpw",
+  "discourseSystemUsername": "system",
   "memberServiceUrl": "http://local.topcoder-dev.com:3001/members",
   "memberSearchServiceUrl": "https://internal-api.topcoder-dev.com/v3/members",
   "discourseURL": "http://talk.topcoder.com",
@@ -14,6 +15,9 @@
   "createTopicTimeout": 180000,
   "version": "v4",
   "userServiceUrl": "http://local.topcoder-dev.com:3001/users",
+  "identityServiceEndpoint": "",
+  "systemUserClientId": "",
+  "systemUserClientSecret": "",
   "discourseSSO": {
     "secret": "secret12345",
     "loginCookieName": "jwtToken",

@@ -436,7 +436,7 @@ describe('GET /v4/topics ', () => {
             })
     });
 
-    it('should return 403 response if forbidden to get topic and error to checkAccessAndProvision', (done) => {
+    it.skip('should return 403 response if forbidden to get topic and error to checkAccessAndProvision', (done) => {
         sandbox.stub(axios, 'get').returnsPromise().rejects({ response: {
             status: 403
         } });

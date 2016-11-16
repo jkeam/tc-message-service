@@ -81,7 +81,7 @@ module.exports = (logger, db) => {
 
                         if(!checkAccessAndProvisionPromise) {
                             // Check and provision is only needed to be done once
-                            checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.authToken, req.id, req.authUser.handle,
+                            checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.logger, req.authToken, req.id, req.authUser.handle,
                                 filter.reference, filter.referenceId);
                         }
 
@@ -145,7 +145,8 @@ module.exports = (logger, db) => {
                 logger.error('error marking topic posts read', error);
             });
 
-            return adapter.adaptTopics(topics, req.authToken).then(result => {
+            logger.debug('adapting topics')
+            return adapter.adaptTopics(topics, logger).then(result => {
                 return resp.status(200).send(util.wrapResponse(req.id, result));
             });
         }).catch((error) => {

@@ -4,31 +4,36 @@ var config = require('config');
 var axios = require('axios');
 var _ = require('lodash');
 
+
+const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername')
 /**
  * Service to facilitate communication with the discourse api
- * logger: the logger
  */
-var Discourse = (logger) => {
+var Discourse = () => {
 
     /**
      * Discourse client configuration
      */
-    var discourseClientConfig = {
-        baseURL: config.get('discourseURL')
-    };
+    var client = axios.create({ baseURL: config.get('discourseURL')})
+    client.defaults.params = {
+      api_key: config.get('discourseApiKey'),
+      api_username: DISCOURSE_SYSTEM_USERNAME
+    }
+    client.interceptors.response.use((resp) => {
+      console.log('SUCCESS', resp.config.url)
+      return resp
+    }, (err) => {
+      console.log(err),
+      Promise.reject(err)
+    })
 
    /**
     * Fetches a Discourse user by username
     * username: the Discourse user name
     */
    this.getUser = (username) => {
-        return axios.get('/users/' + username + '.json', {
-            baseURL: config.get('discourseURL'),
-            params: {
-                api_key: config.get('discourseApiKey'),
-                api_username: username
-            }
-        }).then((response) => response.data);
+        return client.get(`/users/${username}.json?api_username=${username}`)
+        .then((response) => response.data);
     }
 
     /**
@@ -38,14 +43,15 @@ var Discourse = (logger) => {
      * email: email of the user, must be unique
      * password: password of the user, this will be ignored since we will be using SSO
      */
-    this.createUser = (name, username, email, password) => {
-        return axios.post('/users?api_key=' + config.get('discourseApiKey') + '&api_username=system', {
+    this.createUser = (logger, name, username, email, password) => {
+        logger.debug('Creating user in discourse:', username)
+        return client.post('/users', {
             name: name,
             username: username,
             email: email,
             password: password,
             active: true
-        }, discourseClientConfig);
+        });
     }
 
     /**
@@ -55,9 +61,15 @@ var Discourse = (logger) => {
      * users: comma separated list of user names that should be part of the conversation
      */
     this.createPrivatePost = (title, post, users, owner) => {
-        return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=' + (owner ? owner : 'system') + '&archetype=private_message&target_usernames=' + users +
-            '&title=' + encodeURIComponent(title) +
-            '&raw=' + encodeURIComponent(post), '', discourseClientConfig);
+        return client.post('/posts', {}, {
+          params: {
+            archetype: 'private_message',
+            target_usernames: users,
+            api_username: owner ? owner : DISCOURSE_SYSTEM_USERNAME,
+            title: encodeURIComponent(title),
+            raw: encodeURIComponent(post)
+          }
+        })
     }
 
     /**
@@ -66,8 +78,8 @@ var Discourse = (logger) => {
      * username: the username to use to fetch the topic, for security purposes
      */
     this.getTopic = (topicId, username) => {
-        return axios.get('/t/' + topicId + '.json?api_key=' + config.get('discourseApiKey') + '&api_username=' + username,
-            discourseClientConfig).then((response) => response.data);
+        return client.get(`/t/${topicId}.json?api_username=${username}`)
+        .then((response) => response.data);
     }
 
     /**
@@ -76,9 +88,9 @@ var Discourse = (logger) => {
      * topicId: identifier of the topic to which access should be granted
      */
     this.grantAccess = (userName, topicId) => {
-        return axios.post('/t/' + topicId + '/invite?api_key=' + config.get('discourseApiKey') + '&api_username=system', {
+        return client.post(`/t/${topicId}/invite`, {
             user: userName
-        }, discourseClientConfig);
+        });
     }
 
     /**
@@ -92,8 +104,8 @@ var Discourse = (logger) => {
         if(responseTo) {
           data += '&reply_to_post_number=' + responseTo;
         }
-        return axios.post('/posts?api_key=' + config.get('discourseApiKey') + '&api_username=' + username,
-            data, discourseClientConfig);
+
+        return axios.post(`/posts?api_username=${username}`, data);
     }
 
     /**
@@ -103,18 +115,15 @@ var Discourse = (logger) => {
      * postIds: array containing the list of posts that should be retrieved
      */
      this.getPosts = (username, topicId, postIds) => {
-        
+
         var postIdsFilter = '';
         var separator = '';
         _(postIds).each(postId => {
             postIdsFilter += `${separator}${encodeURIComponent('post_ids[]')}=${postId}`;
-            separator = '&'; 
+            separator = '&';
         });
 
-        console.log(`/t/${topicId}/posts.json?${postIdsFilter}` +
-            `&api_username=${username}&api_key=${config.get('discourseApiKey')}`);
-        return axios.get(`/t/${topicId}/posts.json?${postIdsFilter}` +
-            `&api_username=${username}&api_key=${config.get('discourseApiKey')}`, discourseClientConfig);
+        return axios.get(`/t/${topicId}/posts.json?${postIdsFilter}`);
      }
 
 
@@ -129,9 +138,7 @@ var Discourse = (logger) => {
         postIds.forEach(postId => {
             parts.push(encodeURIComponent('timings[' + postId + ']') + '=1000');
         });
-        return axios.post('/topics/timings.json?api_key=' + config.get('discourseApiKey') +
-                          '&api_username=' + username,
-                          parts.join('&'), discourseClientConfig);
+        return client.post(`/topics/timings.json?api_username=${username}`, parts.join('&'));
     }
 
     return this;

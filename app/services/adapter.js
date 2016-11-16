@@ -3,30 +3,35 @@
 var _ = require('lodash');
 var Helper = require('./helper.js');
 var Promise = require('bluebird');
+var config = require('config');
 
-function Adapter(logger, db) {
-    var helper = Helper(logger);
+const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername')
+
+function Adapter(clsLogger, db) {
+    var helper = Helper(clsLogger);
     var handleMap = {
-        system: 'system'
+        system: 'system',
     };
+    handleMap[DISCOURSE_SYSTEM_USERNAME] = DISCOURSE_SYSTEM_USERNAME
 
-    function userIdLookup(authToken, handle) {
-        // FIXME: (parth) this map will grow eventually as more users are added,
-        // consider using external cache instead
-        return new Promise((resolve, reject) => {
-            if(handleMap[handle]) {
-                resolve(handleMap[handle]);
-            } else {
-                return helper.getTopcoderUser(authToken, handle).then(result => {
-                    if(result &&
-                       result.userId) {
-                       resolve(result.userId);
-                    } else {
-                       resolve(null);
-                    }
-                });
-            }
-        });
+    function userIdLookup(handle, logger) {
+      var logger = logger || clsLogger
+      // FIXME: (parth) this map will grow eventually as more users are added,
+      // consider using external cache instead
+      return new Promise((resolve, reject) => {
+        if (handleMap[handle]) {
+          resolve(handleMap[handle]);
+        } else {
+            return helper.getTopcoderUser(logger, handle).then(result => {
+              if (result && result.userId) {
+                handleMap[handle] = result.userId
+                resolve(result.userId);
+              } else {
+                resolve(null);
+              }
+            });
+          }
+      });
     }
 
     function convertPost(userId, input) {
@@ -40,12 +45,13 @@ function Adapter(logger, db) {
         }
     }
 
-    this.adaptPosts = function(authToken, input) {
+    this.adaptPosts = function(input, logger) {
+        var logger = logger || clsLogger
         var handle = input.username;
         var result = [];
 
         return Promise.each(input.post_stream.posts, (post) => {
-            return userIdLookup(authToken, post.username).then(userId => {
+            return userIdLookup(post.username, logger).then(userId => {
                 result.push(convertPost(userId, post));
 
                 return result;
@@ -55,33 +61,36 @@ function Adapter(logger, db) {
         });
     }
 
-    this.adaptPost = function(input, authToken) {
+    this.adaptPost = function(input, logger) {
         var handle = input.username;
 
-        return userIdLookup(authToken, handle).then(userId => {
+        return userIdLookup(logger, handle).then(userId => {
             return convertPost(userId, input);
         });
     }
 
-    this.adaptTopics = function(input, authToken) {
+    this.adaptTopics = function(input, logger) {
+        var logger = logger || clsLogger
         var topics = [];
         var discourseTopics = input;
-
         if(!(discourseTopics instanceof Array)) {
             discourseTopics = [discourseTopics];
         }
 
         return Promise.each(discourseTopics, discourseTopic => {
             var handle = discourseTopic.post_stream.posts[0].username;
-
-            return userIdLookup(authToken, handle).then((userId) => {
+            logger.debug('DT', discourseTopic.title)
+            return userIdLookup(handle, logger).then((userId) => {
+              logger.debug('found userId', handle, userId)
                 return db.topics.find({
                     where: {
                         discourseTopicId: discourseTopic.id
                     }
                 }).then(pgTopic => {
+                    logger.debug('found topic', topic)
                     var topic = {
                         id: discourseTopic.id,
+                        dbId: pgTopic ? pgTopic.id : undefined,
                         reference: pgTopic ? pgTopic.reference : undefined,
                         referenceId: pgTopic ? pgTopic.referenceId : undefined,
                         date: discourseTopic.created_at,
@@ -100,13 +109,17 @@ function Adapter(logger, db) {
                         discourseTopic: discourseTopic,
                         topic: topic
                     };
-                });
+                })
+                .catch((err) => {
+                  logger.debug('Topic not found', discourseTopic.id, err)
+                })
             }).then(result => {
+              logger.debug('result', result)
                 if(result.discourseTopic.post_stream && result.discourseTopic.post_stream.posts) {
                     return Promise.each(result.discourseTopic.post_stream.posts, discoursePost => {
                         var postHandle = discoursePost.username;
 
-                        return userIdLookup(authToken, postHandle).then(userId => {
+                        return userIdLookup(postHandle, logger).then(userId => {
                             if(discoursePost.created_at > result.topic.lastActivityAt) {
                                 result.topic.lastActivityAt = discoursePost.created_at;
                             }
