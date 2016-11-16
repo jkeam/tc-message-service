@@ -12,7 +12,7 @@ function Adapter(clsLogger, db) {
     var handleMap = {
         system: 'system',
     };
-    handleMap[DISCOURSE_SYSTEM_USERNAME] = DISCOURSE_SYSTEM_USERNAME
+    handleMap[DISCOURSE_SYSTEM_USERNAME] = 'system'
 
     function userIdLookup(handle, logger) {
       var logger = logger || clsLogger
