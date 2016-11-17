@@ -126,7 +126,7 @@ module.exports = (logger, db) => {
                 logger.error('Error retrieving topcoder user', error);
                 throw new errors.HttpStatusError(500, 'Failed to get topcoder user info');
             }).then((user) => {
-                logger.info('Successfully got topcoder user');
+                logger.info('Successfully got topcoder user', JSON.stringify(user));
                 // Create discourse user
                 return discourseClient.createUser(logger, encodeURIComponent(user.firstName) + ' ' + encodeURIComponent(user.lastName),
                         user.handle,
