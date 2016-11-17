@@ -1,11 +1,9 @@
 branch-defaults:
-  add-users-to-topic:
-    environment: tc-message-api-v4-dev
   dev:
-    environment: tc-message-service
+    environment: tc-message-api-v4-dev
     group_suffix: null
   master:
-    environment: tc-message-service
+    environment: tc-message-api-v4-prod
     group_suffix: null
 global:
   application_name: tc-message-service
