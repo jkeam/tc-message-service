@@ -55,10 +55,6 @@ var Discourse = () => {
             password: password,
             active: true
         })
-        .catch(err => {
-          logger.error(err)
-          return Promise.reject(err)
-        })
     }
 
     /**
@@ -85,7 +81,9 @@ var Discourse = () => {
      * username: the username to use to fetch the topic, for security purposes
      */
     this.getTopic = (topicId, username) => {
-        return client.get(`/t/${topicId}.json?api_username=${username}`)
+        return client.get(`/t/${topicId}.json`, {
+          params: { api_username: username }
+        })
         .then((response) => response.data);
     }
 
@@ -112,7 +110,9 @@ var Discourse = () => {
           data += '&reply_to_post_number=' + responseTo;
         }
 
-        return client.post(`/posts?api_username=${username}`, data);
+        return client.post('/posts', data, {
+          params: { api_username: username }
+        });
     }
 
     /**
@@ -130,7 +130,9 @@ var Discourse = () => {
             separator = '&';
         });
 
-        return client.get(`/t/${topicId}/posts.json?${postIdsFilter}`);
+        return client.get(`/t/${topicId}/posts.json?${postIdsFilter}`, {
+          params: { api_username: username }
+        });
      }
 
 
@@ -145,7 +147,9 @@ var Discourse = () => {
         postIds.forEach(postId => {
             parts.push(encodeURIComponent('timings[' + postId + ']') + '=1000');
         });
-        return client.post(`/topics/timings.json?api_username=${username}`, parts.join('&'));
+        return client.post('/topics/timings.json', parts.join('&'), {
+          params: { api_username: username }
+        });
     }
 
     return this;

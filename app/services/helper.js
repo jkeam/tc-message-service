@@ -48,7 +48,7 @@ module.exports = (logger, db) => {
         logger.debug('retrieving userToken')
         return util.getSystemUserToken(logger)
           .then(token => {
-            logger.debug('retrieved token invoking member service', token)
+            logger.debug('retrieved token invoking member service')
             return axios.get(config.memberServiceUrl + '/' + handle, {
                 headers: {
                     'Authorization': 'Bearer ' + token,
@@ -137,7 +137,7 @@ module.exports = (logger, db) => {
                     logger.info('Discourse user created');
                     return result.data;
                 } else {
-                    logger.error('Unable to create discourse user', result);
+                    logger.error('Unable to create discourse user', result.data);
                     throw new errors.HttpStatusError(500, 'Unable to create discourse user');
                 }
             }).catch((error) => {
