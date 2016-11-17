@@ -74,7 +74,7 @@ module.exports = (logger, db) => {
                 // logger.debug('Error creating private post', error);
                 // logger.debug(error.response && error.response.status);
                 // logger.debug(error.response && error.response.data);
-                logger.info('Failed to create topic in Discourse', error);
+                logger.info('Failed to create topic in Discourse', JSON.stringify(error.data));
 
                 // If 403 or 422, it is possible that the user simply hasn't been created in Discourse yet
                 if(error.response && (error.response.status == 500 || error.response.status == 403 || error.response.status == 422)) {
