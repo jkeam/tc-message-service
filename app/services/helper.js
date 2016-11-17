@@ -24,7 +24,7 @@ module.exports = (logger, db) => {
      */
     function lookupUserHandles(logger, userIds) {
 
-      return axios.get(`${config.get('memberSearchServiceUrl')}/_search`, {
+      return axios.get(`${config.get('memberServiceUrl')}/_search`, {
         params: {
           fields: 'handle',
           query: _.map(userIds, i => { return `userId:${i}` }).join(' OR ')

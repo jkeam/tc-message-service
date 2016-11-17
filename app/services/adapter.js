@@ -12,7 +12,7 @@ function Adapter(clsLogger, db) {
     var handleMap = {
         system: 'system',
     };
-    handleMap[DISCOURSE_SYSTEM_USERNAME] = DISCOURSE_SYSTEM_USERNAME
+    handleMap[DISCOURSE_SYSTEM_USERNAME] = 'system'
 
     function userIdLookup(handle, logger) {
       var logger = logger || clsLogger
@@ -87,7 +87,6 @@ function Adapter(clsLogger, db) {
                         discourseTopicId: discourseTopic.id
                     }
                 }).then(pgTopic => {
-                    logger.debug('found topic', topic)
                     var topic = {
                         id: discourseTopic.id,
                         dbId: pgTopic ? pgTopic.id : undefined,
@@ -114,7 +113,7 @@ function Adapter(clsLogger, db) {
                   logger.debug('Topic not found', discourseTopic.id, err)
                 })
             }).then(result => {
-              logger.debug('result', result)
+              // logger.debug('result', result)
                 if(result.discourseTopic.post_stream && result.discourseTopic.post_stream.posts) {
                     return Promise.each(result.discourseTopic.post_stream.posts, discoursePost => {
                         var postHandle = discoursePost.username;

@@ -19,13 +19,16 @@ var Discourse = () => {
       api_key: config.get('discourseApiKey'),
       api_username: DISCOURSE_SYSTEM_USERNAME
     }
-    client.interceptors.response.use((resp) => {
-      console.log('SUCCESS', resp.config.url)
-      return resp
-    }, (err) => {
-      console.log(err),
-      Promise.reject(err)
-    })
+    /**
+     * Uncomment to debug discourse api calls
+     */
+    // client.interceptors.response.use((resp) => {
+    //   console.log('SUCCESS', resp.config.url)
+    //   return resp
+    // }, (err) => {
+    //   console.log(err),
+    //   Promise.reject(err)
+    // })
 
    /**
     * Fetches a Discourse user by username
@@ -66,8 +69,8 @@ var Discourse = () => {
             archetype: 'private_message',
             target_usernames: users,
             api_username: owner ? owner : DISCOURSE_SYSTEM_USERNAME,
-            title: encodeURIComponent(title),
-            raw: encodeURIComponent(post)
+            title: title,
+            raw: post
           }
         })
     }

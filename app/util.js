@@ -5,6 +5,7 @@ const config = require('config')
 const jwt = require('jsonwebtoken')
 
 
+
 var token = null
 /**
  * verify if token has not expired
@@ -34,6 +35,7 @@ _.assign(util, {
     const httpClient = util.getHttpClient({id: id, log: logger})
     const url = `${config.get('identityServiceEndpoint')}authorizations`
     const formData = `clientId=${config.get('systemUserClientId')}&secret=${encodeURIComponent(config.get('systemUserClientSecret'))}`
+    // logger.debug(url, formData)
     return httpClient.post(url, formData,
       {
         timeout: 4000,
@@ -42,6 +44,7 @@ _.assign(util, {
     )
     .then(res => {
       token = res.data.result.content.token
+      // console.log('\n\n\nTOKEN:', token)
       return token
     })
   }
