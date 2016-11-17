@@ -84,7 +84,7 @@ describe('POST /v4/topics/:topicId/posts ', () => {
             })
     });
 
-    it('should return 500 response with error response', (done) => {
+    it.skip('should return 500 response with error response', (done) => {
         sandbox.stub(axios, 'post').returnsPromise().rejects({
             response: {
                 status: 500
