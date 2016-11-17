@@ -62,9 +62,9 @@ function Adapter(clsLogger, db) {
     }
 
     this.adaptPost = function(input, logger) {
-        var handle = input.username;
-
-        return userIdLookup(logger, handle).then(userId => {
+      var handle = input.username;
+      return userIdLookup(handle, logger)
+        .then(userId => {
             return convertPost(userId, input);
         });
     }

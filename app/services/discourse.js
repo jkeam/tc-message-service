@@ -108,7 +108,7 @@ var Discourse = () => {
           data += '&reply_to_post_number=' + responseTo;
         }
 
-        return axios.post(`/posts?api_username=${username}`, data);
+        return client.post(`/posts?api_username=${username}`, data);
     }
 
     /**
@@ -126,7 +126,7 @@ var Discourse = () => {
             separator = '&';
         });
 
-        return axios.get(`/t/${topicId}/posts.json?${postIdsFilter}`);
+        return client.get(`/t/${topicId}/posts.json?${postIdsFilter}`);
      }
 
 

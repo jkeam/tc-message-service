@@ -22,7 +22,7 @@ module.exports = (logger, db) => {
         return  discourseClient.createPost(req.authUser.handle, req.body.post, req.params.topicId, req.body.responseTo).then((response) => {
             logger.info('Post created');
 
-            return adapter.adaptPost(response.data).then(post => {
+            return adapter.adaptPost(response.data, logger).then(post => {
                 return resp.status(200).send(util.wrapResponse(req.id, post));
             });
         }).catch((error) => {
