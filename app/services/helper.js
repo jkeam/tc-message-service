@@ -48,7 +48,7 @@ module.exports = (logger, db) => {
         logger.debug('retrieving userToken')
         return util.getSystemUserToken(logger)
           .then(token => {
-            logger.debug('retrieved token invoking member service')
+            logger.debug('retrieved token invoking member service', token)
             return axios.get(config.memberServiceUrl + '/' + handle, {
                 headers: {
                     'Authorization': 'Bearer ' + token,

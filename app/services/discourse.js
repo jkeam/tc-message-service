@@ -47,7 +47,7 @@ var Discourse = () => {
      * password: password of the user, this will be ignored since we will be using SSO
      */
     this.createUser = (logger, name, username, email, password) => {
-        logger.debug('Creating user in discourse:', username, username, email)
+        logger.debug('Creating user in discourse:', name, username, email)
         return client.post('/users', {
             name: name,
             username: username,
