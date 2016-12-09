@@ -1,0 +1,392 @@
+swagger: "2.0"
+info:
+  version: "v3"
+  title: "Message Service"
+  description: |
+    The message service provides apis for members to be able to collaborate within the topcoder platform. It provides capabilities to create public and private threaded conversations associated with specific topcoder entities such as projects, challenges, submissions, etc. and general discussions not associated with any specific entity.
+    
+    The message service is a thin layer on top of Discourse (https://www.discourse.org). Discourse is an open source forum that provides rich features and a full feature API to handle users, threads, posts, attachments, etc.
+
+# during production should point to your server machine
+host: local.topcoder-dev.com:3000
+basePath: "/v4"
+# during production should point to https
+schemes:
+- http
+produces:
+- application/json
+consumes:
+- application/json
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+
+paths:
+  /topics:
+    post:
+      tags:
+        - topic
+      operationId: createTopic
+      security:
+        - Bearer: []
+      description: Create new topic
+      parameters:
+        - in: body
+          name: body
+          required: true
+          description: Topic parameters
+          schema:
+            $ref: '#/definitions/NewTopicBodyParam'
+      responses:
+        '200':
+          description: Success. Returns newly created topic
+          schema:
+            $ref: "#/definitions/NewTopicResponse"
+        '400':
+          $ref: "#/responses/ValidationFailure"
+        '403':
+          $ref: "#/responses/InvalidAccess"
+        '500':
+          $ref: "#/responses/UnexpectedFailure"
+    get:
+      tags:
+        - topic
+      operationId: getTopics
+      security:
+        - Bearer: []
+      description: Get all topics that match the specified criteria 
+      parameters:
+        - name: filter
+          required: true
+          type: string
+          in: query
+          description: |
+            A URL-encoded string that specify criteria for topics matching.
+            Should be in the form `reference={ref_type}&referenceId={ref_id}&tag={tag}`, where:
+            - ref_type - type of entity with which the topic is associated, e.g. `project`, `challenge`, `submission`, etc.
+            - ref_id - id of entity with which the topic is associated, e.g. `455`.
+            - tag - tag field of the topic, e.g. `PRIMARY`
+            
+            Example: `reference=submission&referenceId=455&tag=PRIMARY`
+      responses:
+        '200':
+          description: Success. Returns list of topics
+          schema:
+            $ref: "#/definitions/TopicListResponse"
+        '400':
+          $ref: "#/responses/ValidationFailure"
+        '403':
+          $ref: "#/responses/InvalidAccess"
+        '404':
+          $ref: "#/responses/NotFound"
+        '500':
+          $ref: "#/responses/UnexpectedFailure"
+  /topics/{topicId}:
+    get:
+      tags:
+        - topic
+      operationId: getTopic
+      security:
+        - Bearer: []
+      summary: Get topic
+      description: Get topic and its posts
+      parameters:
+        - in: header
+          name: Authorization
+          description: Authorization token
+          required: true
+          type: string
+        - name: topicId
+          in: path
+          description: Topic ID
+          required: true
+          type: number
+      responses:
+        '200':
+          description: Success. Returns the topic
+          schema:
+            $ref: "#/definitions/TopicResponse"
+        '403':
+          $ref: "#/responses/InvalidAccess"
+        '404':
+          $ref: "#/responses/NotFound"
+        '500':
+          $ref: "#/responses/UnexpectedFailure"
+
+  "/topics/:topicId/posts":
+    get:
+      summary: Add a Post to a Discourse Topic
+      description: Adds a Post to a Discourse Topic, optionally as a reply to an existing post
+      parameters:
+        - in: header
+          name: Authorization
+          description: Authorization token
+          required: true
+          type: string
+        - name: topicId
+          in: query
+          description: Topic ID
+          required: true
+          type: number
+        - name: body
+          in: body
+          description: The Post content
+          required: true
+          schema:
+            $ref: '#/definitions/PostBody'
+      tags:
+        - Topics
+      responses:
+        200:
+          description: Confirmation
+          schema:
+            $ref: '#/definitions/ObjectWithMessage'
+        500:
+          description: Response Had Error
+          schema:
+            $ref: '#/definitions/ObjectWithMessage'
+        403:
+          description: Invalid JWT Token
+          schema:
+            $ref: '#/definitions/ObjectWithMessage'
+
+definitions:
+  NewTopicBodyParam:
+    type: object
+    required:
+       - reference
+       - referenceId
+       - tag
+       - title
+       - body
+    properties:
+      reference:
+        type: string
+        description: type of entity with which the topic is associated, e.g. 'project', 'challenge', 'submission', etc.
+      referenceId:
+        type: string
+        description: id of entity with which the topic is associated, e.g. '455'.
+      tag:
+        type: string
+        description: tag field of the topic, e.g. 'PRIMARY'
+      title:
+        type: string
+        description: title of the topic
+      body:
+        type: string
+        description: body of the topic message, supports markup 
+
+  NewTopicResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        description: unique id identifying the request
+      version:
+        type: string
+        description: the api version
+      result:
+        type: object
+        properties:
+          success:
+            type: boolean
+            description: whether the result is successful
+          status:
+            description: http status code
+            type: integer
+            format: int32
+          metadata:
+            type: object
+            description: result metadata
+          content:
+            $ref: "#/definitions/TopicObject"
+
+  TopicListResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        description: unique id identifying the request
+      version:
+        type: string
+        description: the api version
+      result:
+        type: object
+        properties:
+          success:
+            type: boolean
+            description: whether the result is successful
+          status:
+            description: http status code
+            type: integer
+            format: int32
+          metadata:
+            type: object
+            description: result metadata
+          content:
+            type: array
+            description: list of topic objects
+            items:
+              $ref: "#/definitions/TopicObject"
+  
+  TopicResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        description: unique id identifying the request
+      version:
+        type: string
+        description: the api version
+      result:
+        type: object
+        properties:
+          success:
+            type: boolean
+            description: whether the result is successful
+          status:
+            description: http status code
+            type: integer
+            format: int32
+          metadata:
+            type: object
+            description: result metadata
+          content:
+              $ref: "#/definitions/TopicFullObject"
+
+  TopicObject:
+    type: object
+    description: Discourse topic object
+    properties:
+      topic_id:
+        type: string
+        description: identifier for topic in Discourse
+      username:
+        type: string
+        description: user created the topic
+      reads:
+        type: integer
+        description: topic read count
+  
+  TopicFullObject:
+    type: object
+    description: Discourse topic object
+    properties:
+      topic_id:
+        type: string
+        description: identifier for topic in Discourse
+      username:
+        type: string
+        description: user created the topic
+      reads:
+        type: integer
+        description: topic read count
+      post_stream:
+        type: object
+        properties:
+          posts:
+            type: array
+            items:
+              $ref: "#/definitions/PostObject"
+
+  PostObject:
+    type: object
+    description: Discourse post object
+    properties:
+      id:
+        type: integer
+        description: identifier for post in Discourse
+      name:
+        type: string
+        description: post name
+      username:
+        type: string
+        description: post user name
+      created_at:
+        type: string
+        description: created timestamp
+      post_number:
+        type: integer
+        description: post number
+      post_type:
+        type: integer
+        description: post type
+      updated_at:
+        type: string
+        description: updated timestamp
+      reply_count:
+        type: integer
+        description: reply type
+      reply_to_post_number:
+        type: integer
+        description: reply to post number
+      cooked:
+        type: string
+        description: post body
+      reads:
+        type: integer
+        description: post read count
+      score:
+        type: number
+        description: post score
+
+  ErrorResponse:
+    type: object
+    properties:
+      version:
+        type: string
+        description: the api version
+      result:
+        type: object
+        properties:
+          success:
+            type: boolean
+            description: whether the result is successful
+          status:
+            description: http status code
+            type: integer
+            format: int32
+          metadata:
+            type: object
+            description: result metadata
+          content:
+            type: string
+            description: error message
+
+  PostBody:
+    type: object
+    required: [post]
+    properties:
+      post:
+        description: The Post Content
+        type: string
+      responseTo:
+        description: The Post Number to respond to
+        type: number
+  ObjectWithMessage:
+    type: object
+    properties:
+      message:
+        description: The Error Message
+        type: string
+
+responses:
+  InvalidAccess:
+    description: Invalid token or user does not have access to requested entity
+    schema:
+      $ref: "#/definitions/ErrorResponse"
+  ValidationFailure:
+    description: Validation Failure
+    schema:
+      $ref: "#/definitions/ErrorResponse"
+  NotFound:
+    description: Requested resource not found
+    schema:
+      $ref: "#/definitions/ErrorResponse"
+  UnexpectedFailure:
+    description: Unexpected Failure
+    schema:
+      $ref: "#/definitions/ErrorResponse"
