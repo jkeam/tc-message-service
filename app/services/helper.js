@@ -5,7 +5,7 @@ var config = require('config');
 var Discourse = require('./discourse');
 var axios = require('axios');
 var errors = require('common-errors');
-var util = require('../util')
+var util = require('../util');
 
 /**
  * Returns helper service containing common functions used in route handlers
