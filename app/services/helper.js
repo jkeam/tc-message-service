@@ -44,23 +44,21 @@ module.exports = (logger, db) => {
    * finds handle of user from userId,
    * userId: userId of user
    */
-  function lookupUserFromIds(userIds) {
+  function lookupUserFromId(userId) {
 
     return axios.get(`${config.get('memberServiceUrl')}?`, {
       params: {
-        fields: 'handle',
-        query: _.map(userIds, i => {
-          return `result.content.userId=${i}`
-        }).join('&')
-  }
-  }).then(response => {
-      logger.debug('UserHandle response', response.data)
-      var data = _.map(response.data, (data) => data.result.content)
+        query: `result.content.userId=${userId}`
+      }
+    }).then(response => {
+      //logger.debug('UserHandle response', response.data)
+      var data = response.data[0].result.content
       if (!data)
-        throw new Error('Response does not have result.content');
+        throw new Error('Response does not have content');
       return data
     })
   }
+
   /**
    * Fetches a topcoder user from the topcoder members api
    * logger: request logger that logs along with request id for tracing
@@ -143,12 +141,11 @@ module.exports = (logger, db) => {
       logger.info('Discourse user doesn\'t exist, creating one', userId);
       // User doesn't exist, create
       // Fetch user info from member service
-      return this.lookupUserFromIds([userId])
+      return this.lookupUserFromId(userId)
         .catch((error) => {
           logger.error('Error retrieving topcoder user', error);
           throw new errors.HttpStatusError(500, 'Failed to get topcoder user info');
-        }).then((users) => {
-          var user = users[0];
+        }).then((user) => {
           logger.info('Successfully got topcoder user', JSON.stringify(user));
           // Create discourse user
           return discourseClient.createUser(encodeURIComponent(user.firstName) + ' ' + encodeURIComponent(user.lastName),
@@ -193,7 +190,7 @@ module.exports = (logger, db) => {
   return {
     getTopcoderUser: getTopcoderUser,
     lookupUserHandles: lookupUserHandles,
-    lookupUserFromIds: lookupUserFromIds,
+    lookupUserFromId: lookupUserFromId,
     userHasAccessToEntity: userHasAccessToEntity,
     getUserOrProvision: getUserOrProvision,
     checkAccessAndProvision: checkAccessAndProvision
