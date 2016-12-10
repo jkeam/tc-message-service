@@ -14,7 +14,7 @@
   "createTopicTimeout": 180000,
   "version": "v4",
   "userServiceUrl": "http://local.topcoder-dev.com:3001/users",
-  "identityServiceEndpoint": "",
+  "identityServiceEndpoint": "http://local.topcoder-dev.com:3001/",
   "systemUserClientId": "",
   "systemUserClientSecret": "",
   "discourseSSO": {

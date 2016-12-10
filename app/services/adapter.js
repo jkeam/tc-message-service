@@ -16,7 +16,7 @@ handleMap[DISCOURSE_SYSTEM_USERNAME] = DISCOURSE_SYSTEM_USERNAME
 function Adapter(logger, db) {
   var helper = Helper(logger);
 
-  function userIdLookup(handle) {
+  this.userIdLookup = function userIdLookup(handle) {
 
     return new Promise((resolve, reject) => {
       if (handleMap[handle]) {
@@ -29,7 +29,8 @@ function Adapter(logger, db) {
           } else {
             resolve(null);
           }
-        });
+        }).catch(() =>
+      resolve(null));
       }
     });
   }
