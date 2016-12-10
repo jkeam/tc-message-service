@@ -76,71 +76,66 @@ function Adapter(logger, db) {
     }
 
     return Promise.each(discourseTopics, discourseTopic => {
-      var handle = discourseTopic.post_stream.posts[0].username;
+      var userId = discourseTopic.post_stream.posts[0].username;
       logger.debug('DT', discourseTopic.title)
-      return userIdLookup(handle).then((userId) => {
-        logger.debug('found userId', handle, userId)
-        return db.topics.find({
-            where: {
-              discourseTopicId: discourseTopic.id
-            }
-          }).then(pgTopic => {
-            var topic = {
-              id: discourseTopic.id,
-              dbId: pgTopic ? pgTopic.id : undefined,
-              reference: pgTopic ? pgTopic.reference : undefined,
-              referenceId: pgTopic ? pgTopic.referenceId : undefined,
-              date: discourseTopic.created_at,
-              lastActivityAt: discourseTopic.created_at,
-              title: discourseTopic.title,
-              read: discourseTopic.post_stream.posts[0].read,
-              userId: userId,
-              tag: discourseTopic.tag,
-              totalPosts: discourseTopic.post_stream.stream.length,
-              retrievedPosts: discourseTopic.post_stream.posts.length,
-              postIds: discourseTopic.post_stream.stream,
-              posts: []
-            };
+      return db.topics.find({
+          where: {
+            discourseTopicId: discourseTopic.id
+          }
+        }).then(pgTopic => {
+          var topic = {
+            id: discourseTopic.id,
+            dbId: pgTopic ? pgTopic.id : undefined,
+            reference: pgTopic ? pgTopic.reference : undefined,
+            referenceId: pgTopic ? pgTopic.referenceId : undefined,
+            date: discourseTopic.created_at,
+            lastActivityAt: discourseTopic.created_at,
+            title: discourseTopic.title,
+            read: discourseTopic.post_stream.posts[0].read,
+            userId: userId,
+            tag: discourseTopic.tag,
+            totalPosts: discourseTopic.post_stream.stream.length,
+            retrievedPosts: discourseTopic.post_stream.posts.length,
+            postIds: discourseTopic.post_stream.stream,
+            posts: []
+          };
 
-            return {
-              discourseTopic: discourseTopic,
-              topic: topic
-            };
-          })
-          .catch((err) => {
-            logger.debug('Topic not found', discourseTopic.id, err)
-          })
-      }).then(result => {
+          return {
+            discourseTopic: discourseTopic,
+            topic: topic
+          };
+        })
+        .catch((err) => {
+          logger.debug('Topic not found', discourseTopic.id, err)
+        }).then(result => {
         // logger.debug('result', result)
         if (result.discourseTopic.post_stream && result.discourseTopic.post_stream.posts) {
           return Promise.each(result.discourseTopic.post_stream.posts, discoursePost => {
-            var postHandle = discoursePost.username;
+            var userId = discoursePost.username;
 
-            return userIdLookup(postHandle).then(userId => {
-              if (discoursePost.created_at > result.topic.lastActivityAt) {
-                result.topic.lastActivityAt = discoursePost.created_at;
-              }
-              if (discoursePost.action_code == 'invited_user' && discoursePost.action_code_who) {
-                result.topic.retrievedPosts--;
-                result.topic.posts.push({
-                  id: discoursePost.id,
-                  date: discoursePost.created_at,
-                  userId: userId,
-                  read: true,
-                  body: discoursePost.action_code_who + ' joined the discussion',
-                  type: 'user-joined'
-                });
-              } else {
-                result.topic.posts.push({
-                  id: discoursePost.id,
-                  date: discoursePost.created_at,
-                  userId: userId,
-                  read: discoursePost.read,
-                  body: discoursePost.cooked,
-                  type: 'post'
-                });
-              }
-            });
+            if (discoursePost.created_at > result.topic.lastActivityAt) {
+              result.topic.lastActivityAt = discoursePost.created_at;
+            }
+            if (discoursePost.action_code == 'invited_user' && discoursePost.action_code_who) {
+              result.topic.retrievedPosts--;
+              result.topic.posts.push({
+                id: discoursePost.id,
+                date: discoursePost.created_at,
+                userId: userId,
+                read: true,
+                body: discoursePost.action_code_who + ' joined the discussion',
+                type: 'user-joined'
+              });
+            } else {
+              result.topic.posts.push({
+                id: discoursePost.id,
+                date: discoursePost.created_at,
+                userId: userId,
+                read: discoursePost.read,
+                body: discoursePost.cooked,
+                type: 'post'
+              });
+            }
           }).then(() => {
             return result;
           });

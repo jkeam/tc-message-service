@@ -41,6 +41,29 @@ module.exports = (logger, db) => {
   }
 
   /**
+   * [lookupUserFromId description]
+   * @param  {[type]} userIds [description]
+   * @param  {[type]} userIds [description]
+   * @return {[type]}         [description]
+   */
+  function lookupUserFromIds(userIds) {
+
+    return axios.get(`${config.get('memberServiceUrl')}?`, {
+      params: {
+        fields: 'handle',
+        query: _.map(userIds, i => {
+          return `result.content.userId=${i}`
+        }).join('&')
+  }
+  }).then(response => {
+      logger.debug('UserHandle response', response.data)
+      var data = _.map(response.data, (data) => data.result.content)
+      if (!data)
+        throw new Error('Response does not have result.content');
+      return data
+    })
+  }
+  /**
    * Fetches a topcoder user from the topcoder members api
    * logger: request logger that logs along with request id for tracing
    * handle: handle of the user to fetch
@@ -113,24 +136,25 @@ module.exports = (logger, db) => {
    * Get user from discourse provision a user in Discourse if one doesn't exist
    * userHandle: handle of the user to fetch
    */
-  function getUserOrProvision(userHandle) {
-    return discourseClient.getUser(userHandle).then((user) => {
+  function getUserOrProvision(userId) {
+    return discourseClient.getUser(userId).then((user) => {
       // logger.debug(user);
-      logger.info('Successfully got the user from Discourse', userHandle);
+      logger.info('Successfully got the user from Discourse', userId);
       return user;
     }).catch((error) => {
-      logger.info('Discourse user doesn\'t exist, creating one', userHandle);
+      logger.info('Discourse user doesn\'t exist, creating one', userId);
       // User doesn't exist, create
       // Fetch user info from member service
-      return this.getTopcoderUser(userHandle)
+      return this.lookupUserFromIds([userId])
         .catch((error) => {
           logger.error('Error retrieving topcoder user', error);
           throw new errors.HttpStatusError(500, 'Failed to get topcoder user info');
-        }).then((user) => {
+        }).then((users) => {
+          var user = users[0];
           logger.info('Successfully got topcoder user', JSON.stringify(user));
           // Create discourse user
           return discourseClient.createUser(encodeURIComponent(user.firstName) + ' ' + encodeURIComponent(user.lastName),
-            user.handle,
+            user.userId.toString(),
             user.email,
             config.defaultDiscoursePw);
         }).then((result) => {
@@ -171,6 +195,7 @@ module.exports = (logger, db) => {
   return {
     getTopcoderUser: getTopcoderUser,
     lookupUserHandles: lookupUserHandles,
+    lookupUserFromIds: lookupUserFromIds,
     userHasAccessToEntity: userHasAccessToEntity,
     getUserOrProvision: getUserOrProvision,
     checkAccessAndProvision: checkAccessAndProvision

@@ -1,7 +1,7 @@
 {
   "development": {
     "username": "coder",
-    "password": "postgres",
+    "password": "l  ",
     "database": "messages",
     "host": "local.topcoder-dev.com",
     "dialect": "postgres"
