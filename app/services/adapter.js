@@ -46,26 +46,20 @@ function Adapter(logger, db) {
   }
 
   this.adaptPosts = function(input) {
-    var handle = input.username;
+    var userId = input.username;
     var result = [];
 
     return Promise.each(input.post_stream.posts, (post) => {
-      return userIdLookup(post.username).then(userId => {
-        result.push(convertPost(userId, post));
-
-        return result;
-      });
+      result.push(convertPost(userId, post));
+      return result;
     }).then(() => {
       return result;
     });
   }
 
   this.adaptPost = function(input) {
-    var handle = input.username;
-    return userIdLookup(handle)
-      .then(userId => {
-        return convertPost(userId, input);
-      });
+    var userId = input.username;
+    return convertPost(userId, input);
   }
 
   this.adaptTopics = function(input) {
