@@ -41,10 +41,8 @@ module.exports = (logger, db) => {
   }
 
   /**
-   * [lookupUserFromId description]
-   * @param  {[type]} userIds [description]
-   * @param  {[type]} userIds [description]
-   * @return {[type]}         [description]
+   * finds handle of user from userId,
+   * userId: userId of user
    */
   function lookupUserFromIds(userIds) {
 
@@ -134,7 +132,7 @@ module.exports = (logger, db) => {
 
   /**
    * Get user from discourse provision a user in Discourse if one doesn't exist
-   * userHandle: handle of the user to fetch
+   * userId: userId of the user to fetch
    */
   function getUserOrProvision(userId) {
     return discourseClient.getUser(userId).then((user) => {
@@ -175,11 +173,11 @@ module.exports = (logger, db) => {
   /**
    * Checks if a user has access to an entity, and if they do, provision a user in Discourse if one doesn't exist
    * authToken: user's auth token to use to call the Topcoder api to get user info for provisioning
-   * userHandle: handle of the user
+   * userId: userId of the user
    * reference: name of the reference, used to find the endpoint in the referenceLookupTable
    * referenceId: identifier of the reference record
    */
-  function checkAccessAndProvision(authToken, requestId, userHandle, reference, referenceId) {
+  function checkAccessAndProvision(authToken, requestId, userId, reference, referenceId) {
     return this.userHasAccessToEntity(authToken, requestId, reference, referenceId).then((resp) => {
       var hasAccess = resp[0]
       logger.debug('hasAccess: ' + hasAccess);
@@ -188,7 +186,7 @@ module.exports = (logger, db) => {
       }
     }).then(() => {
       logger.info('User has access to entity');
-      return this.getUserOrProvision(userHandle);
+      return this.getUserOrProvision(userId);
     });
   }
 

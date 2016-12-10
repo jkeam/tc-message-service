@@ -65,7 +65,7 @@ module.exports = (db) => {
 
       const topicPromises = result.map(pgTopic => {
         logger.debug(pgTopic.dataValues);
-        return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.handle).then((response) => {
+        return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.userId.toString()).then((response) => {
           logger.info(`Topic received from discourse: ${pgTopic.discourseTopicId}`);
           response.tag = pgTopic.tag;
           return response;
@@ -75,13 +75,13 @@ module.exports = (db) => {
           logger.debug(error.response && error.response.data);
           logger.info(`Failed to get topic from discourse: ${pgTopic.discourseTopicId}`);
 
-          // If 403, it is possible that the user simply hasn't been granted access to the topic yet
+          // If 403, it is possi ble that the user simply hasn't been granted access to the topic yet
           if (error.response && (error.response.status == 500 || error.response.status == 403 || error.response.status == 422)) {
             logger.info(`User doesn\'t have access to topic ${pgTopic.discourseTopicId}, checking access and provisioning`);
 
             if (!checkAccessAndProvisionPromise) {
               // Check and provision is only needed to be done once
-              checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.authToken, req.id, req.authUser.handle,
+              checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.authToken, req.id, req.authUser.userId.toString(),
                 filter.reference, filter.referenceId);
             }
 
@@ -90,11 +90,11 @@ module.exports = (db) => {
               logger.debug(discourseUser);
               // Grant access to the topic to the user
               logger.info(`User entity access verified, granting access to topic ${pgTopic.discourseTopicId}`);
-              return discourseClient.grantAccess(req.authUser.handle, pgTopic.discourseTopicId);
+              return discourseClient.grantAccess(req.authUser.userId.toString(), pgTopic.discourseTopicId);
             }).then((response) => {
               logger.debug(response.data);
               logger.info(`Succeeded to grant access to topic ${pgTopic.discourseTopicId}`);
-              return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.handle);
+              return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.userId.toString());
             }).then((response) => {
               logger.info(`Topic received from discourse ${pgTopic.discourseTopicId}`);
               response.tag = pgTopic.tag;
@@ -137,7 +137,7 @@ module.exports = (db) => {
       Promise.all(topics.filter(topic => !topic.read).map(topic => {
         if (topic.post_stream && topic.post_stream.posts && topic.post_stream.posts.length > 0) {
           var postIds = topic.post_stream.posts.map(post => post.post_number);
-          return discourseClient.markTopicPostsRead(req.authUser.handle, topic.id, postIds);
+          return discourseClient.markTopicPostsRead(req.authUser.userId.toString(), topic.id, postIds);
         } else {
           return Promise.resolve();
         }
