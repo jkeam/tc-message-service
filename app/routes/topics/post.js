@@ -37,9 +37,9 @@ module.exports = (db) => {
     return Promise.each(handles, (handle) => {
         return adapter.userIdLookup(handle).then((userId) => {
           if(userId){
-            handleMap[handle] = userId.toString()
+            handleMap[handle] = userId.toString();
           } else {
-            logger.error(`Cannot find user with userId ${userId}`);
+            logger.error(`Cannot find user with handle ${handle}`);
           }
         })
       }).then(() => {

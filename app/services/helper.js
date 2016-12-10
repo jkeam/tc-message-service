@@ -6,7 +6,7 @@ var Discourse = require('./discourse');
 var axios = require('axios');
 var errors = require('common-errors');
 var util = require('../util');
-
+var Promise = require('bluebird');
 /**
  * Returns helper service containing common functions used in route handlers
  * logger: the logger
@@ -187,12 +187,55 @@ module.exports = (logger, db) => {
     });
   }
 
+
+  /**
+   * Returns handle or userId from @ mentions
+   * match: @ mention
+   */
+  function getContentFromMatch(match) {
+    return match.slice(2);
+  }
+
+  function mentionUserIdToHandle(post) {
+    var userIdRex = />(@[^\<]+)/g;
+    var htmlRex = /s\/([^\"]+)/g;
+    var userIds = _.map(post.match(userIdRex), getContentFromMatch);
+    var handleMap = {};
+    return Promise.each(userIds, (userId) => {
+      return this.lookupUserFromId(userId).then((data) => {
+        var handle = data.handle;
+        if (handle) {
+          handleMap[userId] = handle;
+        } else {
+          logger.error(`Cannot find user with userId ${userId}`);
+        }
+      }).catch(e => {
+        logger.info(`not valid mention ${userId}`)
+      })
+    }).then(() => {
+      return post.replace(userIdRex, (match) => {
+        var handle = handleMap[getContentFromMatch(match)];
+        if (handle) {
+          return '>@' + handle;
+        }
+        return match;
+      }).replace(htmlRex, (match) => {
+        var handle = handleMap[getContentFromMatch(match)];
+        if (handle) {
+          return 's/' + handle;
+        }
+        return match;
+      });
+    })
+  }
+
   return {
     getTopcoderUser: getTopcoderUser,
     lookupUserHandles: lookupUserHandles,
     lookupUserFromId: lookupUserFromId,
     userHasAccessToEntity: userHasAccessToEntity,
     getUserOrProvision: getUserOrProvision,
-    checkAccessAndProvision: checkAccessAndProvision
+    checkAccessAndProvision: checkAccessAndProvision,
+    mentionUserIdToHandle: mentionUserIdToHandle
   };
 }

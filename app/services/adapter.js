@@ -106,31 +106,34 @@ function Adapter(logger, db) {
         // logger.debug('result', result)
         if (result.discourseTopic.post_stream && result.discourseTopic.post_stream.posts) {
           return Promise.each(result.discourseTopic.post_stream.posts, discoursePost => {
-            var userId = discoursePost.username;
+            return helper.mentionUserIdToHandle(discoursePost.cooked)
+              .then((postBody) => {
+                var userId = discoursePost.username;
 
-            if (discoursePost.created_at > result.topic.lastActivityAt) {
-              result.topic.lastActivityAt = discoursePost.created_at;
-            }
-            if (discoursePost.action_code == 'invited_user' && discoursePost.action_code_who) {
-              result.topic.retrievedPosts--;
-              result.topic.posts.push({
-                id: discoursePost.id,
-                date: discoursePost.created_at,
-                userId: userId,
-                read: true,
-                body: discoursePost.action_code_who + ' joined the discussion',
-                type: 'user-joined'
-              });
-            } else {
-              result.topic.posts.push({
-                id: discoursePost.id,
-                date: discoursePost.created_at,
-                userId: userId,
-                read: discoursePost.read,
-                body: discoursePost.cooked,
-                type: 'post'
-              });
-            }
+                if (discoursePost.created_at > result.topic.lastActivityAt) {
+                  result.topic.lastActivityAt = discoursePost.created_at;
+                }
+                if (discoursePost.action_code == 'invited_user' && discoursePost.action_code_who) {
+                  result.topic.retrievedPosts--;
+                  result.topic.posts.push({
+                    id: discoursePost.id,
+                    date: discoursePost.created_at,
+                    userId: userId,
+                    read: true,
+                    body: discoursePost.action_code_who + ' joined the discussion',
+                    type: 'user-joined'
+                  });
+                } else {
+                  result.topic.posts.push({
+                    id: discoursePost.id,
+                    date: discoursePost.created_at,
+                    userId: userId,
+                    read: discoursePost.read,
+                    body: postBody,
+                    type: 'post'
+                  });
+                }
+              })
           }).then(() => {
             return result;
           });
