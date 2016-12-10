@@ -9,13 +9,13 @@
 		"7712164b-b896-2f1d-1992-7da3cc8f839f",
 		"82af2840-5091-0314-63e6-2b8f0e0c7925",
 		"d738c1bc-c0d1-e1d2-fcbe-bf8a217a33ca",
-		"04c45749-5f3f-cf79-61fc-d5460e3d7e4d"
+		"04c45749-5f3f-cf79-61fc-d5460e3d7e4d",
+		"fc3718b7-4688-3083-863e-061f8470ce70"
 	],
 	"folders": [],
 	"timestamp": 1471197995712,
 	"owner": "270275",
 	"public": false,
-	"hasRequests": true,
 	"requests": [
 		{
 			"id": "04c45749-5f3f-cf79-61fc-d5460e3d7e4d",
@@ -31,7 +31,7 @@
 			"currentHelper": "normal",
 			"helperAttributes": {},
 			"time": 1481401328386,
-			"name": "Reply Topic (magrathean, submission 455, PRIMARY)",
+			"name": "Create Post (magrathean, submission 455, PRIMARY)",
 			"description": "",
 			"collectionId": "f98d4a65-a7e9-4ad6-bd90-5a20f16a2116",
 			"responses": [],
@@ -148,6 +148,27 @@
 			"description": "",
 			"collectionId": "f98d4a65-a7e9-4ad6-bd90-5a20f16a2116",
 			"responses": []
+		},
+		{
+			"id": "fc3718b7-4688-3083-863e-061f8470ce70",
+			"headers": "Authorization: Bearer {{magratheanToken}}\nContent-Type: application/json\n",
+			"url": "{{URL}}/v4/topics/40/posts?postIds=71",
+			"pathVariables": {},
+			"preRequestScript": null,
+			"method": "GET",
+			"collectionId": "f98d4a65-a7e9-4ad6-bd90-5a20f16a2116",
+			"data": [],
+			"dataMode": "raw",
+			"name": "Get post (magrathean, submission 455, PRIMARY)",
+			"description": "",
+			"descriptionFormat": "html",
+			"time": 1481406344078,
+			"version": 2,
+			"responses": [],
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"rawModeData": "{\n    \"post\": \"submission @test_user1 @magrathean hello\"\n}"
 		}
 	]
 }

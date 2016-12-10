@@ -190,11 +190,16 @@ module.exports = (logger, db) => {
 
   /**
    * Returns handle or userId from @ mentions
-   * match: @ mention
+   * match:  @mention
    */
   function getContentFromMatch(match) {
     return match.slice(2);
   }
+
+  /**
+   * Returns converts mentions from discourse @userId to @handles
+   * match: converted string
+   */
 
   function mentionUserIdToHandle(post) {
     var userIdRex = />(@[^\<]+)/g;
@@ -236,6 +241,7 @@ module.exports = (logger, db) => {
     userHasAccessToEntity: userHasAccessToEntity,
     getUserOrProvision: getUserOrProvision,
     checkAccessAndProvision: checkAccessAndProvision,
+    getContentFromMatch: getContentFromMatch,
     mentionUserIdToHandle: mentionUserIdToHandle
   };
 }

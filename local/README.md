@@ -141,6 +141,7 @@ And execute the following statement:
 
 ```
 insert into "referenceLookups" (reference, endpoint, "createdAt", "updatedAt") values ('submission', 'http://local.topcoder-dev.com:3001/submissions/{id}', now(), now());
+CREATE DATABASE messages_test;
 ```
 
 ## Setup Discourse and Enable SSO

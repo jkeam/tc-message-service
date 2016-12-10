@@ -36,14 +36,17 @@ function Adapter(logger, db) {
   }
 
   function convertPost(userId, input) {
-    return {
-      id: input.id,
-      date: input.created_at,
-      userId: userId,
-      read: true,
-      body: input.cooked,
-      type: 'post'
-    }
+    return helper.mentionUserIdToHandle(input.cooked)
+      .then((postBody) => {
+        return {
+          id: input.id,
+          date: input.created_at,
+          userId: userId,
+          read: true,
+          body: postBody,
+          type: 'post'
+        }
+      });
   }
 
   this.adaptPosts = function(input) {
@@ -51,8 +54,7 @@ function Adapter(logger, db) {
     var result = [];
 
     return Promise.each(input.post_stream.posts, (post) => {
-      result.push(convertPost(userId, post));
-      return result;
+      return convertPost(userId, post).then((cpost) => result.push(cpost))
     }).then(() => {
       return result;
     });
