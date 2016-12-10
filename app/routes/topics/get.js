@@ -50,7 +50,7 @@ module.exports = (db) => {
       let checkAccessAndProvisionPromise = null;
 
       logger.debug(pgTopic.dataValues);
-      return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.handle).then((response) => {
+      return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.userId.toString()).then((response) => {
         logger.info(`Topic received from discourse: ${pgTopic.discourseTopicId}`);
         response.tag = pgTopic.tag;
         return response;
@@ -66,7 +66,7 @@ module.exports = (db) => {
 
           if (!checkAccessAndProvisionPromise) {
             // Check and provision is only needed to be done once
-            checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.authToken, req.id, req.authUser.handle,
+            checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.authToken, req.id, req.authUser.userId.toString(),
               filter.reference, filter.referenceId);
           }
 
@@ -74,10 +74,10 @@ module.exports = (db) => {
           return checkAccessAndProvisionPromise.then((discourseUser) => {
             // Grant access to the topic to the user
             logger.info(`User entity access verified, granting access to topic ${pgTopic.discourseTopicId}`);
-            return discourseClient.grantAccess(req.authUser.handle, pgTopic.discourseTopicId);
+            return discourseClient.grantAccess(req.authUser.userId.toString(), pgTopic.discourseTopicId);
           }).then((response) => {
             logger.info(`Succeeded to grant access to topic ${pgTopic.discourseTopicId}`);
-            return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.handle);
+            return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.userId.toString());
           }).then((response) => {
             logger.info(`Topic received from discourse ${pgTopic.discourseTopicId}`);
             return response;
