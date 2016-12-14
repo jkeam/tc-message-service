@@ -16,7 +16,7 @@ export AWS_SECRET_ACCESS_KEY=$(eval "echo \$${ENV}_AWS_SECRET_ACCESS_KEY")
 EB_OUTPUT="$(eb deploy tc-message-api-v4-${ENV_LOWER} -l $TAG -r us-east-1)"
 echo $EB_OUTPUT
 if echo $EB_OUTPUT | grep -iq error; then
-then
  exit 1
+else
+  exit 0
 fi
-exit 0
