@@ -23,7 +23,7 @@ module.exports = (db) => {
     }
 
     var postIds = req.query.postIds.split(',');
-    return discourseClient.getPosts(req.authUser.handle, req.params.topicId, postIds)
+    return discourseClient.getPosts(req.authUser.userId.toString(), req.params.topicId, postIds)
       .then((response) => {
         logger.info('Fetched posts from discourse');
         return adapter.adaptPosts(response.data)

@@ -71,17 +71,17 @@ Install the sequelize command line interface by following the instructions found
 Update your localhost entry in your hosts file (/etc/hosts) to map talk.topcoder.com and local.topcoder-dev.com to the ip address in which your docker containers will run:
 On Linux it is the local host itself:
 ```
-127.0.0.1	localhost local.topcoder-dev.com talk.topcoder.com
+127.0.0.1	localhost local.topcoder-dev.com talk.topcoder.com talk.topcoder-dev.com
 ```
 On Windows it is the ip address of the docker machine, find it with the command "docker-machine ip", below is the default:
 C:\Windows\System32\drivers\etc\hosts
 ```
-192.168.99.100	local.topcoder-dev.com talk.topcoder.com
+192.168.99.100	local.topcoder-dev.com talk.topcoder.com talk.topcoder-dev.com
 ```
 On Mac OS X it is the ip address of the docker virtual machine, find it with the command "docker-machine ip", below is the default
 /etc/hosts
 ```
-192.168.99.100	 local.topcoder-dev.com talk.topcoder.com
+192.168.99.100	 local.topcoder-dev.com talk.topcoder.com talk.topcoder-dev.com
 ```
 If docker runs no machine, then map to 127.0.0.1 as on Linux.
 
@@ -141,6 +141,7 @@ And execute the following statement:
 
 ```
 insert into "referenceLookups" (reference, endpoint, "createdAt", "updatedAt") values ('submission', 'http://local.topcoder-dev.com:3001/submissions/{id}', now(), now());
+CREATE DATABASE messages_test;
 ```
 
 ## Setup Discourse and Enable SSO
@@ -187,25 +188,25 @@ rake admin:create
 rake api_key:get
 
 The `config/default.json` file contains the following discourse and sso related properties:
-* discourseURL - this is the disource host url, no need to change. 
+* discourseURL - this is the disource host url, no need to change.
 * discourseApiKey - this is the discourse api key, set to the api-key obtained above.
 * discourseSSO
 ** secret - the discourse sso secret, need to be the same as the value on discouse settings page
 ** loginCookieName - the login cookie name to obtain the jwt token
 ** loginUrl - the login url to redirect to
 
-To enable sso in discourse, login discourse with the admin account created above. 
+To enable sso in discourse, login discourse with the admin account created above.
 Click on the menu icon (top right corner) and select Admin.
 Click on the Settings tab and then on the Login menu item
 Scroll down and do as below:
-* activate 'enable sso', 
+* activate 'enable sso',
 * activate 'sso overrides email'
 * activate 'sso overrides username'
 * activate 'sso overrides name'
 * set 'sso url' to the sso endpoint of this message service. e.g. http://127.0.0.1:3000/sso
 * set 'sso secret' to the same value as the `discourseSSO.secret` in the `config/default.json` file, e.g. secret12345
 
-Still on the settings tab, click the 'Users' menu and set 'logout redirect' to a logout endpoint. 
+Still on the settings tab, click the 'Users' menu and set 'logout redirect' to a logout endpoint.
 Still on the settings tab, click the 'SSO Redirect' menu and add host of sso-url to the 'sso redirect domain whitelist'
 
 Note that the 'SSO Redirect' menu appeared after restarting the docker container in /var/discourse directory:
@@ -219,12 +220,12 @@ sudo ./launcher start app
 We need to set the following 2 environment variables:
 
 ```
-export DISCOURSE_API_KEY=<<SYSTEM USER API KEY>> 
+export DISCOURSE_API_KEY=<<SYSTEM USER API KEY>>
 export DEFAULT_DISCOURSE_PW=supersecretpw
 ```
 
 DEFAULT_DISCOURSE_PW defines the default password for users which will be created in Discourse automatically.
-The system user's API key is obtained in the last step from discourse. 
+The system user's API key is obtained in the last step from discourse.
 
 # Running the Service
 
@@ -248,7 +249,7 @@ JWT is used to authenticate calls to the service, and an unexpired JWT token is 
 This JWT token can be used to impersonate the user magrathean:
 
 ```
-eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiIxMzI0NTYiLCJpYXQiOjE0NTA5MjkyNDYsImVtYWlsIjpudWxsLCJqdGkiOiIxMzY5YzYwMC1lMGExLTQ1MjUtYTdjNy01NmJlN2Q4MTNmNTEifQ.n_gFPaAVca300AZqjVdHETzNGexcsJsh1ePSAaMtJxk
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiI0MDAxMTU3OCIsImlhdCI6MTQ1MDkyOTI0NiwiZW1haWwiOm51bGwsImp0aSI6IjEzNjljNjAwLWUwYTEtNDUyNS1hN2M3LTU2YmU3ZDgxM2Y1MSJ9.SeLETowyDVJCGKGc0wjk4fPMH9pug7C9Yw_7xkI7Fvk
 ```
 
 You can make changes to test with different users by going to jwt.io, and pasting the token above in the editor on that page. You can make changes on the "Decoded" side of the editor and that will be reflected in the token that you can then use to sign your requests, therefore impersonating other users.
@@ -260,7 +261,7 @@ Note: The signature key used for the local environment is "secret", which is con
 The following curl command will check if the user has access to the submission 455, fetch a thread, creating the thread if necessary, and provisioning a new user in discourse if necessary:
 
 ```
-curl -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiIxMzI0NTYiLCJpYXQiOjE0NTA5MjkyNDYsImVtYWlsIjpudWxsLCJqdGkiOiIxMzY5YzYwMC1lMGExLTQ1MjUtYTdjNy01NmJlN2Q4MTNmNTEifQ.n_gFPaAVca300AZqjVdHETzNGexcsJsh1ePSAaMtJxk" "http://localhost:3000/v4/topics?filter=reference%3Dsubmission%26referenceId%3D455"
+curl -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiI0MDAxMTU3OCIsImlhdCI6MTQ1MDkyOTI0NiwiZW1haWwiOm51bGwsImp0aSI6IjEzNjljNjAwLWUwYTEtNDUyNS1hN2M3LTU2YmU3ZDgxM2Y1MSJ9.SeLETowyDVJCGKGc0wjk4fPMH9pug7C9Yw_7xkI7Fvk" "http://localhost:3000/v4/topics?filter=reference%3Dsubmission%26referenceId%3D455"
 ```
 
 You can also create posts in existing threads by doing the following:
@@ -274,7 +275,7 @@ First, Create `payload` file in the current directory, where the file content is
 
 Then, run the following command, `@payload` is referencing the created file above.
 ```
-curl -X POST -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiIxMzI0NTYiLCJpYXQiOjE0NTA5MjkyNDYsImVtYWlsIjpudWxsLCJqdGkiOiIxMzY5YzYwMC1lMGExLTQ1MjUtYTdjNy01NmJlN2Q4MTNmNTEifQ.n_gFPaAVca300AZqjVdHETzNGexcsJsh1ePSAaMtJxk" -H "Content-Type: application/json" "http://localhost:3000/v4/threads" -d @payload
+curl -X POST -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiI0MDAxMTU3OCIsImlhdCI6MTQ1MDkyOTI0NiwiZW1haWwiOm51bGwsImp0aSI6IjEzNjljNjAwLWUwYTEtNDUyNS1hN2M3LTU2YmU3ZDgxM2Y1MSJ9.SeLETowyDVJCGKGc0wjk4fPMH9pug7C9Yw_7xkI7Fvk" -H "Content-Type: application/json" "http://localhost:3000/v4/threads" -d @payload
 ```
 
 
