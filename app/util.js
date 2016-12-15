@@ -15,7 +15,10 @@ var token = null
 function isValid(_token) {
   var decoded = jwt.decode(_token, {complete: true});
   var now = Date.now() / 100 - 100
-  return decoded.payload.exp > now
+  if(decoded){
+    return decoded.payload.exp > now
+  }
+  return false;
 }
 
 var util = _.cloneDeep(require('tc-core-library-js').util(config))
@@ -33,7 +36,7 @@ _.assign(util, {
 
     id = id || 'system'
     const httpClient = util.getHttpClient({id: id, log: logger})
-    const url = `${config.get('identityServiceEndpoint')}authorizations`
+    const url = `${config.get('identityServiceEndpoint')}authorizations/`
     const formData = `clientId=${config.get('systemUserClientId')}&secret=${encodeURIComponent(config.get('systemUserClientSecret'))}`
     // logger.debug(url, formData)
     return httpClient.post(url, formData,
