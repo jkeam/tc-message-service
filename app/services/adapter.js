@@ -41,7 +41,7 @@ function Adapter(logger, db) {
         return {
           id: input.id,
           date: input.created_at,
-          userId: userId,
+          userId: userId !== 'system' ? parseInt(userId) : userId,
           read: true,
           body: postBody,
           type: 'post'
@@ -74,6 +74,7 @@ function Adapter(logger, db) {
 
     return Promise.each(discourseTopics, discourseTopic => {
       var userId = discourseTopic.post_stream.posts[0].username;
+      userId = userId !== 'system' ? parseInt(userId) : userId
       logger.debug('DT', discourseTopic.title)
       return db.topics.find({
           where: {
