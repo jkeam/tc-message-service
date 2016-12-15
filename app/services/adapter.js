@@ -111,8 +111,8 @@ function Adapter(logger, db) {
             return helper.mentionUserIdToHandle(discoursePost.cooked)
               .then((postBody) => {
                 var userId = discoursePost.username;
-
-                if (discoursePost.created_at > result.topic.lastActivityAt) {
+                // ignore createdAt for invited_user type posts
+                if (discoursePost.action_code !== 'invited_user' && discoursePost.created_at > result.topic.lastActivityAt) {
                   result.topic.lastActivityAt = discoursePost.created_at;
                 }
                 if (discoursePost.action_code == 'invited_user' && discoursePost.action_code_who) {
