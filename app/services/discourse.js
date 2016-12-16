@@ -26,7 +26,7 @@ var Discourse = (logger) => {
     logger.debug('SUCCESS', resp.config.url)
     return resp
   }, (err) => {
-    logger.error('Discourse Failed', err)
+    logger.error('Discourse Failed', JSON.stringify(err))
     return Promise.reject(err)
   })
 
