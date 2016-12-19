@@ -125,6 +125,7 @@ module.exports = (db) => {
               throw error;
             }
           }).catch((error) => {
+            logger.error('Failed to create topic', JSON.stringify(error))
             if (error.status || error.response && error.response.status) {
               const message = _.get(error, 'response.data.errors[0]') || error.message;
               throw new errors.HttpStatusError(error.status || error.response.status, `Failed to create topic in Discourse: ${message}`);
