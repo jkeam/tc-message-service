@@ -114,6 +114,7 @@ module.exports = (logger, db) => {
    * userHandle: handle of the user to fetch
    */
   function getUserOrProvision(userHandle) {
+    logger.debug('Verifying if user exsits in Discorse:', userHandle)
     return discourseClient.getUser(userHandle).then((user) => {
       // logger.debug(user);
       logger.info('Successfully got the user from Discourse', userHandle);
