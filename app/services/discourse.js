@@ -22,13 +22,13 @@ var Discourse = (logger) => {
     api_username: DISCOURSE_SYSTEM_USERNAME
   }
 
-  client.interceptors.response.use((resp) => {
-    logger.debug('SUCCESS', resp.config.url)
-    return resp
-  }, (err) => {
-    logger.error('Discourse Failed', JSON.stringify(err))
-    return Promise.reject(err)
-  })
+  // client.interceptors.response.use((resp) => {
+  //   logger.debug('SUCCESS', resp.config.url)
+  //   return resp
+  // }, (err) => {
+  //   logger.error(err)
+  //   return Promise.reject(err)
+  // })
 
   /**
    * Fetches a Discourse user by username
@@ -72,6 +72,11 @@ var Discourse = (logger) => {
         title: title,
         raw: post
       }
+    })
+    .catch((err) => {
+      logger.error('Error creating topic')
+      logger.error(err)
+      return Promise.reject(err)
     })
   }
 

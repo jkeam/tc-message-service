@@ -132,9 +132,9 @@ module.exports = (logger, db) => {
    * Get user from discourse provision a user in Discourse if one doesn't exist
    * userId: userId of the user to fetch
    */
-  function getUserOrProvision(userId) {
-    return discourseClient.getUser(userId).then((user) => {
-      // logger.debug(user);
+  function getUserOrProvision(userHandle) {
+    logger.debug('Verifying if user exsits in Discorse:', userHandle)
+    return discourseClient.getUser(userHandle).then((user) => {
       logger.info('Successfully got the user from Discourse', userId);
       return user;
     }).catch((error) => {
