@@ -73,11 +73,11 @@ var Discourse = (logger) => {
         raw: post
       }
     })
-    .catch((err) => {
-      logger.error('Error creating topic')
-      logger.error(err)
-      return Promise.reject(err)
-    })
+    // .catch((err) => {
+    //   logger.error('Error creating topic')
+    //   logger.error(err)
+    //   return Promise.reject(err)
+    // })
   }
 
   /**
