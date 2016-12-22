@@ -114,9 +114,9 @@ module.exports = (logger, db) => {
    * userHandle: handle of the user to fetch
    */
   function getUserOrProvision(userHandle) {
-    logger.debug('Verifying if user exsits in Discorse:', userHandle)
+    logger.debug('Verifying if user exsits in Discourse:', userHandle)
     return discourseClient.getUser(userHandle).then((user) => {
-      // logger.debug(user);
+      logger.debug(user);
       logger.info('Successfully got the user from Discourse', userHandle);
       return user;
     }).catch((error) => {
@@ -133,14 +133,23 @@ module.exports = (logger, db) => {
           return discourseClient.createUser(encodeURIComponent(user.firstName) + ' ' + encodeURIComponent(user.lastName),
             user.handle,
             user.email,
-            config.defaultDiscoursePw);
+            config.defaultDiscoursePw,
+            _.get(user, 'photoURL', null));
         }).then((result) => {
           if (result.data.success) {
-            logger.info('Discourse user created');
-            return result.data;
+            logger.info('Discourse user created')
           } else {
             logger.error('Unable to create discourse user', result.data);
             throw new errors.HttpStatusError(500, 'Unable to create discourse user');
+          }
+          return discourseClient.changeTrustLevel(result.data.user_id, config.get('defaultUserTrustLevel'));
+        }).then((result) => {
+          if (result.status == 200) {
+            logger.info('Discourse user trust level changed');
+            return result.data;
+          } else {
+            logger.error('Unable to change discourse user trust level', result);
+            throw new errors.HttpStatusError(500, 'Unable to change discourse user trust level');
           }
         }).catch((error) => {
           logger.error('Failed to create discourse user', error);

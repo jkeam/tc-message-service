@@ -22,13 +22,13 @@ var Discourse = (logger) => {
     api_username: DISCOURSE_SYSTEM_USERNAME
   }
 
-  // client.interceptors.response.use((resp) => {
-  //   logger.debug('SUCCESS', resp.config.url)
-  //   return resp
-  // }, (err) => {
-  //   logger.error(err)
-  //   return Promise.reject(err)
-  // })
+  client.interceptors.response.use((resp) => {
+    logger.debug('SUCCESS', resp.config.url)
+    return resp
+  }, (err) => {
+    logger.error('Discourse call failed: ', _.pick(err.response, ['config', 'data']))
+    return Promise.reject(err)
+  })
 
   /**
    * Fetches a Discourse user by username
@@ -46,8 +46,9 @@ var Discourse = (logger) => {
    * email: email of the user, must be unique
    * password: password of the user, this will be ignored since we will be using SSO
    */
-  this.createUser = (name, username, email, password) => {
+  this.createUser = (name, username, email, password, photoUrl) => {
     logger.debug('Creating user in discourse:', name, username, email)
+    // TODO: add photo URL
     return client.post('/users', {
       name: name,
       username: username,
@@ -163,6 +164,19 @@ var Discourse = (logger) => {
         api_username: username
       }
     });
+  }
+
+  /**
+   * Changes trust level of existing user
+   * user_id: user's discourse user_id
+   * level: new trust level
+   */
+  this.changeTrustLevel = (user_id, level) => {
+    logger.debug('Changing trust level of user in discourse:', user_id)
+    return client.put(`/admin/users/${user_id}/trust_level`, {
+      user_id: user_id,
+      level: level,
+    })
   }
 
   return this;

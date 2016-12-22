@@ -21,5 +21,6 @@
     "secret": "secret12345",
     "loginCookieName": "jwtToken",
     "loginUrl": "http://192.168.1.100:3000"
-  }
+  },
+  "defaultUserTrustLevel": 2
 }
