@@ -80,14 +80,13 @@ module.exports = (db) => {
             // If 403 or 422, it is possible that the user simply hasn't been created in Discourse yet
             if (error.response && (error.response.status == 500 || error.response.status == 403 || error.response.status == 422)) {
               logger.info('Failed to create topic in Discourse, checking user exists in Discourse and provisioning');
-              const getUserPromises = _.map(users, user => {
+              return Promise.map(users, user => {
                 if (user !== DISCOURSE_SYSTEM_USERNAME) {
                   return helper.getUserOrProvision(user)
                 } else {
                   return new Promise.resolve()
                 }
-              })
-              return Promise.all(getUserPromises).then(() => {
+              }).then(() => {
                 logger.info('User(s) exists in Discourse, trying to create topic again');
                 return Promise.coroutine(function*() {
                   // createPrivatePost may fail again if called too soon. Trying over and over again until success or timeout
@@ -98,8 +97,10 @@ module.exports = (db) => {
                       logger.debug(`attempt number ${i}`);
                       return yield discourseClient.createPrivatePost(params.title, params.body, users.join(','), req.authUser.userId.toString());
                     } catch (e) {
-                      if (error.response && (error.response.status == 403 || error.response.status == 422)) {
-                        logger.debug(`Failed to create create private post. (attempt #${i}, error: ${error})`);
+                      if (e.response && (e.response.status == 403 || e.response.status == 422)) {
+                        logger.debug(`Failed to create create private post. (attempt #${i}, error: ${e})`);
+
+
                         // logger.debug(error.response && error.response.status);
                         // logger.debug(error.response && error.response.data);
                         const timeLeftMs = endTimeMs - new Date().getTime();

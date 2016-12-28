@@ -160,6 +160,19 @@ var Discourse = (logger) => {
     });
   }
 
+  /**
+   * Changes trust level of existing user
+   * user_id: user's discourse user_id
+   * level: new trust level
+   */
+  this.changeTrustLevel = (user_id, level) => {
+    logger.debug('Changing trust level of user in discourse:', user_id)
+    return client.put(`/admin/users/${user_id}/trust_level`, {
+      user_id: user_id,
+      level: level,
+    })
+  }
+
   return this;
 }
 

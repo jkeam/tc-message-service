@@ -155,10 +155,18 @@ module.exports = (logger, db) => {
         }).then((result) => {
           if (result.data.success) {
             logger.info('Discourse user created');
-            return result.data;
           } else {
             logger.error('Unable to create discourse user', result.data);
             throw new errors.HttpStatusError(500, 'Unable to create discourse user');
+          }
+          return discourseClient.changeTrustLevel(result.data.user_id, config.get('defaultUserTrustLevel'));
+        }).then((result) => {
+          if (result.status == 200) {
+            logger.info('Discourse user trust level changed');
+            return result;
+          } else {
+            logger.error('Unable to change discourse user trust level', result);
+            throw new errors.HttpStatusError(500, 'Unable to change discourse user trust level');
           }
         }).catch((error) => {
           logger.error('Failed to create discourse user', error);

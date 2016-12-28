@@ -154,7 +154,7 @@ git clone https://github.com/discourse/discourse_docker.git /var/discourse
 cd /var/discourse
 ./discourse-setup
 
-# Answer the following questions when prompted:
+# Answer the following questions when prompted:*
 #   Hostname for your Discourse? [discourse.example.com]: localhost
 #   Email address for admin account? [me@example.com]: myname@gmail.com
 #   SMTP server address? [smtp.example.com]: smtp.gmail.com
@@ -171,7 +171,7 @@ rake plugin:install["https://github.com/FutureProofGames/discourse_sso_redirect.
 
 # create admin acount
 rake admin:create
-
+*
 # answer the following questions:
 #   Email: admin@example.com
 #   Password: password
@@ -205,7 +205,7 @@ Scroll down and do as below:
 * activate 'sso overrides name'
 * set 'sso url' to the sso endpoint of this message service. e.g. http://127.0.0.1:3000/sso
 * set 'sso secret' to the same value as the `discourseSSO.secret` in the `config/default.json` file, e.g. secret12345
-
+-*
 Still on the settings tab, click the 'Users' menu and set 'logout redirect' to a logout endpoint.
 Still on the settings tab, click the 'SSO Redirect' menu and add host of sso-url to the 'sso redirect domain whitelist'
 
@@ -222,7 +222,7 @@ We need to set the following 2 environment variables:
 ```
 export DISCOURSE_API_KEY=<<SYSTEM USER API KEY>>
 export DEFAULT_DISCOURSE_PW=supersecretpw
-```
+**-```
 
 DEFAULT_DISCOURSE_PW defines the default password for users which will be created in Discourse automatically.
 The system user's API key is obtained in the last step from discourse.
@@ -239,7 +239,7 @@ To see pretty logging on local development use the following command instead:
 ```
 npm run local-start
 ```
-
+-*
 # Testing the service
 
 ## Obtaining a JWT token
@@ -256,7 +256,7 @@ You can make changes to test with different users by going to jwt.io, and pastin
 
 Note: The signature key used for the local environment is "secret", which is configured in the tc-message-service/config/default.json
 
-## Making a Request
+## *-Making a Request*
 
 The following curl command will check if the user has access to the submission 455, fetch a thread, creating the thread if necessary, and provisioning a new user in discourse if necessary:
 
@@ -273,7 +273,7 @@ First, Create `payload` file in the current directory, where the file content is
 }
 ```
 
-Then, run the following command, `@payload` is referencing the created file above.
+Th-en, run the following command, `@*paylo*-ad` is referencing the created file above.
 ```
 curl -X POST -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiI0MDAxMTU3OCIsImlhdCI6MTQ1MDkyOTI0NiwiZW1haWwiOm51bGwsImp0aSI6IjEzNjljNjAwLWUwYTEtNDUyNS1hN2M3LTU2YmU3ZDgxM2Y1MSJ9.SeLETowyDVJCGKGc0wjk4fPMH9pug7C9Yw_7xkI7Fvk" -H "Content-Type: application/json" "http://localhost:3000/v4/threads" -d @payload
 ```
@@ -290,3 +290,4 @@ Then you can check coverage report in coverage folder.
 
 ## Postman
 You can also verify the service using Postman. For this load files from the local/postman directory into Postman.
+-----*-------------------------+-+----*-***-*-*
