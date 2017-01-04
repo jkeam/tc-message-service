@@ -32,7 +32,7 @@ module.exports = (logger, db) => {
         }).join(' OR ')
       }
     }).then(response => {
-      logger.debug('UserHandle response', response.data)
+      // logger.debug('UserHandle response', response.data)
       var data = _.get(response, 'data.result.content', null)
       if (!data)
         throw new Error('Response does not have result.content');
@@ -45,18 +45,10 @@ module.exports = (logger, db) => {
    * userId: userId of user
    */
   function lookupUserFromId(userId) {
-
-    return axios.get(`${config.get('memberServiceUrl')}?`, {
-      params: {
-        query: `result.content.userId=${userId}`
-      }
-    }).then(response => {
-      //logger.debug('UserHandle response', response.data)
-      var data = response.data[0].result.content
-      if (!data)
-        throw new Error('Response does not have content');
-      return data
-    })
+    return lookupUserHandles([userId])
+      .then(handles => {
+        return getTopcoderUser(handles[0])
+      })
   }
 
   /**
@@ -79,7 +71,7 @@ module.exports = (logger, db) => {
         })
       })
       .then(response => {
-        logger.debug('retrieved user', response.data);
+        // logger.debug('retrieved user', response.data);
         if (!_.get(response, 'data.result.content'))
           throw new Error('Response does not have result.content');
         return response.data.result.content;
@@ -132,9 +124,9 @@ module.exports = (logger, db) => {
    * Get user from discourse provision a user in Discourse if one doesn't exist
    * userId: userId of the user to fetch
    */
-  function getUserOrProvision(userHandle) {
-    logger.debug('Verifying if user exsits in Discorse:', userHandle)
-    return discourseClient.getUser(userHandle).then((user) => {
+  function getUserOrProvision(userId) {
+    logger.debug('Verifying if user exsits in Discourse:', userId)
+    return discourseClient.getUser(userId).then((user) => {
       logger.info('Successfully got the user from Discourse', userId);
       return user;
     }).catch((error) => {
@@ -151,14 +143,23 @@ module.exports = (logger, db) => {
           return discourseClient.createUser(encodeURIComponent(user.firstName) + ' ' + encodeURIComponent(user.lastName),
             user.userId.toString(),
             user.email,
-            config.defaultDiscoursePw);
+            config.defaultDiscoursePw,
+            _.get(user, 'photoURL', null));
         }).then((result) => {
           if (result.data.success) {
-            logger.info('Discourse user created');
-            return result.data;
+            logger.info('Discourse user created')
           } else {
             logger.error('Unable to create discourse user', result.data);
             throw new errors.HttpStatusError(500, 'Unable to create discourse user');
+          }
+          return discourseClient.changeTrustLevel(result.data.user_id, config.get('defaultUserTrustLevel'));
+        }).then((result) => {
+          if (result.status == 200) {
+            logger.info('Discourse user trust level changed');
+            return result.data;
+          } else {
+            logger.error('Unable to change discourse user trust level', result);
+            throw new errors.HttpStatusError(500, 'Unable to change discourse user trust level');
           }
         }).catch((error) => {
           logger.error('Failed to create discourse user', error);

@@ -97,12 +97,14 @@ module.exports = (db) => {
                   for (let i = 1;; ++i) {
                     try {
                       logger.debug(`attempt number ${i}`);
+                      // We need update post body for subsequent tries, otherwise system user posts fail - DISCOURSE !
+                      params.body += ' '
                       return yield discourseClient.createPrivatePost(params.title, params.body, users.join(','), req.authUser.userId.toString());
                     } catch (e) {
-                      if (error.response && (error.response.status == 403 || error.response.status == 422)) {
-                        logger.debug(`Failed to create create private post. (attempt #${i}, error: ${error})`);
-                        // logger.debug(error.response && error.response.status);
-                        // logger.debug(error.response && error.response.data);
+                      if (e.response && (e.response.status == 403 || e.response.status == 422)) {
+                        logger.debug(`Failed to create create private post. (attempt #${i}, e: ${e})`);
+                        logger.debug(e.response && e.response.status);
+                        logger.debug(e.response && e.response.data);
                         const timeLeftMs = endTimeMs - new Date().getTime();
                         if (timeLeftMs > 0) {
                           logger.info(`Create topic failed. Trying again after delay (${~~(timeLeftMs / 1000)} seconds left until timeout).`);

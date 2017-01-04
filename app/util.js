@@ -50,6 +50,10 @@ _.assign(util, {
       // console.log('\n\n\nTOKEN:', token)
       return token
     })
+  },
+  isDiscourseAdmin: (_userId) => {
+    const userId = _userId.toString()
+    return config.get('systemUserIds').indexOf(userId) > -1
   }
 })
 
