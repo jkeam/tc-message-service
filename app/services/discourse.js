@@ -47,15 +47,16 @@ var Discourse = (logger) => {
    * email: email of the user, must be unique
    * password: password of the user, this will be ignored since we will be using SSO
    */
-  this.createUser = (name, username, email, password, photoUrl) => {
-    logger.debug('Creating user in discourse:', name, username, email)
+  this.createUser = (name, userId, handle, email, password, photoUrl) => {
+    logger.debug('Creating user in discourse:', name, userId, handle)
     // TODO: add photo URL
     return client.post('/users', {
       name: name,
-      username: username,
+      username: userId,
       email: email,
       password: password,
-      active: true
+      active: true,
+      user_fields: { "1": handle }
     })
   }
 

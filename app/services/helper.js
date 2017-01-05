@@ -142,6 +142,7 @@ module.exports = (logger, db) => {
           // Create discourse user
           return discourseClient.createUser(encodeURIComponent(user.firstName) + ' ' + encodeURIComponent(user.lastName),
             user.userId.toString(),
+            user.handle,
             user.email,
             config.defaultDiscoursePw,
             _.get(user, 'photoURL', null));
