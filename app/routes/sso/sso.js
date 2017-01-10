@@ -55,7 +55,7 @@ module.exports = (logger) => {
 
             logger.debug(decoded);
 
-            var userId = decoded.userId;
+            var userId = decoded.userId.toString();
             var handle = decoded.handle;
             var isAdmin = _.indexOf(decoded.roles, 'administrator') >= 0;
 
@@ -77,10 +77,10 @@ module.exports = (logger) => {
 
                     var data = {
                         nonce: nonce,
-                        username: handle,
+                        username: userId,
                         name: userInfo.firstName + ' ' + userInfo.lastName,
                         email: userInfo.email,
-                        external_id: userId,
+                        external_id: handle,
                         require_activation: false,
                         admin: isAdmin,
                         suppress_welcome_message: true

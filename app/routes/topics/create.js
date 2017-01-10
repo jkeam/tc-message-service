@@ -57,18 +57,18 @@ module.exports = (db) => {
         if (params.reference.toLowerCase() === 'project') {
           var projectMembers = _.get(resp[1], "members", [])
             // get users list
-          var topicUsers = _.map(projectMembers, 'userId')
+          var topicUsers = _.map(projectMembers, (member) => member.userId.toString())
           logger.debug(topicUsers)
-          return helper.lookupUserHandles(topicUsers)
+          return topicUsers
         } else {
-          return new Promise.resolve([req.authUser.handle])
+          return new Promise.resolve([req.authUser.userId.toString()])
         }
       }).then((users) => {
         logger.info('User has access to entity, creating topic in Discourse');
         // add system user
         users.push(DISCOURSE_SYSTEM_USERNAME)
         logger.debug('Users that should be added to topic: ', users)
-        return discourseClient.createPrivatePost(params.title, params.body, users.join(','), req.authUser.handle)
+        return discourseClient.createPrivatePost(params.title, params.body, users.join(','), req.authUser.userId.toString())
           .then((response) => {
             return response;
           }).catch((error) => {
@@ -97,12 +97,14 @@ module.exports = (db) => {
                   for (let i = 1;; ++i) {
                     try {
                       logger.debug(`attempt number ${i}`);
-                      return yield discourseClient.createPrivatePost(params.title, params.body, users.join(','), req.authUser.handle);
+                      // We need update post body for subsequent tries, otherwise system user posts fail - DISCOURSE !
+                      params.body += ' '
+                      return yield discourseClient.createPrivatePost(params.title, params.body, users.join(','), req.authUser.userId.toString());
                     } catch (e) {
-                      if (error.response && (error.response.status == 403 || error.response.status == 422)) {
-                        logger.debug(`Failed to create create private post. (attempt #${i}, error: ${error})`);
-                        // logger.debug(error.response && error.response.status);
-                        // logger.debug(error.response && error.response.data);
+                      if (e.response && (e.response.status == 403 || e.response.status == 422)) {
+                        logger.debug(`Failed to create create private post. (attempt #${i}, e: ${e})`);
+                        logger.debug(e.response && e.response.status);
+                        logger.debug(e.response && e.response.data);
                         const timeLeftMs = endTimeMs - new Date().getTime();
                         if (timeLeftMs > 0) {
                           logger.info(`Create topic failed. Trying again after delay (${~~(timeLeftMs / 1000)} seconds left until timeout).`);
@@ -142,9 +144,9 @@ module.exports = (db) => {
           discourseTopicId: response.data.topic_id,
           tag: params.tag,
           createdAt: new Date(),
-          createdBy: req.authUser.handle,
+          createdBy: req.authUser.userId.toString(),
           updatedAt: new Date(),
-          updatedBy: req.authUser.handle
+          updatedBy: req.authUser.userId.toString()
         });
 
         return pgTopic.save().then(() => {
@@ -153,7 +155,7 @@ module.exports = (db) => {
         });
       }).then((topic) => {
         logger.info('returning topic');
-        return discourseClient.getTopic(topic.topic_id, req.authUser.handle).then(fullTopic => {
+        return discourseClient.getTopic(topic.topic_id, req.authUser.userId.toString()).then(fullTopic => {
           fullTopic.tag = params.tag;
           return adapter.adaptTopics(fullTopic).then(result => {
             if ((result instanceof Array) && result.length == 1) {

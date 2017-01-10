@@ -3,6 +3,7 @@ var Promise = require('bluebird');
 var config = require('config');
 var axios = require('axios');
 var _ = require('lodash');
+var util = require('../util');
 
 
 const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername')
@@ -22,13 +23,13 @@ var Discourse = (logger) => {
     api_username: DISCOURSE_SYSTEM_USERNAME
   }
 
-  // client.interceptors.response.use((resp) => {
-  //   logger.debug('SUCCESS', resp.config.url)
-  //   return resp
-  // }, (err) => {
-  //   logger.error(err)
-  //   return Promise.reject(err)
-  // })
+  client.interceptors.response.use((resp) => {
+    logger.debug('SUCCESS', resp.request.path)
+    return resp
+  }, (err) => {
+    logger.error('Discourse call failed: ', _.pick(err.response, ['config', 'data']))
+    return Promise.reject(err)
+  })
 
   /**
    * Fetches a Discourse user by username
@@ -46,14 +47,16 @@ var Discourse = (logger) => {
    * email: email of the user, must be unique
    * password: password of the user, this will be ignored since we will be using SSO
    */
-  this.createUser = (name, username, email, password) => {
-    logger.debug('Creating user in discourse:', name, username, email)
+  this.createUser = (name, userId, handle, email, password, photoUrl) => {
+    logger.debug('Creating user in discourse:', name, userId, handle)
+    // TODO: add photo URL
     return client.post('/users', {
       name: name,
-      username: username,
+      username: userId,
       email: email,
       password: password,
-      active: true
+      active: true,
+      user_fields: { "1": handle }
     })
   }
 
@@ -64,20 +67,21 @@ var Discourse = (logger) => {
    * users: comma separated list of user names that should be part of the conversation
    */
   this.createPrivatePost = (title, post, users, owner) => {
-    return client.post('/posts', {}, {
-      params: {
+    return client.post('/posts', {
         archetype: 'private_message',
         target_usernames: users,
-        api_username: owner ? owner : DISCOURSE_SYSTEM_USERNAME,
         title: title,
         raw: post
-      }
-    })
-    .catch((err) => {
-      logger.error('Error creating topic')
-      logger.error(err)
-      return Promise.reject(err)
-    })
+      }, {
+        params: {
+          api_username: owner && !util.isDiscourseAdmin(owner) ? owner : DISCOURSE_SYSTEM_USERNAME
+        }
+      })
+      .catch((err) => {
+        logger.error('Error creating topic')
+        logger.error(err)
+        return Promise.reject(err)
+      })
   }
 
   /**
@@ -88,7 +92,7 @@ var Discourse = (logger) => {
   this.getTopic = (topicId, username) => {
     return client.get(`/t/${topicId}.json`, {
         params: {
-          api_username: username
+          api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username
         }
       })
       .then((response) => response.data);
@@ -118,7 +122,7 @@ var Discourse = (logger) => {
     }
     return client.post('/posts', data, {
       params: {
-        api_username: username
+        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username
       }
     });
   }
@@ -141,7 +145,7 @@ var Discourse = (logger) => {
 
     return client.get(`/t/${topicId}/posts.json?${postIdsFilter}`, {
       params: {
-        api_username: username
+        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username
       }
     })
   }
@@ -163,6 +167,19 @@ var Discourse = (logger) => {
         api_username: username
       }
     });
+  }
+
+  /**
+   * Changes trust level of existing user
+   * user_id: user's discourse user_id
+   * level: new trust level
+   */
+  this.changeTrustLevel = (user_id, level) => {
+    logger.debug('Changing trust level of user in discourse:', user_id)
+    return client.put(`/admin/users/${user_id}/trust_level`, {
+      user_id: user_id,
+      level: level,
+    })
   }
 
   return this;

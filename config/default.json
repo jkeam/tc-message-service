@@ -3,23 +3,25 @@
   "discourseSystemUsername": "system",
   "memberServiceUrl": "http://local.topcoder-dev.com:3001/members",
   "discourseURL": "http://talk.topcoder-dev.com",
-  "discourseApiKey": "060d947123ba7c425d70ce4ebe01606cdf9fe434956cc916381a18a7c72b4a8d",
+  "discourseApiKey": "cbe0bcee43a31087b081d7c10db116f5841bf27726a7c6fea842e5a0390cde63",
   "authSecret": "secret",
   "captureLogs": "false",
   "dbConfig": {
-    "masterUrl": "postgres://postgres:postgres@local.topcoder-dev.com:5432/messages"
+    "masterUrl": "postgres://coder:mysecretpassword@local.topcoder-dev.com:5432/messages"
   },
   "referenceLookupTimeout": 3000,
   "createTopicRetryDelay": 2000,
   "createTopicTimeout": 180000,
   "version": "v4",
   "userServiceUrl": "http://local.topcoder-dev.com:3001/users",
-  "identityServiceEndpoint": "",
+  "identityServiceEndpoint": "http://local.topcoder-dev.com:3001/",
   "systemUserClientId": "",
   "systemUserClientSecret": "",
   "discourseSSO": {
     "secret": "secret12345",
     "loginCookieName": "jwtToken",
     "loginUrl": "http://192.168.1.100:3000"
-  }
+  },
+  "systemUserIds": "0",
+  "defaultUserTrustLevel": 2
 }
