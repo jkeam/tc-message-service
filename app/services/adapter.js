@@ -35,13 +35,15 @@ function Adapter(logger, db) {
     });
   }
 
-  function convertPost(userId, input) {
+  function convertPost(input) {
+    var userId = input.username
+    userId = userId !== 'system' ? parseInt(userId) : userId
     return helper.mentionUserIdToHandle(input.cooked)
       .then((postBody) => {
         return {
           id: input.id,
           date: input.created_at,
-          userId: userId !== 'system' ? parseInt(userId) : userId,
+          userId,
           read: true,
           body: postBody,
           type: 'post'
@@ -50,19 +52,17 @@ function Adapter(logger, db) {
   }
 
   this.adaptPosts = function(input) {
-    var userId = input.username;
     var result = [];
 
     return Promise.each(input.post_stream.posts, (post) => {
-      return convertPost(userId, post).then((cpost) => result.push(cpost))
+      return convertPost(post).then((cpost) => result.push(cpost))
     }).then(() => {
       return result;
     });
   }
 
   this.adaptPost = function(input) {
-    var userId = input.username;
-    return convertPost(userId, input);
+    return convertPost(input);
   }
 
   this.adaptTopics = function(input) {
