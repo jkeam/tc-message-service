@@ -53,6 +53,26 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(routes);
 
+
+// Queues
+app.services = {}
+if (process.env.NODE_ENV.toLowerCase() === 'test') {
+    // TODO add test mocks
+} else {
+  app.services.pubSub = require('./app/services/rabbitmq')(logger)
+  app.services.pubSub.init(
+    config.get('rabbitmqUrl'),
+    config.get('pubSubExchangeName'),
+    config.get('pubSubQueueName'))
+  .then(() => {
+    logger.info('RabbitMQ service initialized')
+  })
+  .catch(err => {
+    console.log(err)
+    logger.error('Error initializing services', err)
+  })
+}
+
 // Define the server
 var server = app.listen(port, () => {});
 

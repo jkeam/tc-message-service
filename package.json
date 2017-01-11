@@ -4,6 +4,7 @@
   "description": "Topcoder platform messaging service",
   "main": "server.js",
   "dependencies": {
+    "amqplib": "^0.5.1",
     "axios": "^0.13.1",
     "bluebird": "^3.4.1",
     "body-parser": "^1.15.2",
@@ -35,7 +36,7 @@
   },
   "scripts": {
     "start": "nodemon server.js",
-    "local-start": "nodemon server.js | ./node_modules/.bin/bunyan",
+    "local-start": "NODE_ENV=local nodemon server.js | ./node_modules/.bin/bunyan",
     "test": "NODE_ENV=test ./node_modules/.bin/istanbul cover _mocha $(find app -path '*spec.js*')",
     "local-test": "NODE_ENV=test ./node_modules/.bin/istanbul cover _mocha $(find app -path '*spec.js*') | ./node_modules/.bin/bunyan",
     "live-test": "NODE_ENV=test ./node_modules/.bin/mocha -w $(find app -path '*spec.js*')"
