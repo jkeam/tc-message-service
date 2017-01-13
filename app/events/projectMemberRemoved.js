@@ -17,12 +17,13 @@ module.exports = (logger, msg, channel) => {
       topics = yield db.topics.findAll({
         where: {
           referenceId: member.projectId.toString(),
+          reference: 'project'
         },
         attributes: ['discourseTopicId']
       });
     } catch (err) {
       logger.error('Error retrieving project', err, msg);
-      channel.nack(msg, false, !msg.fields.redelivered);
+      return channel.nack(msg, false, !msg.fields.redelivered);
     }
 
     for (let i = 0; i < topics.length; i++) {
@@ -33,6 +34,6 @@ module.exports = (logger, msg, channel) => {
         logger.error('Error removing access from project project', err, topic.discourseTopicId);
       }
     }
-    channel.ack(msg);
+    return channel.ack(msg);
   })();
 }
