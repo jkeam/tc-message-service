@@ -1,12 +1,38 @@
+'use strict'
+
+const _ = require('lodash');
+const Promise = require('bluebird');
+const db = require('../models');
+const Discourse = require('../services/discourse');
+
 
 
 module.exports = (logger, msg, channel) => {
-  const member = JSON.parse(msg.content.toString())
+  const discourseClient = Discourse(logger);
+  const member = JSON.parse(msg.content.toString());
 
-  // TODO Remove member.userId from all topics associated with this
-  //  project (member.projectId) in Discourse
-  channel.ack(msg)
-  // If processing fails
-  // logger.error('Error retrieving project', err, msg)
-  // channel.nack(msg, false, !msg.fields.redelivered)
+  return Promise.coroutine(function *(){
+    let topics;
+    try {
+      topics = yield db.topics.findAll({
+        where: {
+          referenceId: member.projectId.toString(),
+        },
+        attributes: ['discourseTopicId']
+      });
+    } catch (err) {
+      logger.error('Error retrieving project', err, msg);
+      channel.nack(msg, false, !msg.fields.redelivered);
+    }
+
+    for (let i = 0; i < topics.length; i++) {
+      const topic = topics[i].toJSON();
+      try {
+        yield discourseClient.removeAccess(member.userId.toString(), topic.discourseTopicId);
+      } catch (err) {
+        logger.error('Error removing access from project project', err, topic.discourseTopicId);
+      }
+    }
+    channel.ack(msg);
+  })();
 }
