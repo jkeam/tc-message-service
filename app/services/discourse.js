@@ -182,6 +182,17 @@ var Discourse = (logger) => {
     })
   }
 
+  /**
+   * Removes access of a user from topic
+   * userName: identifies the user that should be removed
+   * topicId: identifier of the topic from which access should be removed
+   */
+  this.removeAccess = (userName, topicId) => {
+    return client.put(`/t/${topicId}/remove-allowed-user`, {
+      username: userName
+    });
+  }
+  
   return this;
 }
 

@@ -17,5 +17,6 @@
   "captureLogs": "CAPTURE_LOGS",
   "identityServiceEndpoint": "IDENTITY_SERVICE_ENDPOINT",
   "systemUserClientId": "SYSTEM_USER_CLIENT_ID",
-  "systemUserClientSecret": "SYSTEM_USER_CLIENT_SECRET"
+  "systemUserClientSecret": "SYSTEM_USER_CLIENT_SECRET",
+  "rabbitmqURL": "RABBITMQ_URL"
 }
