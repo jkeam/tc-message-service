@@ -12,10 +12,25 @@ module.exports = (logger, db) => {
 
   // health check
   router.get('/_health', (req, res, next) => {
-    // TODO more checks
-    res.status(200).send({
-      message: "All-is-well"
-    });
+    // check if we can connect to discourse
+    const httpClient = util.getHttpClient({id: 1, log: logger})
+    return httpClient.get(config.get('discourseURL') + "1")
+      .then(resp => {
+        if (resp.status === 200) {
+          res.status(200).send({
+            message: "All-is-well"
+          });
+        }
+      })
+      .catch(err => {
+        const msg = `Uanble to ping discourse: ${config.get('discourseURL')}`
+        logger.error(msg, err)
+        res.status(500).send({
+          message: msg,
+          error: JSON.stringify(err)
+        })
+      })
+
   });
 
   // register discourse sso endpoint (no auth is needed)
