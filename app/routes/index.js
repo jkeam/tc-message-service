@@ -9,12 +9,12 @@ module.exports = (logger, db) => {
   const router = require('express').Router();
   const config = require('config');
   const util = require('tc-core-library-js').util(config);
+  const axios = require('axios');
 
   // health check
   router.get('/_health', (req, res, next) => {
     // check if we can connect to discourse
-    const httpClient = util.getHttpClient({id: 1, log: logger})
-    return httpClient.get(config.get('discourseURL') + "1")
+    return axios.get(config.get('discourseURL'))
       .then(resp => {
         if (resp.status === 200) {
           res.status(200).send({
