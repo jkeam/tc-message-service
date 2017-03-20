@@ -37,7 +37,7 @@ function Adapter(logger, db) {
 
   function convertPost(input) {
     var userId = input.username
-    userId = userId !== 'system' ? parseInt(userId) : userId
+    userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId) : userId
     return helper.mentionUserIdToHandle(input.cooked)
       .then((postBody) => {
         return {
@@ -74,7 +74,7 @@ function Adapter(logger, db) {
 
     return Promise.each(discourseTopics, discourseTopic => {
       var userId = discourseTopic.post_stream.posts[0].username;
-      userId = userId !== 'system' ? parseInt(userId) : userId
+      userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId) : userId
       logger.debug('DT', discourseTopic.title)
       return db.topics.find({
           where: {
@@ -112,7 +112,7 @@ function Adapter(logger, db) {
             return helper.mentionUserIdToHandle(discoursePost.cooked)
               .then((postBody) => {
                 var userId = discoursePost.username;
-                userId = userId !== 'system' ? parseInt(userId) : userId
+                userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId) : userId
                 // ignore createdAt for invited_user type posts
                 if (discoursePost.action_code !== 'invited_user' && discoursePost.created_at > result.topic.lastActivityAt) {
                   result.topic.lastActivityAt = discoursePost.created_at;
