@@ -4,10 +4,7 @@ const request = require('supertest');
 
 const axios = require('axios');
 const sinon = require('sinon');
-const sinonStubPromise = require('sinon-stub-promise');
 const config = require('config');
-
-sinonStubPromise(sinon);
 
 describe('index', () => {
   const server = require('../app'); // eslint-disable-line
@@ -22,7 +19,7 @@ describe('index', () => {
   });
 
   it('GET /_health should return 200 response', (done) => {
-    sandbox.stub(axios, 'get').returnsPromise().resolves({
+    sandbox.stub(axios, 'get').resolves({
       status: 200,
       data: {
         result: {},
@@ -44,7 +41,7 @@ describe('index', () => {
   it('GET /_health should return 500 response when it discourseURL is unreachable', (done) => {
     const stub = sandbox.stub(axios, 'get');
     stub.withArgs(config.get('discourseURL'), sinon.match.any)
-      .returnsPromise().rejects({ status: 404, data: { msg: 'unreachable' } });
+      .rejects({ status: 404, data: { msg: 'unreachable' } });
 
     request(server)
       .get('/_health')

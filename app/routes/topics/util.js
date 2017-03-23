@@ -4,13 +4,6 @@ import config from 'config';
 import Promise from 'bluebird';
 import { USER_ROLE } from '../../constants';
 
-
-// const util = require('tc-core-library-js').util(config);
-// const Discourse = require('../../services/discourse');
-// const HelperService = require('../../services/helper');
-// const Adapter = require('../../services/adapter');
-
-
 /**
  * Retrieves topic from discourse
  * @param {Object} logger logging
@@ -20,7 +13,6 @@ import { USER_ROLE } from '../../constants';
  */
 const retrieveTopic = Promise.coroutine(function* (logger, dbTopic, authUser, discourseClient) {
   let isReadOnlyForAdmins = false;
-  logger.debug(dbTopic.dataValues);
   // attempt to retrieve discourse Topic
   let topic = null;
   try {

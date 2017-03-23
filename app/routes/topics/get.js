@@ -31,30 +31,42 @@ module.exports = db =>
     const topicId = req.params.topicId;
 
     // Get topic from the Postgres database
+
     return db.topics.findOne({ where: { discourseTopicId: topicId }, raw: true })
-      .then(dbTopic => retrieveTopic(logger, dbTopic, req.authUser, discourseClient))
-      .then(({ isReadOnlyForAdmins, topic }) => {
-        if (!topic) {
+      .then((dbTopic) => {
+        if (!dbTopic) {
           const err = new errors.HttpStatusError(404, 'Topic does not exist');
           return next(err);
         }
-        if (!isReadOnlyForAdmins && !topic.read
-          && topic.post_stream && topic.post_stream.posts && topic.post_stream.posts.length > 0) {
-          const postIds = topic.post_stream.posts.map(post => post.post_number);
-          return discourseClient
-            .markTopicPostsRead(req.authUser.userId.toString(), topic.id, postIds)
-            .then(() => { logger.debug('marked read'); return topic; })
-            .catch((error) => {
-              logger.error('error marking topic posts read', error);
-            });
-        } else { // eslint-disable-line
-          return Promise.resolve(topic);
-        }
+
+        return retrieveTopic(logger, dbTopic, req.authUser, discourseClient)
+          .then(({ isReadOnlyForAdmins, topic }) => {
+            if (!topic) {
+              const err = new errors.HttpStatusError(500, 'Unable to retrieve topic from discourse');
+              return next(err);
+            }
+            if (!isReadOnlyForAdmins && !topic.read &&
+              topic.post_stream && topic.post_stream.posts && topic.post_stream.posts.length > 0) {
+              const postIds = topic.post_stream.posts.map(post => post.post_number);
+              return discourseClient
+                .markTopicPostsRead(req.authUser.userId.toString(), topic.id, postIds)
+                .then(() => {
+                  logger.debug('marked read');
+                  return topic;
+                })
+                .catch((error) => {
+                  logger.error('error marking topic posts read', error);
+                });
+            } else { // eslint-disable-line
+              return Promise.resolve(topic);
+            }
+          })
+          .then((topic) => {
+            logger.info('returning topic');
+            return adapter.adaptTopics(topic, req.authToken);
+          })
+          .then(result => resp.status(200).send(util.wrapResponse(req.id, result)))
+          .catch(err => next(err));
       })
-      .then((topic) => {
-        logger.info('returning topic');
-        return adapter.adaptTopics(topic, req.authToken);
-      })
-      .then(result => resp.status(200).send(util.wrapResponse(req.id, result)))
       .catch(err => next(err));
   };

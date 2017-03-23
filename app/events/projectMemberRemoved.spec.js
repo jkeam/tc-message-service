@@ -5,10 +5,7 @@ const config = require('config');
 const models = require('../models');
 const axios = require('axios');
 const sinon = require('sinon');
-const sinonStubPromise = require('sinon-stub-promise');
 const coreLib = require('tc-core-library-js');
-
-sinonStubPromise(sinon);
 
 const removeMemberHandler = require('./projectMemberRemoved');
 
@@ -91,29 +88,32 @@ describe('Event: project.member.removed', () => {
     sandbox.restore();
     clearDB(done);
   });
+
+  const invoked = (done) => { true.should.be.true; done(); } // eslint-disable-line
+  const errorCheck = (done) => { true.should.be.false; done(); } // eslint-disable-line
   it('should ack when user exist in project and removed', (done) => {
-    sandbox.stub(axios, 'put').returnsPromise().resolves({});
+    sandbox.stub(axios, 'put').resolves({});
     const channel = {
-      ack: () => done(),
-      nack: () => done('Nacked!!'),
+      ack: () => invoked(done),
+      nack: () => errorCheck(done),
     };
     removeMemberHandler(logger, msg, channel);
   });
 
-  it('should ack when user exist not exist in project', (done) => {
-    sandbox.stub(axios, 'put').returnsPromise().rejects({});
+  it('should nack when if discourse call fails', (done) => {
+    sandbox.stub(axios, 'put').rejects({});
     const channel = {
-      ack: () => done(),
-      nack: () => done('Nacked!!'),
+      ack: () => errorCheck(done),
+      nack: () => invoked(done),
     };
     removeMemberHandler(logger, msg, channel);
   });
 
   it('should nack if error querying db ', (done) => {
-    sandbox.stub(models.topics, 'findAll').returnsPromise().rejects({});
+    sandbox.stub(models.topics, 'findAll').rejects({});
     const channel = {
-      ack: () => done('Acked!!'),
-      nack: () => done(),
+      ack: () => errorCheck(done),
+      nack: () => invoked(done),
     };
     removeMemberHandler(logger, msg, channel);
   });

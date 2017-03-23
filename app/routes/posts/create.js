@@ -45,7 +45,8 @@ module.exports = db => (req, resp, next) => {
     return discourseClient.createPost(
       req.authUser.userId.toString(),
       postBody, req.params.topicId,
-      req.body.responseTo).then((response) => {
+      req.body.responseTo)
+      .then((response) => {
         logger.info('Post created');
         return adapter.adaptPost(response.data)
             .then(post => resp.status(200).send(util.wrapResponse(req.id, post)));

@@ -21,21 +21,22 @@ module.exports = (logger) => {
    */
   function getClient() {
     if (client) return client;
-    client = axios.create({
-      baseURL: config.get('discourseURL'),
-    });
+    client = axios;
+    client.defaults.baseURL = config.get('discourseURL');
     client.defaults.params = {
       api_key: config.get('discourseApiKey'),
       api_username: DISCOURSE_SYSTEM_USERNAME,
     };
 
-    client.interceptors.response.use((resp) => {
-      logger.debug('SUCCESS', resp.request.path);
-      return resp;
-    }, (err) => {
-      logger.error('Discourse call failed: ', _.pick(err.response, ['config', 'data']));
-      return Promise.reject(err);
+    // Add a response interceptor
+    client.interceptors.response.use(function (res) { // eslint-disable-line
+      logger.error('SUCCESS', _.pick(res, ['config.url', 'status']));
+      return res;
+    }, function (error) { // eslint-disable-line
+      logger.error('Discourse call failed: ', _.pick(error, ['config.url', 'response.status', 'response.data']));
+      return Promise.reject(error);
     });
+
     return client;
   }
 
@@ -110,7 +111,7 @@ module.exports = (logger) => {
         api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
       },
     })
-      .then(response => response.data);
+    .then(response => response.data);
   }
 
   /**

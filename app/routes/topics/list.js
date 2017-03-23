@@ -36,13 +36,16 @@ module.exports = db =>
 
     // Parse filter
     const parsedFilter = (req.query.filter || '').split('&');
-    const filter = {};
+    let filter = {};
     _(parsedFilter).each((value) => {
       const parts = value.split('=');
       if (parts.length === 2) {
         filter[parts[0]] = parts[1];
       }
     });
+    // allowed filters
+    filter = _.pick(filter, ['reference', 'referenceId', 'tag']);
+
     // Verify required filters are present
     if (!filter.reference || !filter.referenceId) {
       return next(new errors.HttpStatusError(400, 'Please provide reference and referenceId filter parameters'));
@@ -53,7 +56,8 @@ module.exports = db =>
     db.topics.findAll({ where: filter })
     .then((dbTopics) => {
       if (dbTopics.length === 0) {
-        throw new errors.HttpStatusError(404, 'Topic does not exist');
+        // returning empty list
+        return resp.status(200).send(util.wrapResponse(req.id, []));
       }
 
       logger.info('Topics exist in pg, fetching from discourse');

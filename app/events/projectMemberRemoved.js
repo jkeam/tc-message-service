@@ -26,6 +26,11 @@ module.exports = (logger, msg, channel) => {
         .then(() => {
           logger.info(`Removed user ${userId} from all topics for project ${projectId}`);
           return channel.ack(msg);
+        })
+        .catch((error) => {
+          logger.debug(error.response && error.response.status);
+          logger.debug(error.response && error.response.data);
+          return channel.nack(msg, false, !msg.fields.redelivered);
         });
     } catch (error) {
       logger.debug(error.response && error.response.status);

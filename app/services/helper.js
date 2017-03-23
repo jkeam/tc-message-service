@@ -83,14 +83,11 @@ module.exports = (logger, db, _discourseClient = null) => {
    * @return {Promise} promise
    */
   function userHasAccessToEntity(authToken, requestId, reference, referenceId) {
-    return db.referenceLookups.findOne({
-      where: {
-        reference,
-      },
-    }).then((result) => {
+    return db.referenceLookups.findOne({ where: { reference } })
+    .then((result) => {
       if (!result) {
         logger.debug('no result');
-        return true; // if nothing exists in the referenceLookup table, the entity should be open,
+        return [false, null]; // if nothing exists in the referenceLookup table, the entity should be open,
         // and anyone should be able to see the threads
       }
       const referenceLookup = result;
@@ -111,7 +108,7 @@ module.exports = (logger, db, _discourseClient = null) => {
         return [false, null];
       }).catch((error) => {
         logger.debug(error);
-        return false;
+        return [false, null];
       });
     });
   }

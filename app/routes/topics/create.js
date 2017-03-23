@@ -49,7 +49,6 @@ module.exports = db =>
       .then((hasAccessResp) => {
         logger.info('Checking if user has access to identity');
         const hasAccess = hasAccessResp[0];
-        logger.debug(`hasAccess: ${hasAccess}`);
         if (!hasAccess) { throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity'); }
         if (params.reference.toLowerCase() === 'project') {
           const projectMembers = _.get(hasAccessResp[1], 'members', []);
