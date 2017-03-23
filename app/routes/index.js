@@ -1,76 +1,81 @@
-'use strict'
+
+const router = require('express').Router();
+const config = require('config');
+const util = require('tc-core-library-js').util(config);
+const axios = require('axios');
+const ssoHandler = require('./sso/sso.js');
+const tcCoreLib = require('tc-core-library-js');
+const getTopicHandler = require('./topics/get');
+const topicListHandler = require('./topics/list');
+const topicCreateHandler = require('./topics/create');
+
+const createPostHandler = require('./posts/create');
+const getPostsHandler = require('./posts/get');
+const systemUserFilter = require('../middleware/system-user-filter.js');
 
 /**
  * Loads and configures all sub routes of this api
- * logger: logger
- * db: sequelize db object containing all models
+ * @param {Object} logger: logger
+ * @param {Object} db sequelize db object containing all models
+ * @return {Object} response
  */
 module.exports = (logger, db) => {
-  const router = require('express').Router();
-  const config = require('config');
-  const util = require('tc-core-library-js').util(config);
-  const axios = require('axios');
-
   // health check
-  router.get('/_health', (req, res, next) => {
+  router.get('/_health', (req, res, next) => { // eslint-disable-line
     // check if we can connect to discourse
     return axios.get(config.get('discourseURL'))
-      .then(resp => {
+      .then((resp) => {
         if (resp.status === 200) {
-          res.status(200).send({
-            message: "All-is-well"
-          });
+          res.status(200).send({ message: 'All-is-well' });
         }
       })
-      .catch(err => {
-        const msg = `Uanble to ping discourse: ${config.get('discourseURL')}`
-        logger.error(msg, err)
+      .catch((err) => {
+        const msg = `Uanble to ping discourse: ${config.get('discourseURL')}`;
+        logger.error(msg, err);
         res.status(500).send({
           message: msg,
-          error: JSON.stringify(err)
-        })
-      })
-
+          error: JSON.stringify(err),
+        });
+      });
   });
 
   // register discourse sso endpoint (no auth is needed)
-  router.route('/sso').get(require('./sso/sso.js')(logger));
+  router.route('/sso').get(ssoHandler(logger));
 
   // all project service endpoints need authentication
-  const jwtAuth = require('tc-core-library-js').middleware.jwtAuthenticator
+  const jwtAuth = tcCoreLib.middleware.jwtAuthenticator;
   router.all('/v4/topics*', jwtAuth(), (req, res, next) => {
-    req.authToken = req.get('authorization').split(' ')[1];
+    req.authToken = req.get('authorization').split(' ')[1]; // eslint-disable-line
     next();
   });
 
-  router.use(require('../middleware/system-user-filter.js')(logger));
+  router.use(systemUserFilter(logger));
 
   // Register all the routes
   router.route('/v4/topics/:topicId')
-    .get(require('./topics/get')(db));
+    .get(getTopicHandler(db));
 
   router.route('/v4/topics')
-    .post(require('./topics/create')(db))
-    .get(require('./topics/list')(db));
+    .post(topicCreateHandler(db))
+    .get(topicListHandler(db));
 
 
   router.route('/v4/topics/:topicId/posts')
-    .post(require('./topics/post.js')(db))
-    .get(require('./topics/get-post.js')(db));
+    .post(createPostHandler(db))
+    .get(getPostsHandler(db));
 
   // register error handler
-  router.use((err, req, res, next) => {
-    var logger = req.log
-    logger.error(err);
+  router.use((err, req, res, next) => { // eslint-disable-line
+    req.log.error(err);
 
     let httpStatus = err.status || 500;
     let message;
 
     // specific for validation errors
     if (err.isJoi && err.details && err.details.length > 0) {
-      logger.debug(err.message);
-      logger.debug(err.details);
-      message = 'Validation error: ' + err.details.map(error => error.message).join(', ');
+      req.log.debug(err.message);
+      req.log.debug(err.details);
+      message = `Validation error: ${err.details.map(error => error.message).join(', ')}`;
       httpStatus = 400;
     } else {
       message = err.message;
@@ -87,11 +92,11 @@ module.exports = (logger, db) => {
   });
 
   // catch 404 and forward to error handler
-  //router.use((req, res, next) => {
-  //const err = new Error('Not Found');
-  ////err.status = 404;
-  //next(err);
-  //})
+  // router.use((req, res, next) => {
+  // const err = new Error('Not Found');
+  // //err.status = 404;
+  // next(err);
+  // })
 
   return router;
 };

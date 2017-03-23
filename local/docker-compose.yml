@@ -12,7 +12,7 @@ services:
             POSTGRES_USER: 'coder'
             POSTGRES_PASSWORD: 'mysecretpassword'
             POSTGRES_DB: 'messages'
-    rabbitmq:
+    myrabbitmq:
       image: rabbitmq:3-management
       restart: always
       ports:
