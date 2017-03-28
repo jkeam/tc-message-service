@@ -1,21 +1,21 @@
-'use strict'
+import { retrieveTopic } from './util';
 
-var _ = require('lodash');
-var config = require('config');
-var util = require('tc-core-library-js').util(config);
-var Promise = require('bluebird');
-var Discourse = require('../../services/discourse');
-var HelperService = require('../../services/helper');
-var axios = require('axios');
-var errors = require('common-errors');
-var Joi = require('joi');
-var Adapter = require('../../services/adapter');
+const _ = require('lodash');
+const config = require('config');
+const util = require('tc-core-library-js').util(config);
+const Promise = require('bluebird');
+const Discourse = require('../../services/discourse');
+const errors = require('common-errors');
+const Joi = require('joi');
+const Adapter = require('../../services/adapter');
+
 
 /**
  * Handles listing of topics
- * db: sequelize db with all models loaded
+ * @param {Object} db sequelize db with all models loaded
+ * @return {Objet} response
  */
-module.exports = (db) => {
+module.exports = db =>
   /**
    * Gets topics from Discourse for the specified entity, and in the process it does:
    *  - Checks if the user has access to the referred entity
@@ -24,133 +24,77 @@ module.exports = (db) => {
    *  - If the topic already exists, checks if the user has access, if not gives access
    * params: standard express parameters
    */
-  return (req, resp, next) => {
-    var logger = req.log
-    var discourseClient = Discourse(logger);
-    var helper = HelperService(logger, db);
-    var adapter = new Adapter(logger, db);
+  (req, resp, next) => { // eslint-disable-line
+    const logger = req.log;
+    const discourseClient = Discourse(logger);
+    const adapter = new Adapter(logger, db);
 
     // Validate request parameters
     Joi.assert(req.query, {
-      filter: Joi.string().required()
+      filter: Joi.string().required(),
     });
 
     // Parse filter
-    var parsedFilter = (req.query.filter || '').split('&');
-    var filter = {};
-
-    _(parsedFilter).each(value => {
+    const parsedFilter = (req.query.filter || '').split('&');
+    let filter = {};
+    _(parsedFilter).each((value) => {
       const parts = value.split('=');
-      if (parts.length == 2) {
+      if (parts.length === 2) {
         filter[parts[0]] = parts[1];
       }
     });
+    // allowed filters
+    filter = _.pick(filter, ['reference', 'referenceId', 'tag']);
 
     // Verify required filters are present
     if (!filter.reference || !filter.referenceId) {
       return next(new errors.HttpStatusError(400, 'Please provide reference and referenceId filter parameters'));
     }
 
+    let isReadOnlyForAdmins = false;
     // Get topics from the Postgres database
-    db.topics.findAll({
-      where: filter
-    }).then((result) => {
-      if (result.length === 0) {
-        throw new errors.HttpStatusError(404, 'Topic does not exist');
+    db.topics.findAll({ where: filter })
+    .then((dbTopics) => {
+      if (dbTopics.length === 0) {
+        // returning empty list
+        return resp.status(200).send(util.wrapResponse(req.id, []));
       }
 
       logger.info('Topics exist in pg, fetching from discourse');
+      const topicPromises = dbTopics.map(dbTopic => retrieveTopic(logger, dbTopic, req.authUser, discourseClient));
 
-      let checkAccessAndProvisionPromise = null;
-
-      const topicPromises = result.map(pgTopic => {
-        logger.debug(pgTopic.dataValues);
-        return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.userId.toString()).then((response) => {
-          logger.info(`Topic received from discourse: ${pgTopic.discourseTopicId}`);
-          response.tag = pgTopic.tag;
-          return response;
-        }).catch((error) => {
-          logger.debug(error);
-          logger.debug(error.response && error.response.status);
-          logger.debug(error.response && error.response.data);
-          logger.info(`Failed to get topic from discourse: ${pgTopic.discourseTopicId}`);
-
-          // If 403, it is possi ble that the user simply hasn't been granted access to the topic yet
-          if (error.response && (error.response.status == 500 || error.response.status == 403 || error.response.status == 422)) {
-            logger.info(`User doesn\'t have access to topic ${pgTopic.discourseTopicId}, checking access and provisioning`);
-
-            if (!checkAccessAndProvisionPromise) {
-              // Check and provision is only needed to be done once
-              checkAccessAndProvisionPromise = helper.checkAccessAndProvision(req.authToken, req.id, req.authUser.userId.toString(),
-                filter.reference, filter.referenceId);
-            }
-
-            // Verify if the user has access and if so provision
-            return checkAccessAndProvisionPromise.then((discourseUser) => {
-              logger.debug(discourseUser);
-              // Grant access to the topic to the user
-              logger.info(`User entity access verified, granting access to topic ${pgTopic.discourseTopicId}`);
-              return discourseClient.grantAccess(req.authUser.userId.toString(), pgTopic.discourseTopicId);
-            }).then((response) => {
-              logger.debug(response.data);
-              logger.info(`Succeeded to grant access to topic ${pgTopic.discourseTopicId}`);
-              return discourseClient.getTopic(pgTopic.discourseTopicId, req.authUser.userId.toString());
-            }).then((response) => {
-              logger.info(`Topic received from discourse ${pgTopic.discourseTopicId}`);
-              response.tag = pgTopic.tag;
-              return response;
-            }).catch((error) => {
-              logger.debug(error);
-              logger.debug(error.response && error.response.status);
-              logger.debug(error.response && error.response.data);
-              throw error;
-            });
-          } else {
-            throw error;
-          }
-        }).catch((error) => {
-          logger.debug(error);
-          logger.info(`Failed to get topic from discourse: ${pgTopic.discourseTopicId}`);
-          // Swallowing errors to be able to return partial result
-          return null;
-        });
-      });
-
-      return Promise.all(topicPromises).then((topics) => {
-        // chaining to checkAccessAndProvisionPromise if it exists, to ensure that we don't miss access errors
-        return (checkAccessAndProvisionPromise || Promise.resolve()).then(() => {
-          // filter null topics and sort in the  order of the last activity date descending (more recent activity first)
-          return _.chain(topics)
-            .filter(topic => topic != null)
-            .orderBy(['last_posted_at'], ['desc'])
-            .value();
-        });
-      });
-    }).then((topics) => {
-      if (topics.length === 0) {
-        throw new errors.HttpStatusError(404, 'Topic does not exist');
-      }
-      logger.debug(topics);
-      logger.info('returning topics');
-
-      // Mark all unread topics as read.
-      Promise.all(topics.filter(topic => !topic.read).map(topic => {
-        if (topic.post_stream && topic.post_stream.posts && topic.post_stream.posts.length > 0) {
-          var postIds = topic.post_stream.posts.map(post => post.post_number);
-          return discourseClient.markTopicPostsRead(req.authUser.userId.toString(), topic.id, postIds);
-        } else {
-          return Promise.resolve();
+      return Promise.all(topicPromises)
+      .then((topicResponses) => {
+        // filter null topics and sort in the  order of the last activity date descending (more recent activity first)
+        let topics = _.map(topicResponses, 'topic');
+        if (topics.length === 0) {
+          throw new errors.HttpStatusError(404, 'Topic does not exist');
         }
-      })).catch((error) => {
-        logger.error('error marking topic posts read', error);
-      });
+        isReadOnlyForAdmins = _.every(_.map(topicResponses, 'isReadOnlyForAdmins'));
+        // console.log(topics);
+        topics = _.chain(topics)
+          .filter(topic => topic != null)
+          .orderBy(['last_posted_at'], ['desc'])
+          .value();
 
-      logger.debug('adapting topics')
-      return adapter.adaptTopics(topics).then(result => {
-        return resp.status(200).send(util.wrapResponse(req.id, result));
-      });
+        logger.info('returning topics');
+        if (!isReadOnlyForAdmins) {
+          // Mark all unread topics as read.
+          Promise.all(topics.filter(topic => !topic.read).map((topic) => {
+            if (topic.post_stream && topic.post_stream.posts && topic.post_stream.posts.length > 0) {
+              const postIds = topic.post_stream.posts.map(post => post.post_number);
+              return discourseClient.markTopicPostsRead(req.authUser.userId.toString(), topic.id, postIds);
+            }
+            return Promise.resolve();
+          })).catch((error) => {
+            logger.error('error marking topic posts read', error);
+          });
+        }
+        logger.debug('adapting topics');
+        return adapter.adaptTopics(topics);
+      })
+      .then(result => resp.status(200).send(util.wrapResponse(req.id, result)));
     }).catch((error) => {
       next(error);
     });
-  }
-}
+  };

@@ -1,0 +1,30 @@
+{
+    "extends": "airbnb-base",
+    "env": {
+        "browser": false,
+        "node": true,
+        "es6": true,
+        "mocha": true
+    },
+    "rules": {
+        "import/no-extraneous-dependencies": ["error", {
+            "devDependencies": ["**/*.test.js", "**/*.spec.js", "**/serviceMocks.js", "tests/index.js"]
+        }],
+        "max-len": ["error", {
+            "ignoreComments": true,
+            "code": 120
+        }],
+        "no-plusplus": ["error", {
+            "allowForLoopAfterthoughts": true
+        }],
+        "valid-jsdoc": ["error", {
+            "requireReturn": true,
+            "requireReturnType": true,
+            "requireParamDescription": true,
+            "requireReturnDescription": true
+        }]
+    },
+    "parserOptions": {
+        "ecmaVersion": 6
+    }
+}

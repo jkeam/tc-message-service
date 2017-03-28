@@ -2,9 +2,9 @@
 
 var _ = require('lodash');
 var Promise  = require('bluebird');
-var db = require('./app/models');
+var db = require('./models');
 var axios = require('axios');
-var Adapter = require('./app/services/adapter');
+var Adapter = require('./services/adapter');
 var config = require('config');
 var coreLib = require('tc-core-library-js');
 
