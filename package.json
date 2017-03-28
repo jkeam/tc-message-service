@@ -4,7 +4,7 @@
   "description": "Topcoder platform messaging service",
   "main": "app/index.js",
   "engines": {
-    "node": "6.9.2"
+    "node": "6.9.4"
   },
   "repository": {
     "type": "git",
