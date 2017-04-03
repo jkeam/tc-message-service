@@ -217,13 +217,14 @@ sudo ./launcher start app
 
 ## Setting up Environment Variables
 
-We need to set the following 2 environment variables:
+We need to set the following 3 environment variables:
 
 ```
 export DISCOURSE_API_KEY=<<SYSTEM USER API KEY>>
 export DEFAULT_DISCOURSE_PW=supersecretpw
+export RABBITMQ_URL=amqp://localhost:5672
 ```
-
+NOTE: You many need to change RABBITMQ_URL to point to your local setup if running under differnt host or port
 DEFAULT_DISCOURSE_PW defines the default password for users which will be created in Discourse automatically.
 The system user's API key is obtained in the last step from discourse.
 

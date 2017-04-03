@@ -1,0 +1,4 @@
+{
+  "pubSubExchangeName": "dev.projects",
+  "pubSubQueueName": "dev.message.service"
+}

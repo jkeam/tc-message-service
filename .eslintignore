@@ -1,0 +1,7 @@
+config/local.js
+coverage
+local/
+node_modules/
+dist/
+scripts/
+migrations/

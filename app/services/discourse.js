@@ -1,188 +1,235 @@
-'use strict'
-var Promise = require('bluebird');
-var config = require('config');
-var axios = require('axios');
-var _ = require('lodash');
-var util = require('../util');
+
+const Promise = require('bluebird');
+const config = require('config');
+const axios = require('axios');
+const _ = require('lodash');
+const util = require('../util');
 
 
-const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername')
-  /**
-   * Service to facilitate communication with the discourse api
-   */
-var Discourse = (logger) => {
-
+const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername');
+/*
+ * Service to facilitate communication with the discourse api
+ */
+module.exports = (logger) => {
   /**
    * Discourse client configuration
    */
-  var client = axios.create({
-    baseURL: config.get('discourseURL')
-  })
-  client.defaults.params = {
-    api_key: config.get('discourseApiKey'),
-    api_username: DISCOURSE_SYSTEM_USERNAME
-  }
+  let client = null;
+  /**
+   * Returns axios client
+   * @return {Object} axios client
+   */
+  function getClient() {
+    if (client) return client;
+    client = axios;
+    client.defaults.baseURL = config.get('discourseURL');
+    client.defaults.params = {
+      api_key: config.get('discourseApiKey'),
+      api_username: DISCOURSE_SYSTEM_USERNAME,
+    };
 
-  client.interceptors.response.use((resp) => {
-    logger.debug('SUCCESS', resp.request.path)
-    return resp
-  }, (err) => {
-    logger.error('Discourse call failed: ', _.pick(err.response, ['config', 'data']))
-    return Promise.reject(err)
-  })
+    // Add a response interceptor
+    client.interceptors.response.use(function (res) { // eslint-disable-line
+      logger.error('SUCCESS', _.pick(res, ['config.url', 'status']));
+      return res;
+    }, function (error) { // eslint-disable-line
+      logger.error('Discourse call failed: ', _.pick(error, ['config.url', 'response.status', 'response.data']));
+      return Promise.reject(error);
+    });
+
+    return client;
+  }
 
   /**
    * Fetches a Discourse user by username
-   * username: the Discourse user name
+   * @param {String} username the Discourse user name
+   * @return {Promise} user promise
    */
-  this.getUser = (username) => {
-    return client.get(`/users/${username}.json?api_username=${username}`)
-      .then((response) => response.data);
+  function getUser(username) {
+    return getClient().get(`/users/${username}.json?api_username=${username}`)
+      .then(response => response.data);
   }
 
   /**
    * Creates a new user in Discourse
-   * name: first and last name of the user
-   * username: username, must be unique
-   * email: email of the user, must be unique
-   * password: password of the user, this will be ignored since we will be using SSO
+   * @param {String} name first and last name of the user
+   * @param {Number} userId User id
+   * @param {String} handle username, must be unique
+   * @param {String} email email of the user, must be unique
+   * @param {String} password password of the user, this will be ignored since we will be using SSO
+   * * @param {String} email email of the user, must be unique
+   * @return {Promise} new user promise
    */
-  this.createUser = (name, userId, handle, email, password, photoUrl) => {
-    logger.debug('Creating user in discourse:', name, userId, handle)
-    // TODO: add photo URL
-    return client.post('/users', {
-      name: name,
+  function createUser(name, userId, handle, email, password) {
+    logger.debug('Creating user in discourse:', name, userId, handle);
+    return getClient().post('/users', {
+      name,
       username: userId,
-      email: email,
-      password: password,
+      email,
+      password,
       active: true,
-      user_fields: { "1": handle }
-    })
+      user_fields: { 1: handle },
+    });
   }
 
   /**
    * Creates a private post in discourse
-   * title: the title of the post
-   * post: the body of the post, html markup is allowed
-   * users: comma separated list of user names that should be part of the conversation
+   * @param {String} title the title of the post
+   * @param {Object} post the body of the post, html markup is allowed
+   * @param {Array} users comma separated list of user names that should be part of the conversation
+   * @param {String} owner user who created the post
+   * @return {Promise} new post promise
    */
-  this.createPrivatePost = (title, post, users, owner) => {
-    return client.post('/posts', {
-        archetype: 'private_message',
-        target_usernames: users,
-        title: title,
-        raw: post
-      }, {
-        params: {
-          api_username: owner && !util.isDiscourseAdmin(owner) ? owner : DISCOURSE_SYSTEM_USERNAME
-        }
-      })
+  function createPrivatePost(title, post, users, owner) {
+    return getClient().post('/posts', {
+      archetype: 'private_message',
+      target_usernames: users,
+      title,
+      raw: post,
+    }, {
+      params: {
+        api_username: owner && !util.isDiscourseAdmin(owner) ? owner : DISCOURSE_SYSTEM_USERNAME,
+      },
+    })
       .catch((err) => {
-        logger.error('Error creating topic')
-        logger.error(err)
-        return Promise.reject(err)
-      })
+        logger.error('Error creating topic');
+        logger.error(err);
+        return Promise.reject(err);
+      });
   }
 
   /**
    * Gets a topic in Discourse
-   * topicId: the id of the topic
-   * username: the username to use to fetch the topic, for security purposes
+   * @param {String} topicId the id of the topic
+   * @param {String} username the username to use to fetch the topic, for security purposes
+   * @return {Promise} get topic promise
    */
-  this.getTopic = (topicId, username) => {
-    return client.get(`/t/${topicId}.json`, {
-        params: {
-          api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username
-        }
-      })
-      .then((response) => response.data);
+  function getTopic(topicId, username) {
+    logger.debug(`Retrieving topic# ${topicId} for user: ${username}`);
+    return getClient().get(`/t/${topicId}.json`, {
+      params: {
+        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
+      },
+    })
+    .then(response => response.data);
   }
 
   /**
    * Grants access to a user by adding that user to the Discrouse topic (or private post)
-   * userName: identifies the user that should receive access
-   * topicId: identifier of the topic to which access should be granted
+   * @param {String} userName identifies the user that should receive access
+   * @param {String} topicId identifier of the topic to which access should be granted
+   * @param {String} invitee user inviting new user to topic
+   * @return {Promise} http promise
    */
-  this.grantAccess = (userName, topicId) => {
-    return client.post(`/t/${topicId}/invite`, {
-      user: userName
+  function grantAccess(userName, topicId, invitee = 'system') {
+    return getClient().post(`/t/${topicId}/invite`, {
+      user: userName,
+    }, {
+      params: { api_username: invitee },
     });
   }
 
   /**
    * Creates a post (reply) to a topic
-   * username: user creating the post
-   * post: body of the post, html markup is permitted
-   * discourseTopicId: the topic id to which the response is being posted
+   * @param {String} username user creating the post
+   * @param {Object} post body of the post, html markup is permitted
+   * @param {Number} discourseTopicId the topic id to which the response is being posted
+   * @param {Number} responseTo reply to post id
+   * @return {Promise} promise
    */
-  this.createPost = (username, post, discourseTopicId, responseTo) => {
-    var data = 'topic_id=' + discourseTopicId + '&raw=' + encodeURIComponent(post);
+  function createPost(username, post, discourseTopicId, responseTo) {
+    let data = `topic_id=${discourseTopicId}&raw=${encodeURIComponent(post)}`;
     if (responseTo) {
-      data += '&reply_to_post_number=' + responseTo;
+      data += `&reply_to_post_number=${responseTo}`;
     }
-    return client.post('/posts', data, {
+    return getClient().post('/posts', data, {
       params: {
-        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username
-      }
+        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
+      },
     });
   }
 
   /**
    * Fetches posts from discourse
-   * username: the name of the user to use to access the Discourse API
-   * topicId: the id of the topic that is parent to the posts
-   * postIds: array containing the list of posts that should be retrieved
+   * @param {String} username: the name of the user to use to access the Discourse API
+   * @param {Number} topicId the id of the topic that is parent to the posts
+   * @param {Array} postIds array containing the list of posts that should be retrieved
+   * @return {Promise} promise
    */
-  this.getPosts = (username, topicId, postIds) => {
-
-    logger.debug('Attempting to retrieve posts', postIds)
-    var postIdsFilter = '';
-    var separator = '';
-    _(postIds).each(postId => {
+  function getPosts(username, topicId, postIds) {
+    logger.debug('Attempting to retrieve posts', postIds);
+    let postIdsFilter = '';
+    let separator = '';
+    _(postIds).each((postId) => {
       postIdsFilter += `${separator}${encodeURIComponent('post_ids[]')}=${postId}`;
       separator = '&';
     });
 
-    return client.get(`/t/${topicId}/posts.json?${postIdsFilter}`, {
+    return getClient().get(`/t/${topicId}/posts.json?${postIdsFilter}`, {
       params: {
-        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username
-      }
-    })
+        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
+      },
+    });
   }
 
 
   /**
    * Marks a topic and posts are read in discourse
-   * username: the name of the user who read the topic
-   * topicId: the id of the topic the user read
-   * postIds: array of post ids representing the posts the user read
+   * @param {String} username the name of the user who read the topic
+   * @param {Number} topicId the id of the topic the user read
+   * @param {Array} postIds array of post ids representing the posts the user read
+   * @return {Promise} promise
    */
-  this.markTopicPostsRead = (username, topicId, postIds) => {
-    var parts = ['topic_id=' + topicId, 'topic_time=' + topicId];
-    postIds.forEach(postId => {
-      parts.push(encodeURIComponent('timings[' + postId + ']') + '=1000');
+  function markTopicPostsRead(username, topicId, postIds) {
+    const parts = [`topic_id=${topicId}`, `topic_time=${topicId}`];
+    postIds.forEach((postId) => {
+      parts.push(`${encodeURIComponent(`timings[${postId}]`)}=1000`);
     });
-    return client.post('/topics/timings.json', parts.join('&'), {
+    return getClient().post('/topics/timings.json', parts.join('&'), {
       params: {
-        api_username: username
-      }
+        api_username: username,
+      },
     });
   }
 
   /**
    * Changes trust level of existing user
-   * user_id: user's discourse user_id
-   * level: new trust level
+   * @param {String} userId user's discourse user_id
+   * @param {Number} level new trust level
+   * @return {Promise} promise
    */
-  this.changeTrustLevel = (user_id, level) => {
-    logger.debug('Changing trust level of user in discourse:', user_id)
-    return client.put(`/admin/users/${user_id}/trust_level`, {
-      user_id: user_id,
-      level: level,
-    })
+  function changeTrustLevel(userId, level) {
+    logger.debug('Changing trust level of user in discourse:', userId);
+    return getClient().put(`/admin/users/${userId}/trust_level`, {
+      user_id: userId,
+      level,
+    });
   }
 
-  return this;
-}
+  /**
+   * Removes access of a user from topic
+   * @param {String} userName identifies the user that should be removed
+   * @param {Number} topicId identifier of the topic from which access should be removed
+   * @return {Promise} promise
+   */
+  function removeAccess(userName, topicId) {
+    return getClient().put(`/t/${topicId}/remove-allowed-user`, {
+      username: userName,
+    }, {
+      params: { api_username: 'system' },
+    });
+  }
 
-module.exports = Discourse;
+  return {
+    createUser,
+    getUser,
+    changeTrustLevel,
+    grantAccess,
+    removeAccess,
+    getTopic,
+    createPost,
+    createPrivatePost,
+    getPosts,
+    markTopicPostsRead,
+  };
+};
