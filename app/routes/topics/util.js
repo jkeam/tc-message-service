@@ -11,7 +11,7 @@ import { USER_ROLE } from '../../constants';
  * @param {Object} authUser authenticated user
  * @param {Object} discourseClient client to invoke calls to discourse
  */
-const retrieveTopic = Promise.coroutine(function* (logger, dbTopic, authUser, discourseClient) {
+const retrieveTopic = Promise.coroutine(function* a(logger, dbTopic, authUser, discourseClient) {
   let isReadOnlyForAdmins = false;
   // attempt to retrieve discourse Topic
   let topic = null;

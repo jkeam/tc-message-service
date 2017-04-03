@@ -14,7 +14,7 @@ module.exports = (logger, msg, channel) => {
   const member = JSON.parse(msg.content.toString());
   const projectId = member.projectId.toString();
 
-  return Promise.coroutine(function* () {
+  return Promise.coroutine(function* a() {
     const userId = member.userId.toString();
     try {
       // check if user exists or create user in discourse

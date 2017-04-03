@@ -84,7 +84,7 @@ module.exports = db =>
               });
               return Promise.all(getUserPromises).then(() => {
                 logger.info('User(s) exists in Discourse, trying to create topic again');
-                return Promise.coroutine(function* () {
+                return Promise.coroutine(function* a() {
                   // createPrivatePost may fail again if called too soon. Trying over and over again until success or timeout
                   const endTimeMs = new Date().getTime() + config.get('createTopicTimeout');
                   const delayMs = config.get('createTopicRetryDelay');

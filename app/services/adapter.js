@@ -47,18 +47,18 @@ function Adapter(logger, db) {
       }));
   }
 
-  this.adaptPosts = function (input) {
+  this.adaptPosts = function a(input) {
     const result = [];
 
     return Promise.each(input.post_stream.posts,
       post => convertPost(post).then(cpost => result.push(cpost))).then(() => result);
   };
 
-  this.adaptPost = function (input) {
+  this.adaptPost = function a(input) {
     return convertPost(input);
   };
 
-  this.adaptTopics = function (input) {
+  this.adaptTopics = function a(input) {
     const topics = [];
     let discourseTopics = input;
     if (!(discourseTopics instanceof Array)) {

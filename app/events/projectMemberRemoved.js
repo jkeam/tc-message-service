@@ -10,7 +10,7 @@ module.exports = (logger, msg, channel) => {
   const userId = member.userId.toString();
   const projectId = member.projectId.toString();
 
-  return Promise.coroutine(function* () {
+  return Promise.coroutine(function* a() {
     let topics;
     try {
       topics = yield db.topics.findAll({
