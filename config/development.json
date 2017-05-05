@@ -1,4 +1,5 @@
 {
+  "authDomain": "topcoder-dev.com",
   "pubSubExchangeName": "dev.projects",
   "pubSubQueueName": "dev.message.service"
 }

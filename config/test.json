@@ -1,4 +1,5 @@
 {
+  "authDomain": "topcoder-dev.com",
   "identityServiceEndpoint": "http://test1/",
   "discourseURL": "http://test1",
   "dbConfig": {
