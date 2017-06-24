@@ -2,7 +2,7 @@
   "defaultDiscoursePw": "supersecretpw",
   "discourseSystemUsername": "system",
   "memberServiceUrl": "http://local.topcoder-dev.com:3001/members",
-  "discourseURL": "http://talk.topcoder-dev.com",
+  "discourseURL": "http://talk.topcoder-dev.com:3002",
   "discourseApiKey": "cbe0bcee43a31087b081d7c10db116f5841bf27726a7c6fea842e5a0390cde63",
   "authSecret": "secret",
   "authDomain": "topcoder.com",

@@ -20,8 +20,7 @@ const retrieveTopic = Promise.coroutine(function* a(logger, dbTopic, authUser, d
     topic.tag = dbTopic.tag;
   } catch (error) {
     logger.info(`Failed to get topic from discourse: ${dbTopic.discourseTopicId}`);
-    logger.debug(error.response && error.response.status);
-    logger.debug(error.response && error.response.data);
+    logger.error(error);
     // check if user is admin or manager - they can view topics without being a part of the team
     if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], authUser.roles).length > 0) {
       isReadOnlyForAdmins = true;
@@ -32,8 +31,7 @@ const retrieveTopic = Promise.coroutine(function* a(logger, dbTopic, authUser, d
         topic.tag = dbTopic.tag;
       } catch (err) {
         logger.info(`Failed to get topic from discourse: ${dbTopic.discourseTopicId}`);
-        logger.debug(error.response && error.response.status);
-        logger.debug(error.response && error.response.data);
+        logger.error(err);
         topic = null;
       }
     }

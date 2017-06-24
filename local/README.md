@@ -39,23 +39,6 @@ To help manage multiple docker instances running together, we will use docker co
 
 https://docs.docker.com/compose/install/
 
-## Discourse
-
-The following page describes how to install and setup a Discourse instance. It suggest the use of a cloud server, but this setup can be easily done locally as well. Feel free to use either approach, just make sure to set the appropriate hosts entries, since this guide assumes you will be running Discourse locally.
-
-If you setup Discourse locally, use talk.topcoder.com as a hostname for Discourse.
-
-Also, the setup requires an email server, you can use your own SMTP server running locally or any cloud service such as SendGrid which has a free tier, GMail, etc.
-
-Discourse setup: https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md
-
-If you have problems with deploying Discourse on OS X, note that you need to change /var to /private/var in app.yml and need to set read&write permissions for /private/var/discourse/shared.
-If error happens, can restart with ./launcher bootstrap app.
-
-Next you will need to establish an admin account. You can do that by registering an account with the same email you provided in the Discourse setup, or alternatively use the discourse command line tools as described here:
-
-https://meta.discourse.org/t/create-admin-account-from-console/17274
-
 ## Nodejs and Npm
 
 Install nodejs and npm, instructions can be found here: https://nodejs.org/en/, please use 6.4.x version
@@ -64,118 +47,58 @@ Install nodejs and npm, instructions can be found here: https://nodejs.org/en/, 
 
 Install the sequelize command line interface by following the instructions found here: https://github.com/sequelize/cli
 
+
+
 # Local Setup
 
 ## Hosts
 
-Update your localhost entry in your hosts file (/etc/hosts) to map talk.topcoder.com and local.topcoder-dev.com to the ip address in which your docker containers will run:
-On Linux it is the local host itself:
-```
-127.0.0.1	localhost local.topcoder-dev.com talk.topcoder.com talk.topcoder-dev.com
-```
-On Windows it is the ip address of the docker machine, find it with the command "docker-machine ip", below is the default:
-C:\Windows\System32\drivers\etc\hosts
-```
-192.168.99.100	local.topcoder-dev.com talk.topcoder.com talk.topcoder-dev.com
-```
-On Mac OS X it is the ip address of the docker virtual machine, find it with the command "docker-machine ip", below is the default
-/etc/hosts
-```
-192.168.99.100	 local.topcoder-dev.com talk.topcoder.com talk.topcoder-dev.com
-```
-If docker runs no machine, then map to 127.0.0.1 as on Linux.
+Update your localhost entry in your hosts file (/etc/hosts or C:\Windows\System32\drivers\etc\hosts on Windows) to map *talk.topcoder-dev.com* and *local.topcoder-dev.com* to the ip address of your docker ip:
 
-We will use talk.topcoder.com to access Discourse, and local.topcoder-dev.com to access all other services and database.
+```properties
+<docker_ip> local.topcoder-dev.com talk.topcoder-dev.com
+```
+On Linux the docker ip should be 127.0.0.1. On OSX/Windows if you use docker machine, find the docker ip with command ``docker-machine ip``
 
 ## Source Code
 
-Unzip the zip file with the source code for the message service locally, we will refer to this folder henceforth as tc-message-service.
-
-# Starting the Application
-
-## Running the Dependencies
-
-Go into the tc-message-service/local folder of this repository and start the docker services:
-
-```
-docker-compose up
+```shell
+git clone https://github.com/topcoder-platform/tc-message-service.git
 ```
 
-## Install Dependent Packages
+We will refer to this folder henceforth as tc-message-service.
 
-In the tc-message-service folder issue the following command:
-```
-npm install
-```
-Note: npm install only has to be executed the first time when you set up the service, and whenever changes are made to the packages.json file
+## Setup Discourse
 
-## Creating the Database Schema
+The following describes how to setup Discourse locally:
 
-We use sequelize to create and manage the database schema, to create the schema in Postgres, simply go into the tc-message-service folder and issue the following command:
+```shell
+# Boot docker container, use 3002 port, you can change to suit your environment
+docker pull discourse/discourse_dev:release
+docker run -d -p 1080:1080 -p 3002:3002 --hostname=discourse --name=discourse_dev discourse/discourse_dev:release /sbin/boot
 
-```
-sequelize db:migrate
-```
+# Checkout Discourse source, stable branch
+git clone https://github.com/discourse/discourse.git
+cd discourse
+git checkout stable
 
-You can connect to postgres using psql locally or from the postgres docker container:
+# Copy source files to container
+docker cp . discourse_dev:/src
+docker exec -it discourse_dev /bin/bash -c "chown -R discourse:discourse /src"
 
-```
-user: postgres
-password: postgres
-database: messages
-```
+# Install bundle and sso plugin
+./bin/docker/bundle install
+./bin/docker/rake plugin:install["https://github.com/FutureProofGames/discourse_sso_redirect.git"]
 
-## Setting up Security for Reference Lookups
+# Migrate db
+./bin/docker/rake db:migrate
 
-The message system assumes that if a user has access to an entity at topcoder, they can therefore participate in discussions associated with that entity. The referenceLookup table in Postgres provides a map to determine with API endpoint should be invoked on behalf of the user, by using the user's authentication token, to check if the record is retrievable. If the record is returned, then the user is allowed to view and participate in the discussion.
-
-We are going to use submissions as the entity, and in order to setup the lookup we need to insert a record into the referenceLookup table.
-
-Login to postgres either by install psql locally, or entering the postgres container:
-
-```
-psql messages postgres -h local.topcoder-dev.com
-```
-
-And execute the following statement:
-
-```
-insert into "referenceLookups" (reference, endpoint, "createdAt", "updatedAt") values ('submission', 'http://local.topcoder-dev.com:3001/submissions/{id}', now(), now());
-CREATE DATABASE messages_test;
-```
-
-## Setup Discourse and Enable SSO
-Here are the commands that you can follow to setup the discourse and enable sso:
-```
-# setup
-sudo -s
-mkdir /var/discourse
-git clone https://github.com/discourse/discourse_docker.git /var/discourse
-cd /var/discourse
-./discourse-setup
-
-# Answer the following questions when prompted:
-#   Hostname for your Discourse? [discourse.example.com]: localhost
-#   Email address for admin account? [me@example.com]: myname@gmail.com
-#   SMTP server address? [smtp.example.com]: smtp.gmail.com
-#   SMTP user name? [postmaster@discourse.example.com]: myname@gmail.com
-#   SMTP port [587]: 587
-#   SMTP password? []: mygmailpassword
-# This will generate an app.yml configuration file on your behalf, and then kicks off bootstrap.
-# Bootstrapping takes between 2-8 minutes to set up your Discourse.
-
-sudo /var/discourse/launcher enter app
-
-# install sso plugin
-rake plugin:install["https://github.com/FutureProofGames/discourse_sso_redirect.git"]
-
-# create admin acount
-rake admin:create
-
-# answer the following questions:
-#   Email: admin@example.com
-#   Password: password
-#   Repeat password: password
+# Create an admin account
+./bin/docker/rake admin:create
+# Answer the following questions:
+#   Email: admin@test.com
+#   Password: 1234
+#   Repeat password: 1234
 #
 #   Ensuring account is active!
 #
@@ -184,64 +107,130 @@ rake admin:create
 #
 #   Your account now has Admin privileges!
 
-# get an api key
-rake api_key:get
+# Get api_key, this will be used later to set env
+./bin/docker/rake api_key:get
 
-The `config/default.json` file contains the following discourse and sso related properties:
-* discourseURL - this is the disource host url, no need to change.
-* discourseApiKey - this is the discourse api key, set to the api-key obtained above.
-* discourseSSO
-** secret - the discourse sso secret, need to be the same as the value on discouse settings page
-** loginCookieName - the login cookie name to obtain the jwt token
-** loginUrl - the login url to redirect to
-
-To enable sso in discourse, login discourse with the admin account created above.
-Click on the menu icon (top right corner) and select Admin.
-Click on the Settings tab and then on the Login menu item
-Scroll down and do as below:
-* activate 'enable sso',
-* activate 'sso overrides email'
-* activate 'sso overrides username'
-* activate 'sso overrides name'
-* set 'sso url' to the sso endpoint of this message service. e.g. http://127.0.0.1:3000/sso
-* set 'sso secret' to the same value as the `discourseSSO.secret` in the `config/default.json` file, e.g. secret12345
-
-Still on the settings tab, click the 'Users' menu and set 'logout redirect' to a logout endpoint.
-Still on the settings tab, click the 'SSO Redirect' menu and add host of sso-url to the 'sso redirect domain whitelist'
-
-Note that the 'SSO Redirect' menu appeared after restarting the docker container in /var/discourse directory:
+# Use 3002 port, you can change to suit your environment
+./bin/docker/rails s -b 0.0.0.0 -p 3002
 ```
-sudo ./launcher stop app
-sudo ./launcher start app
+
+Note by default the Discourse starts on 3000 port in dev mode, which may conflict with our nodejs app when they both run locally, so we change Discourse to use 3002 port instead.
+
+## Configure Discourse
+
+By default Discourse has some strict validation rules and we can relax them for dev (For example by default Discourse does not allow **mailinator.com** email domain for user). Run following commands(replace  <docker_ip> and <api_key>) to configure Discourse settings:
+
+```shell
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/email_domains_blacklist?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d email_domains_blacklist=''
+
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/min_post_length?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d min_post_length=1
+
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/min_first_post_length?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d min_first_post_length=1
+
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/min_private_message_post_length?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d min_private_message_post_length=1
+
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/body_min_entropy?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d body_min_entropy=1
+
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/min_topic_title_length?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d min_topic_title_length=1
+
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/title_min_entropy?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d title_min_entropy=1
+
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/allow_uppercase_posts?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d allow_uppercase_posts=true
+
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/min_private_message_title_length?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d min_private_message_title_length=1
+
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/allow_duplicate_topic_titles?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d allow_duplicate_topic_titles=true
+
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/min_title_similar_length?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d min_title_similar_length=1
+
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/min_body_similar_length?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d min_body_similar_length=1
+
+curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/enable_emoji?api_key=<api_key>&api_username=system' -H 'content-type: application/x-www-form-urlencoded' -i -d enable_emoji=false
+
+```
+
+
+
+# Starting the Application
+
+## Running the Dependencies
+
+Go into the tc-message-service/local folder of this repository and start the docker services:
+
+```shell
+docker-compose up
 ```
 
 ## Setting up Environment Variables
 
-We need to set the following 3 environment variables:
-
-```
-export DISCOURSE_API_KEY=<<SYSTEM USER API KEY>>
+```shell
+export DISCOURSE_API_KEY=<<api_key got from above>>
 export DEFAULT_DISCOURSE_PW=supersecretpw
-export RABBITMQ_URL=amqp://localhost:5672
-```
-NOTE: You many need to change RABBITMQ_URL to point to your local setup if running under differnt host or port
-DEFAULT_DISCOURSE_PW defines the default password for users which will be created in Discourse automatically.
-The system user's API key is obtained in the last step from discourse.
-
-# Running the Service
-
-To run the service, go into the tc-message-service folder and issue the following command:
-
-```
-npm start
+export DISCOURSE_URL=http://talk.topcoder-dev.com:3002
+export RABBITMQ_URL=amqp://local.topcoder-dev.com:5672
+export DB_MASTER_URL=postgres://coder:mysecretpassword@local.topcoder-dev.com:5432/messages
 ```
 
-To see pretty logging on local development use the following command instead:
+NOTE: 
+
+- The Discourse system user's API key is obtained in the last step from Discourse setup
+- DEFAULT_DISCOURSE_PW defines the default password for users which will be created in Discourse automatically
+- You may need to change DISCOURSE_URL/RABBITMQ_URL/DB_MASTER_URL if running under differnt host or port
+
+## Install Dependent Packages
+
+In the tc-message-service folder issue the following command:
+```shell
+npm install
 ```
-npm run local-start
+Note: npm install only has to be executed the first time when you set up the service, and whenever changes are made to the packages.json file
+
+## Creating the Database Schema
+
+We use sequelize to create and manage the database schema, to create the schema in Postgres, simply go into the tc-message-service folder and issue the following command:
+
+```shell
+NODE_ENV=development sequelize db:migrate
 ```
 
-# Testing the service
+You can connect to postgres using psql locally or from the postgres docker container:
+
+```properties
+user: coder
+password: mysecretpassword
+database: messages
+```
+
+## Running the Service
+
+To run the service in dev mode, go into the tc-message-service folder and issue the following command:
+
+```shell
+npm run start:dev
+```
+This will start service on 8001 port.
+
+
+
+# Verify the service
+
+## Setting up Security for Reference Lookups
+
+The message system assumes that if a user has access to an entity at topcoder, they can therefore participate in discussions associated with that entity. The referenceLookup table in Postgres provides a map to determine with API endpoint should be invoked on behalf of the user, by using the user's authentication token, to check if the record is retrievable. If the record is returned, then the user is allowed to view and participate in the discussion.
+
+We are going to use submissions as the entity, and in order to setup the lookup we need to insert a record into the referenceLookup table.
+
+Login to postgres either by install psql locally, or entering the postgres docker container:
+
+```shell
+psql messages coder -h local.topcoder-dev.com
+```
+
+And execute the following statements:
+
+```sql
+INSERT INTO "referenceLookups" (reference, endpoint, "createdAt", "updatedAt") VALUES ('submission', 'http://local.topcoder-dev.com:3001/submissions/{id}', now(), now());
+```
 
 ## Obtaining a JWT token
 
@@ -252,42 +241,62 @@ This JWT token can be used to impersonate the user magrathean:
 ```
 eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiI0MDAxMTU3OCIsImlhdCI6MTQ1MDkyOTI0NiwiZW1haWwiOm51bGwsImp0aSI6IjEzNjljNjAwLWUwYTEtNDUyNS1hN2M3LTU2YmU3ZDgxM2Y1MSJ9.SeLETowyDVJCGKGc0wjk4fPMH9pug7C9Yw_7xkI7Fvk
 ```
-
-You can make changes to test with different users by going to jwt.io, and pasting the token above in the editor on that page. You can make changes on the "Decoded" side of the editor and that will be reflected in the token that you can then use to sign your requests, therefore impersonating other users.
+You can make changes to test with different users by going to [jwt.io](), and pasting the token above in the editor on that page. You can make changes on the "Decoded" side of the editor and that will be reflected in the token that you can then use to sign your requests, therefore impersonating other users.
 
 Note: The signature key used for the local environment is "secret", which is configured in the tc-message-service/config/default.json
 
 ## Making a Request
 
-The following curl command will check if the user has access to the submission 455, fetch a thread, creating the thread if necessary, and provisioning a new user in discourse if necessary:
+The following curl command will check if the user has access to the submission 455, fetch a thread, creating the thread if necessary, and provisioning a new user in Discourse if necessary:
 
+```shell
+curl -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiI0MDAxMTU3OCIsImlhdCI6MTQ1MDkyOTI0NiwiZW1haWwiOm51bGwsImp0aSI6IjEzNjljNjAwLWUwYTEtNDUyNS1hN2M3LTU2YmU3ZDgxM2Y1MSJ9.SeLETowyDVJCGKGc0wjk4fPMH9pug7C9Yw_7xkI7Fvk" "http://localhost:8001/v4/topics?filter=reference%3Dsubmission%26referenceId%3D455"
 ```
-curl -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiI0MDAxMTU3OCIsImlhdCI6MTQ1MDkyOTI0NiwiZW1haWwiOm51bGwsImp0aSI6IjEzNjljNjAwLWUwYTEtNDUyNS1hN2M3LTU2YmU3ZDgxM2Y1MSJ9.SeLETowyDVJCGKGc0wjk4fPMH9pug7C9Yw_7xkI7Fvk" "http://localhost:3000/v4/topics?filter=reference%3Dsubmission%26referenceId%3D455"
-```
-
-You can also create posts in existing threads by doing the following:
-
-First, Create `payload` file in the current directory, where the file content is like following:
-```
-{
-    "post": "This is my response to the thread"
-}
-```
-
-Then, run the following command, `@payload` is referencing the created file above.
-```
-curl -X POST -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiI0MDAxMTU3OCIsImlhdCI6MTQ1MDkyOTI0NiwiZW1haWwiOm51bGwsImp0aSI6IjEzNjljNjAwLWUwYTEtNDUyNS1hN2M3LTU2YmU3ZDgxM2Y1MSJ9.SeLETowyDVJCGKGc0wjk4fPMH9pug7C9Yw_7xkI7Fvk" -H "Content-Type: application/json" "http://localhost:3000/v4/threads" -d @payload
+You can also create topic by doing the following:
+```shell
+curl -X POST -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJhZG1pbmlzdHJhdG9yIl0sImlzcyI6Imh0dHBzOi8vYXBpLnRvcGNvZGVyLWRldi5jb20iLCJoYW5kbGUiOiJtYWdyYXRoZWFuIiwiZXhwIjoxNzY2Mjg5MjQ2LCJ1c2VySWQiOiI0MDAxMTU3OCIsImlhdCI6MTQ1MDkyOTI0NiwiZW1haWwiOm51bGwsImp0aSI6IjEzNjljNjAwLWUwYTEtNDUyNS1hN2M3LTU2YmU3ZDgxM2Y1MSJ9.SeLETowyDVJCGKGc0wjk4fPMH9pug7C9Yw_7xkI7Fvk" -H "Content-Type: application/json" "http://localhost:8001/v4/topics" -d '{"reference":"submission","referenceId":"455","tag":"MESSAGES","title":"Test discussion topic","body":"Create a new topic for the specified entity"}'
 ```
 
 
 ## Unit tests
+
 Please update test environment configurations in `config/config.json`.
-```
-export NODE_ENV=test
-sequelize db:migrate
+
+```shell
+NODE_ENV=test sequelize db:migrate
 npm test
 ```
+
 Then you can check coverage report in coverage folder.
 
 ## Postman
+
 You can also verify the service using Postman. For this load files from the local/postman directory into Postman.
+
+# Enable Discourse SSO
+
+Here are the steps that you can follow to enable the Discourse sso:
+
+The `config/default.json` file contains the following sso related properties:
+
+- discourseSSO
+  - secret - the discourse sso secret, need to be the same as the value on discouse settings page
+  - loginCookieName - the login cookie name to obtain the jwt token
+  - loginUrl - the login url to redirect to
+
+To enable sso in Discourse, login into Discourse with the admin account created above.
+Click on the menu icon (top right corner) and select Admin.
+Click on the Settings tab and then on the Login menu item
+Scroll down and do as below:
+
+- activate 'enable sso',
+- activate 'sso overrides email'
+- activate 'sso overrides username'
+- activate 'sso overrides name'
+- set 'sso url' to the sso endpoint of this message service. e.g. http://localhost:8001/sso
+- set 'sso secret' to the same value as the `discourseSSO.secret` in the `config/default.json` file, e.g. secret12345
+
+Still on the settings tab, click the 'Users' menu and set 'logout redirect' to a logout endpoint http://localhost:8001
+Still on the settings tab, click the 'SSO Redirect' menu and add host of sso-url to the 'sso redirect domain whitelist'
+
+Note that the 'SSO Redirect' menu appeared after restarting the docker container.

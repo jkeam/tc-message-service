@@ -7,6 +7,7 @@ import _ from 'lodash';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import expressRequestId from 'express-request-id';
+import cors from 'cors';
 
 // const express = require('express');
 const coreLib = require('tc-core-library-js');
@@ -14,10 +15,17 @@ const Routes = require('./routes');
 const db = require('./models');
 const rabbitMQService = require('./services/rabbitmq');
 
+// Define and configure app
+const app = express();
+
 // init logger
 let appName = 'tc-message-service';
 if (process.env.NODE_ENV) {
   switch (process.env.NODE_ENV.toLowerCase()) {
+    case 'local':
+      appName += '-local';
+      app.use(cors());
+      break;
     case 'development':
       appName += '-dev';
       break;
@@ -30,9 +38,6 @@ if (process.env.NODE_ENV) {
       break;
   }
 }
-
-// Define and configure app
-const app = express();
 
 const logger = coreLib.logger({
   name: appName,
@@ -56,7 +61,7 @@ app.use(routes);
 
 // Queues
 app.services = {};
-if (process.env.NODE_ENV.toLowerCase() === 'test') {
+if (process.env.NODE_ENV && process.env.NODE_ENV.toLowerCase() === 'test') {
     // TODO add test mocks
 } else {
   app.services.pubSub = rabbitMQService(logger);

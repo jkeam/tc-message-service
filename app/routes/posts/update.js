@@ -7,7 +7,7 @@ const Adapter = require('../../services/adapter');
 const Joi = require('joi');
 
 /**
- * Creates a new post to a topic in Discourse
+ * Save a post to a topic in Discourse
  * @param {Object} db sequelize db with models loaded
  * @return {object} response
  */
@@ -15,25 +15,24 @@ module.exports = db => (req, resp, next) => {
   const logger = req.log;
   const discourseClient = Discourse(logger);
   const adapter = new Adapter(logger, db);
-  // const helper = HelperService(logger, db);
 
-    // Validate request parameters
+  // Validate request parameters
   Joi.assert(req.body, {
     post: Joi.string().required(),
   });
   const postBody = req.body.post;
-  return discourseClient.createPost(
+  return discourseClient.updatePost(
     req.authUser.userId.toString(),
-    postBody,
-    req.params.topicId,
-    req.body.responseTo)
+    req.params.postId,
+    postBody)
   .then((response) => {
-    logger.info('Post created');
-    return adapter.adaptPost(response.data);
+    logger.info('Post saved', response.data);
+    return adapter.adaptPost(response.data.post);
   })
   .then(post => resp.status(200).send(util.wrapResponse(req.id, post)))
   .catch((error) => {
     logger.error(error);
-    next(new errors.HttpStatusError(error.response.status, 'Error creating post'));
+    next(new errors.HttpStatusError(
+      error.response && error.response.status ? error.response.status : 500, 'Error updating post'));
   });
 };
