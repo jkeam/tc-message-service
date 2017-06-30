@@ -7,8 +7,8 @@
     "dialect": "postgres"
   },
   "test": {
-    "username": "postgres",
-    "password": "postgres",
+    "username": "coder",
+    "password": "mysecretpassword",
     "database": "messages_test",
     "host": "local.topcoder-dev.com",
     "dialect": "postgres"

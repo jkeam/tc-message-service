@@ -8,10 +8,16 @@ const tcCoreLib = require('tc-core-library-js');
 const getTopicHandler = require('./topics/get');
 const topicListHandler = require('./topics/list');
 const topicCreateHandler = require('./topics/create');
+const topicUpdateHandler = require('./topics/update');
+const topicDeleteHandler = require('./topics/delete');
 
 const createPostHandler = require('./posts/create');
 const getPostsHandler = require('./posts/get');
+const updatePostHandler = require('./posts/update');
+const deletePostHandler = require('./posts/delete');
 const systemUserFilter = require('../middleware/system-user-filter.js');
+
+const jwt = require('jsonwebtoken');
 
 /**
  * Loads and configures all sub routes of this api
@@ -44,7 +50,35 @@ module.exports = (logger, db) => {
 
   // all project service endpoints need authentication
   const jwtAuth = tcCoreLib.middleware.jwtAuthenticator;
-  router.all('/v4/topics*', jwtAuth(), (req, res, next) => {
+  router.all('/v4/topics*', (req, res, next) => {
+    if (`${process.env.TC_MESSAGE_SERVICE_AUTH_LOOSE}` !== 'true') {
+      jwtAuth()(req, res, next);
+      return;
+    }
+    try {
+      const decoded = jwt.decode(req.headers.authorization.split(' ')[1]);
+      const issuer = `https://api.${config.get('authDomain')}`;
+      if (!decoded) {
+        res.status(403)
+          .json(util.wrapErrorResponse(req.id, 403, 'No token provided.'));
+        res.send();
+      } else if (decoded.iss !== issuer) {
+        // verify issuer
+        res.status(403)
+          .json(util.wrapErrorResponse(req.id, 403, 'Invalid token issuer.'));
+        res.send();
+      } else {
+        // if everything is good, save to request for use in other routes
+        req.authUser = decoded;
+        req.authUser.userId = parseInt(req.authUser.userId, 10);
+        next();
+      }
+    } catch (err) {
+      res.status(403)
+        .json(util.wrapErrorResponse(req.id, 403, 'Failed to authenticate token.'));
+      res.send();
+    }
+  }, (req, res, next) => {
     req.authToken = req.get('authorization').split(' ')[1]; // eslint-disable-line
     next();
   });
@@ -53,7 +87,10 @@ module.exports = (logger, db) => {
 
   // Register all the routes
   router.route('/v4/topics/:topicId')
-    .get(getTopicHandler(db));
+    .get(getTopicHandler(db))
+    .delete(topicDeleteHandler(db));
+  router.route('/v4/topics/:topicId/edit')
+    .post(topicUpdateHandler(db));
 
   router.route('/v4/topics')
     .post(topicCreateHandler(db))
@@ -63,6 +100,12 @@ module.exports = (logger, db) => {
   router.route('/v4/topics/:topicId/posts')
     .post(createPostHandler(db))
     .get(getPostsHandler(db));
+
+  router.route('/v4/topics/:topicId/posts/:postId')
+    .delete(deletePostHandler(db));
+
+  router.route('/v4/topics/:topicId/posts/:postId/edit')
+    .post(updatePostHandler(db));
 
   // register error handler
   router.use((err, req, res, next) => { // eslint-disable-line

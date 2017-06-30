@@ -2,6 +2,142 @@
   
   "users": [
     {
+      "id": 40152922,
+      "result": {
+        "success": true,
+        "status": 200,
+        "metadata": null,
+        "content": {
+          "id": "40152922",
+          "modifiedBy": null,
+          "modifiedAt": "2016-06-01T16:57:47.000Z",
+          "createdBy": null,
+          "createdAt": "2002-02-06T18:06:40.000Z",
+          "handle": "pshah_customer",
+          "email": "pshah_tccustomer@mailinator.com",
+          "firstName": "Parth",
+          "lastName": "Customer",
+          "credential": {
+            "activationCode": "3DZ9IVH4",
+            "resetToken": null,
+            "hasPassword": true
+          },
+          "status": "A",
+          "country": null,
+          "regSource": null,
+          "utmSource": null,
+          "utmMedium": null,
+          "utmCampaign": null,
+          "active": true,
+          "profile": null,
+          "emailActive": true
+        }
+      },
+      "version": "v3"
+    },
+    {
+      "id": 40152856,
+      "result": {
+        "success": true,
+        "status": 200,
+        "metadata": null,
+        "content": {
+          "id": "40152856",
+          "modifiedBy": null,
+          "modifiedAt": "2016-06-01T16:57:47.000Z",
+          "createdBy": null,
+          "createdAt": "2002-02-06T18:06:40.000Z",
+          "handle": "pshah_manager",
+          "email": "pshah_tcmanager@mailinator.com",
+          "firstName": "Parth",
+          "lastName": "Manager",
+          "credential": {
+            "activationCode": "3DZ9IVH4",
+            "resetToken": null,
+            "hasPassword": true
+          },
+          "status": "A",
+          "country": null,
+          "regSource": null,
+          "utmSource": null,
+          "utmMedium": null,
+          "utmCampaign": null,
+          "active": true,
+          "profile": null,
+          "emailActive": true
+        }
+      },
+      "version": "v3"
+    },
+    {
+      "id": 40152855,
+      "result": {
+        "success": true,
+        "status": 200,
+        "metadata": null,
+        "content": {
+          "id": "40152855",
+          "modifiedBy": null,
+          "modifiedAt": "2016-06-01T16:57:47.000Z",
+          "createdBy": null,
+          "createdAt": "2002-02-06T18:06:40.000Z",
+          "handle": "pshah_copilot",
+          "email": "pshah_tccopilot@mailinator.com",
+          "firstName": "Parth",
+          "lastName": "copilot",
+          "credential": {
+            "activationCode": "3DZ9IVH4",
+            "resetToken": null,
+            "hasPassword": true
+          },
+          "status": "A",
+          "country": null,
+          "regSource": null,
+          "utmSource": null,
+          "utmMedium": null,
+          "utmCampaign": null,
+          "active": true,
+          "profile": null,
+          "emailActive": true
+        }
+      },
+      "version": "v3"
+    },
+    {
+      "id": 40011578,
+      "result": {
+        "success": true,
+        "status": 200,
+        "metadata": null,
+        "content": {
+          "id": "40011578",
+          "modifiedBy": null,
+          "modifiedAt": "2016-06-01T16:57:47.000Z",
+          "createdBy": null,
+          "createdAt": "2002-02-06T18:06:40.000Z",
+          "handle": "magrathean",
+          "email": "email@email.com",
+          "firstName": "Firstname",
+          "lastName": "Lastname",
+          "credential": {
+            "activationCode": "3DZ9IVH4",
+            "resetToken": null,
+            "hasPassword": true
+          },
+          "status": "A",
+          "country": null,
+          "regSource": null,
+          "utmSource": null,
+          "utmMedium": null,
+          "utmCampaign": null,
+          "active": true,
+          "profile": null,
+          "emailActive": true
+        }
+      },
+      "version": "v3"
+    },
+    {
       "id": 40051331,
       "result": {
         "success": true,
@@ -13,10 +149,10 @@
           "modifiedAt": "2016-06-01T16:57:47.000Z",
           "createdBy": null,
           "createdAt": "2002-02-06T18:06:40.000Z",
-          "handle": "test_user",
-          "email": "user@topcoder.com",
-          "firstName": "F_user",
-          "lastName": "L_user",
+          "handle": "test_user1",
+          "email": "email_test1@email.com",
+          "firstName": "Firstname",
+          "lastName": "Lastname",
           "credential": {
             "activationCode": "3DZ9IVH4",
             "resetToken": null,
@@ -71,6 +207,156 @@
     }
   ],
   "members": [
+    {
+      "id": "pshah_customer",
+      "result": {
+        "success": true,
+        "status": 200,
+        "metadata": null,
+        "content": {
+          "maxRating": {
+            "rating": 1114,
+            "track": "DATA_SCIENCE",
+            "subTrack": "SRM"
+          },
+          "createdBy": "40011578",
+          "updatedBy": "40011578",
+          "userId": 40152922,
+          "firstName": "Parth",
+          "lastName": "Customer",
+          "quote": "It is a mistake to think you can solve any major problems just with potatoes.",
+          "description": null,
+          "otherLangName": null,
+          "handle": "pshah_customer",
+          "handleLower": "pshah_customer",
+          "status": "ACTIVE",
+          "email": "pshah_tccustomer@mailinator.com",
+          "addresses": [
+            {
+              "streetAddr1": "100 Main Street",
+              "streetAddr2": "",
+              "city": "Chicago",
+              "zip": "60601",
+              "stateCode": "IL",
+              "type": "HOME",
+              "updatedAt": null,
+              "createdAt": null,
+              "createdBy": null,
+              "updatedBy": null
+            }
+          ],
+          "homeCountryCode": "USA",
+          "competitionCountryCode": "USA",
+          "photoURL": null,
+          "tracks": [
+            "DEVELOP"
+          ],
+          "updatedAt": "2015-12-02T14:00Z",
+          "createdAt": "2014-04-10T10:55Z"
+        }
+      },
+      "version": "v3"
+    },
+    {
+      "id": "pshah_manager",
+      "result": {
+        "success": true,
+        "status": 200,
+        "metadata": null,
+        "content": {
+          "maxRating": {
+            "rating": 1114,
+            "track": "DATA_SCIENCE",
+            "subTrack": "SRM"
+          },
+          "createdBy": "40011578",
+          "updatedBy": "40011578",
+          "userId": 40152856,
+          "firstName": "Parth",
+          "lastName": "Manager",
+          "quote": "It is a mistake to think you can solve any major problems just with potatoes.",
+          "description": null,
+          "otherLangName": null,
+          "handle": "pshah_manager",
+          "handleLower": "pshah_manager",
+          "status": "ACTIVE",
+          "email": "pshah_tcmanager@mailinator.com",
+          "addresses": [
+            {
+              "streetAddr1": "100 Main Street",
+              "streetAddr2": "",
+              "city": "Chicago",
+              "zip": "60601",
+              "stateCode": "IL",
+              "type": "HOME",
+              "updatedAt": null,
+              "createdAt": null,
+              "createdBy": null,
+              "updatedBy": null
+            }
+          ],
+          "homeCountryCode": "USA",
+          "competitionCountryCode": "USA",
+          "photoURL": null,
+          "tracks": [
+            "DEVELOP"
+          ],
+          "updatedAt": "2015-12-02T14:00Z",
+          "createdAt": "2014-04-10T10:55Z"
+        }
+      },
+      "version": "v3"
+    },
+    {
+      "id": "pshah_copilot",
+      "result": {
+        "success": true,
+        "status": 200,
+        "metadata": null,
+        "content": {
+          "maxRating": {
+            "rating": 1114,
+            "track": "DATA_SCIENCE",
+            "subTrack": "SRM"
+          },
+          "createdBy": "40011578",
+          "updatedBy": "40011578",
+          "userId": 40152855,
+          "firstName": "Parth",
+          "lastName": "copilot",
+          "quote": "It is a mistake to think you can solve any major problems just with potatoes.",
+          "description": null,
+          "otherLangName": null,
+          "handle": "pshah_copilot",
+          "handleLower": "pshah_copilot",
+          "status": "ACTIVE",
+          "email": "pshah_tccopilot@mailinator.com",
+          "addresses": [
+            {
+              "streetAddr1": "100 Main Street",
+              "streetAddr2": "",
+              "city": "Chicago",
+              "zip": "60601",
+              "stateCode": "IL",
+              "type": "HOME",
+              "updatedAt": null,
+              "createdAt": null,
+              "createdBy": null,
+              "updatedBy": null
+            }
+          ],
+          "homeCountryCode": "USA",
+          "competitionCountryCode": "USA",
+          "photoURL": null,
+          "tracks": [
+            "DEVELOP"
+          ],
+          "updatedAt": "2015-12-02T14:00Z",
+          "createdAt": "2014-04-10T10:55Z"
+        }
+      },
+      "version": "v3"
+    },
     {
       "id": "magrathean",
       "result": {
@@ -135,7 +421,7 @@
           },
           "createdBy": "40011578",
           "updatedBy": "40011578",
-          "userId": 40011578,
+          "userId": 40051331,
           "firstName": "Firstname",
           "lastName": "Lastname",
           "quote": "It is a mistake to think you can solve any major problems just with potatoes.",
