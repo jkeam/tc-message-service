@@ -5,7 +5,7 @@ import { clearDB, prepareDB, jwts } from '../../tests';
 
 
 const request = require('supertest');
-const topicJson = require('../../tests/topic.json');
+const postJson = require('../../tests/post.json');
 const server = require('../../app');
 
 const axios = require('axios');
@@ -13,9 +13,8 @@ const sinon = require('sinon');
 
 require('should-sinon');
 
-describe('GET /v4/topics/:topicId', () => {
-  const apiPathPrefix = '/v4/topics/';
-  const apiPath = `${apiPathPrefix}1`;
+describe('GET /v4/topics/:topicId/posts', () => {
+  const apiPath = '/v4/topics/1/posts?postIds=1,2';
 
   let sandbox;
   beforeEach((done) => {
@@ -42,30 +41,55 @@ describe('GET /v4/topics/:topicId', () => {
             .expect(403, done);
   });
 
-  it('should return 404 response if no matching topic', (done) => {
-    sandbox.stub(axios, 'get').resolves({ data: { result: {} } });
+  it('should return 400 response if missing postIds parameter', (done) => {
     request(server)
-            .get(`${apiPathPrefix}10000`)
+            .get('/v4/topics/1/posts')
             .set({
               Authorization: `Bearer ${jwts.admin}`,
             })
-            .expect(404)
-            .end((err) => {
+            .expect(400)
+            .end((err, res) => {
               if (err) {
                 return done(err);
               }
+              res.body.should.have.propertyByPath('result', 'content', 'message')
+                        .eql('Post ids parameter is required');
               return done();
             });
   });
 
-  it('should return 200 response when called by project member and should mark topic read', (done) => {
-    const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/1.json?include_raw=1').resolves({ data: topicJson });
-    // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({});
+  it('should return 404 response if no matching topic', (done) => {
+    sandbox.stub(axios, 'get').rejects({ response: { status: 404 } });
+    request(server)
+            .get(apiPath)
+            .set({
+              Authorization: `Bearer ${jwts.admin}`,
+            })
+            .expect(404, done);
+  });
+
+  it('should return 200 response if no matching posts', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: { post_stream: { posts: [] } } });
+    request(server)
+            .get(apiPath)
+            .set({
+              Authorization: `Bearer ${jwts.admin}`,
+            })
+            .expect(200)
+            .end((err) => {
+              if (err) {
+                return done(err);
+              }
+              sinon.assert.calledOnce(getStub);
+              return done();
+            });
+  });
+
+  it('should return 200 response when posts are retrieved', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: { post_stream: { posts: [postJson] } } });
 
     request(server)
-      .get(`${apiPathPrefix}1`)
+      .get(apiPath)
       .set({
         Authorization: `Bearer ${jwts.member}`,
       })
@@ -75,36 +99,12 @@ describe('GET /v4/topics/:topicId', () => {
           return done(err);
         }
         sinon.assert.calledOnce(getStub);
-        sinon.assert.calledOnce(postStub);
-        return done();
-      });
-  });
-
-  it('should return 200 response when called by admin not on project team and not mark topic as read', (done) => {
-    const getStub = sandbox.stub(axios, 'get')
-      .onFirstCall().rejects({ })
-      .onSecondCall().resolves({ data: topicJson });
-    // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({});
-
-    request(server)
-      .get(`${apiPathPrefix}1`)
-      .set({
-        Authorization: `Bearer ${jwts.admin}`,
-      })
-      .expect(200)
-      .end((err) => {
-        if (err) {
-          return done(err);
-        }
-        sinon.assert.calledTwice(getStub);
-        sinon.assert.notCalled(postStub);
         return done();
       });
   });
 
 
-  it('should return 500 response if error to get topic', (done) => {
+  it('should return 500 response if error to get posts', (done) => {
     sandbox.stub(axios, 'get').rejects({ response: { status: 500 } });
     request(server)
             .get(apiPath)

@@ -2,7 +2,7 @@
 	"variables": [],
 	"info": {
 		"name": "Message Service",
-		"_postman_id": "4dc66c3c-dd52-b635-0f5b-8b7128fc29fc",
+		"_postman_id": "558c1a9a-c516-8e16-1719-5340acdf81c3",
 		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
@@ -60,7 +60,23 @@
 		{
 			"name": "Get Topics (magrathean, submission 455, PRIMARY)",
 			"request": {
-				"url": "{{URL}}/v4/topics?filter=reference%3Dsubmission%26referenceId%3D455%26tag%3DPRIMARY",
+				"url": {
+					"raw": "{{URL}}/v4/topics?filter=reference%3Dsubmission%26referenceId%3D455%26tag%3DPRIMARY",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"v4",
+						"topics"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": "reference%3Dsubmission%26referenceId%3D455%26tag%3DPRIMARY"
+						}
+					],
+					"variable": []
+				},
 				"method": "GET",
 				"header": [
 					{
@@ -69,7 +85,10 @@
 						"description": ""
 					}
 				],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"description": ""
 			},
 			"response": []
@@ -77,7 +96,23 @@
 		{
 			"name": "Get Topics (test_user1, submission 455, PRIMARY) copy",
 			"request": {
-				"url": "{{URL}}/v4/topics?filter=reference%3Dsubmission%26referenceId%3D455%26tag%3DPRIMARY",
+				"url": {
+					"raw": "{{URL}}/v4/topics?filter=reference%3Dsubmission%26referenceId%3D455%26tag%3DPRIMARY",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"v4",
+						"topics"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": "reference%3Dsubmission%26referenceId%3D455%26tag%3DPRIMARY"
+						}
+					],
+					"variable": []
+				},
 				"method": "GET",
 				"header": [
 					{
@@ -86,7 +121,10 @@
 						"description": ""
 					}
 				],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"description": ""
 			},
 			"response": []
@@ -103,7 +141,10 @@
 						"description": ""
 					}
 				],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"description": ""
 			},
 			"response": []
@@ -120,7 +161,10 @@
 						"description": ""
 					}
 				],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"description": ""
 			},
 			"response": []
@@ -241,9 +285,54 @@
 			"response": []
 		},
 		{
-			"name": "Get post (magrathean, submission 455, PRIMARY)",
+			"name": "List posts (magrathean, submission 455, PRIMARY)",
 			"request": {
-				"url": "{{URL}}/v4/topics/40/posts?postIds=71",
+				"url": {
+					"raw": "{{URL}}/v4/topics/12/posts?postIds=20",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"v4",
+						"topics",
+						"12",
+						"posts"
+					],
+					"query": [
+						{
+							"key": "postIds",
+							"value": "20",
+							"equals": true,
+							"description": ""
+						}
+					],
+					"variable": []
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{magratheanToken}}",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"post\": \"submission @test_user1 @magrathean hello\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Get post (magrathean, submission 455, PRIMARY) copy",
+			"request": {
+				"url": "{{URL}}/v4/topics/12/posts/20",
 				"method": "GET",
 				"header": [
 					{
@@ -305,6 +394,38 @@
 				"body": {
 					"mode": "raw",
 					"raw": ""
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Upload image (magrathean)",
+			"request": {
+				"url": "{{URL}}/v4/topics/image",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{magratheanToken}}",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "multipart/form-data",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"description": "",
+							"type": "file",
+							"src": "Argentina.png"
+						}
+					]
 				},
 				"description": ""
 			},

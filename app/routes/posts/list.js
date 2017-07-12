@@ -14,13 +14,18 @@ module.exports = db => (req, resp, next) => {
   const discourseClient = Discourse(logger);
   const adapter = new Adapter(logger, db);
 
-  return discourseClient.getPost(req.authUser.userId.toString(), req.params.postId)
+  if (!req.query.postIds) {
+    return next(new errors.HttpStatusError(400, 'Post ids parameter is required'));
+  }
+
+  const postIds = req.query.postIds.split(',');
+  return discourseClient.getPosts(req.authUser.userId.toString(), req.params.topicId, postIds)
       .then((response) => {
-        logger.info('Fetched post from discourse', response.data);
-        return adapter.adaptPost(response.data);
+        logger.info('Fetched posts from discourse', response.data);
+        return adapter.adaptPosts(response.data);
       })
       .then(post => resp.status(200).send(util.wrapResponse(req.id, post))).catch((error) => {
         logger.error(error);
-        next(new errors.HttpStatusError(error.response.status, 'Error fetching post'));
+        next(new errors.HttpStatusError(error.response.status, 'Error fetching posts'));
       });
 };

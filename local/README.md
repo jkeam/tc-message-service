@@ -187,18 +187,20 @@ Note: npm install only has to be executed the first time when you set up the ser
 
 ## Creating the Database Schema
 
+Connect to postgres using psql locally or from the postgres docker container, using coder/mysecretpassword to login, create `messages` and `messages_test` databases:
+
+```shell
+psql postgres coder -h local.topcoder-dev.com
+# Password for user coder: mysecretpassword
+CREATE DATABASE messages;
+CREATE DATABASE messages_test;
+```
+
 We use sequelize to create and manage the database schema, to create the schema in Postgres, simply go into the tc-message-service folder and issue the following command:
 
 ```shell
 NODE_ENV=development sequelize db:migrate
-```
-
-You can connect to postgres using psql locally or from the postgres docker container:
-
-```properties
-user: coder
-password: mysecretpassword
-database: messages
+NODE_ENV=test sequelize db:migrate
 ```
 
 ## Running the Service
@@ -263,7 +265,6 @@ curl -X POST -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJy
 Please update test environment configurations in `config/config.json`.
 
 ```shell
-NODE_ENV=test sequelize db:migrate
 npm test
 ```
 
