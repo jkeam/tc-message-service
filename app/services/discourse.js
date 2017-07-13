@@ -211,7 +211,7 @@ module.exports = (logger) => {
       separator = '&';
     });
 
-    return getClient().get(`/t/${topicId}/posts.json?${postIdsFilter}`, {
+    return getClient().get(`/t/${topicId}/posts.json?include_raw=1&${postIdsFilter}`, {
       params: {
         api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
       },

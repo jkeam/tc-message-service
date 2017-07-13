@@ -43,7 +43,7 @@ function Adapter(logger, db) {
         userId,
         read: true,
         body: postBody,
-        raw: input.raw,
+        rawContent: input.raw,
         type: 'post',
       }));
   }
