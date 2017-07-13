@@ -30,7 +30,7 @@ module.exports = (logger) => {
 
     // Add a response interceptor
     client.interceptors.response.use(function (res) { // eslint-disable-line
-      logger.error('SUCCESS', _.pick(res, ['config.url', 'status']));
+      logger.info('SUCCESS', _.pick(res, ['config.url', 'status']));
       return res;
     }, function (error) { // eslint-disable-line
       logger.error('Discourse call failed: ', _.pick(error, ['config.url', 'response.status', 'response.data']));
@@ -115,6 +115,36 @@ module.exports = (logger) => {
   }
 
   /**
+   * Updates a topic in Discourse
+   * @param {String} username the username to use to fetch the topic, for security purposes
+   * @param {String} topicId the id of the topic
+   * @param {String} title the title of the topic
+   * @return {Promise} update topic promise
+   */
+  function updateTopic(username, topicId, title) {
+    logger.debug(`Update topic# ${topicId} for user: ${username}`);
+    return getClient().put(`/t/${topicId}.json`, { topic_id: topicId, title }, {
+      params: {
+        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
+      },
+    });
+  }
+
+  /**
+   * Delete a post (reply) of a topic
+   * @param {String} username user deleting the topic
+   * @param {Number} topicId topic id
+   * @return {Promise} promise
+   */
+  function deleteTopic(username, topicId) {
+    return getClient().delete(`/t/${topicId}.json`, {}, {
+      params: {
+        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
+      },
+    });
+  }
+
+  /**
    * Grants access to a user by adding that user to the Discrouse topic (or private post)
    * @param {String} userName identifies the user that should receive access
    * @param {String} topicId identifier of the topic to which access should be granted
@@ -172,6 +202,34 @@ module.exports = (logger) => {
     });
   }
 
+  /**
+   * Update a post (reply) of a topic
+   * @param {String} username user updating the post
+   * @param {Number} postId post id
+   * @param {Object} body body of the post, html markup is permitted
+   * @return {Promise} promise
+   */
+  function updatePost(username, postId, body) {
+    return getClient().put(`/posts/${postId}.json`, { post: { raw: body } }, {
+      params: {
+        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
+      },
+    });
+  }
+
+  /**
+   * Delete a post (reply) of a topic
+   * @param {String} username user deleting the post
+   * @param {Number} postId post id
+   * @return {Promise} promise
+   */
+  function deletePost(username, postId) {
+    return getClient().delete(`/posts/${postId}.json`, {}, {
+      params: {
+        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
+      },
+    });
+  }
 
   /**
    * Marks a topic and posts are read in discourse
@@ -227,7 +285,11 @@ module.exports = (logger) => {
     grantAccess,
     removeAccess,
     getTopic,
+    updateTopic,
+    deleteTopic,
     createPost,
+    updatePost,
+    deletePost,
     createPrivatePost,
     getPosts,
     markTopicPostsRead,

@@ -1,6 +1,6 @@
 version: '2'
 services:
-    jsonserver:
+    mock-services:
         build: 'mock-services'
         ports:
             - 3001:3001

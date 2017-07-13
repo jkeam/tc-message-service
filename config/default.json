@@ -3,7 +3,7 @@
   "discourseSystemUsername": "system",
   "memberServiceUrl": "http://local.topcoder-dev.com:3001/members",
   "discourseURL": "http://talk.topcoder-dev.com",
-  "discourseApiKey": "cbe0bcee43a31087b081d7c10db116f5841bf27726a7c6fea842e5a0390cde63",
+  "discourseApiKey": "9a4ba22aaea1def205b61d1bfddc58d7205be61ee3447b7525ce5a191b8daed7",
   "authSecret": "secret",
   "authDomain": "topcoder.com",
   "captureLogs": "false",
