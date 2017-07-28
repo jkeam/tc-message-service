@@ -5,7 +5,7 @@ const util = require('tc-core-library-js').util(config);
 const Discourse = require('../../services/discourse');
 const errors = require('common-errors');
 const Adapter = require('../../services/adapter');
-const _  = require('lodash');
+const _ = require('lodash');
 const { USER_ROLE } = require('../../constants');
 
 /**
@@ -27,7 +27,7 @@ module.exports = db => (req, resp, next) => {
   // Get the posts as the system user if the logged is user is an admin
   let effectiveUserId = req.authUser.userId.toString();
   if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], req.authUser.roles).length > 0) {
-      effectiveUserId = config.get('discourseSystemUsername');
+    effectiveUserId = config.get('discourseSystemUsername');
   }
 
   return discourseClient.getPosts(effectiveUserId, req.params.topicId, postIds)
