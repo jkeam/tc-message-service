@@ -5,6 +5,8 @@ const util = require('tc-core-library-js').util(config);
 const Discourse = require('../../services/discourse');
 const errors = require('common-errors');
 const Adapter = require('../../services/adapter');
+const _  = require('lodash');
+const { USER_ROLE } = require('../../constants');
 
 /**
  * Creates a new post to a topic in Discourse
@@ -21,7 +23,14 @@ module.exports = db => (req, resp, next) => {
   }
 
   const postIds = req.query.postIds.split(',');
-  return discourseClient.getPosts(req.authUser.userId.toString(), req.params.topicId, postIds)
+
+  // Get the posts as the system user if the logged is user is an admin
+  let effectiveUserId = req.authUser.userId.toString();
+  if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], req.authUser.roles).length > 0) {
+      effectiveUserId = config.get('discourseSystemUsername');
+  }
+
+  return discourseClient.getPosts(effectiveUserId, req.params.topicId, postIds)
       .then((response) => {
         logger.info('Fetched posts from discourse');
         return adapter.adaptPosts(response.data);
