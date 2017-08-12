@@ -16,19 +16,13 @@ module.exports = db => (req, resp, next) => {
   const discourseClient = Discourse(logger);
   const adapter = new Adapter(logger, db);
 
-  if (!req.query.postIds) {
-    return resp.status(400).send('Post ids parameter is required');
-  }
-
-  const postIds = req.query.postIds.split(',');
-
   // Get the posts as the system user if the logged is user is an admin
   let effectiveUserId = req.authUser.userId.toString();
   if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], req.authUser.roles).length > 0) {
     effectiveUserId = config.get('discourseSystemUsername');
   }
 
-  return discourseClient.getPosts(effectiveUserId, req.params.topicId, postIds)
+  return discourseClient.getPost(effectiveUserId, req.params.postId)
       .then((response) => {
         logger.info('Fetched post from discourse', response.data);
         return adapter.adaptPost(response.data);

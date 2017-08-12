@@ -3,6 +3,8 @@ const util = require('tc-core-library-js').util(config);
 const Discourse = require('../../services/discourse');
 const errors = require('common-errors');
 const Adapter = require('../../services/adapter');
+const _ = require('lodash');
+const { USER_ROLE } = require('../../constants');
 
 /**
  * Get posts from Discourse
@@ -15,17 +17,24 @@ module.exports = db => (req, resp, next) => {
   const adapter = new Adapter(logger, db);
 
   if (!req.query.postIds) {
-    return next(new errors.HttpStatusError(400, 'Post ids parameter is required'));
+    return resp.status(400).send('Post ids parameter is required');
   }
 
   const postIds = req.query.postIds.split(',');
-  return discourseClient.getPosts(req.authUser.userId.toString(), req.params.topicId, postIds)
+
+  // Get the posts as the system user if the logged is user is an admin
+  let effectiveUserId = req.authUser.userId.toString();
+  if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], req.authUser.roles).length > 0) {
+    effectiveUserId = config.get('discourseSystemUsername');
+  }
+
+  return discourseClient.getPosts(effectiveUserId, req.params.topicId, postIds)
       .then((response) => {
-        logger.info('Fetched posts from discourse', response.data);
+        logger.info('Fetched post from discourse', response.data);
         return adapter.adaptPosts(response.data);
       })
       .then(post => resp.status(200).send(util.wrapResponse(req.id, post))).catch((error) => {
         logger.error(error);
-        next(new errors.HttpStatusError(error.response.status, 'Error fetching posts'));
+        next(new errors.HttpStatusError(error.response.status, 'Error fetching post'));
       });
 };
