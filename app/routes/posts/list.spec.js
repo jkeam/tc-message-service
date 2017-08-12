@@ -47,7 +47,7 @@ describe('GET /v4/topics/:topicId/posts', () => {
             .set({
               Authorization: `Bearer ${jwts.admin}`,
             })
-            .expect(400,done);
+            .expect(400, done);
   });
 
   it('should return 404 response if no matching topic', (done) => {
@@ -69,7 +69,6 @@ describe('GET /v4/topics/:topicId/posts', () => {
             })
             .expect(200)
             .end((err) => {
-              console.log('baaaa');
               if (err) {
                 return done(err);
               }
