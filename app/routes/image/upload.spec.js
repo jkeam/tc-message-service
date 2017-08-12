@@ -99,15 +99,7 @@ describe('POST /v4/topics/image', () => {
               Authorization: `Bearer ${jwts.admin}`,
             })
             .attach('file', 'app/tests/test.png')
-            .expect(500)
-            .end((err, res) => {
-              if (err) {
-                return done(err);
-              }
-              res.body.should.have.propertyByPath('result', 'content', 'message')
-                        .eql(errMsg);
-              return done();
-            });
+            .expect(500, done);
   });
 
   it('should return 500 response with error response', (done) => {
