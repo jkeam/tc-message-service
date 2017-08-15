@@ -38,8 +38,13 @@ module.exports = db => (req, resp, next) => {
     if (!dbTopic && !topic) {
       throw new errors.HttpStatusError(404, 'Topic does not exist');
     }
-    if (topic && topic.post_stream && topic.post_stream.posts && topic.post_stream.posts.length > 1) {
-      throw new errors.HttpStatusError(422, 'Topic has comments and can not be deleted');
+    if (topic && topic.post_stream && topic.post_stream.posts) {
+      // Only count the posts which are not invited_user/removed_user action
+      const postLength = topic.post_stream.posts.filter(
+        post => post.action_code !== 'invited_user' && post.action_code !== 'removed_user').length;
+      if (postLength > 1) {
+        throw new errors.HttpStatusError(422, 'Topic has comments and can not be deleted');
+      }
     }
     const deletePromises = [];
     if (topic) {

@@ -2,7 +2,7 @@
 	"variables": [],
 	"info": {
 		"name": "Message Service",
-		"_postman_id": "558c1a9a-c516-8e16-1719-5340acdf81c3",
+		"_postman_id": "222135ce-a6df-9acc-11a1-b4be5cfa86a7",
 		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
@@ -423,9 +423,35 @@
 							"key": "file",
 							"description": "",
 							"type": "file",
-							"src": "Argentina.png"
+							"src": "Argentina.png",
+							"value": ""
 						}
 					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Sync users",
+			"request": {
+				"url": "{{URL}}/v4/topics/syncUsers",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{pshah_managerToken}}",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"reference\": \"project\",\n    \"referenceId\": 1111\n}"
 				},
 				"description": ""
 			},

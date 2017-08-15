@@ -10,6 +10,7 @@ const topicListHandler = require('./topics/list');
 const topicCreateHandler = require('./topics/create');
 const topicUpdateHandler = require('./topics/update');
 const topicDeleteHandler = require('./topics/delete');
+const syncUsersHandler = require('./topics/syncUsers');
 
 const uploadImageHandler = require('./image/upload');
 const createPostHandler = require('./posts/create');
@@ -112,6 +113,9 @@ module.exports = (logger, db) => {
 
   router.route('/v4/topics/image')
     .post(uploadImageHandler());
+
+  router.route('/v4/topics/syncUsers')
+    .put(syncUsersHandler(db));
 
   // register error handler
   router.use((err, req, res, next) => { // eslint-disable-line
