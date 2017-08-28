@@ -4,7 +4,8 @@ const config = require('config');
 const axios = require('axios');
 const _ = require('lodash');
 const util = require('../util');
-
+const fs = require('fs');
+const FormData = require('form-data');
 
 const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername');
 /*
@@ -106,7 +107,7 @@ module.exports = (logger) => {
    */
   function getTopic(topicId, username) {
     logger.debug(`Retrieving topic# ${topicId} for user: ${username}`);
-    return getClient().get(`/t/${topicId}.json`, {
+    return getClient().get(`/t/${topicId}.json?include_raw=1`, {
       params: {
         api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
       },
@@ -180,6 +181,21 @@ module.exports = (logger) => {
   }
 
   /**
+   * Fetches post from discourse
+   * @param {String} username: the name of the user to use to access the Discourse API
+   * @param {Number} postId the id of the post
+   * @return {Promise} promise
+   */
+  function getPost(username, postId) {
+    logger.debug('Attempting to retrieve post', postId);
+    return getClient().get(`/posts/${postId}.json?`, {
+      params: {
+        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
+      },
+    });
+  }
+
+  /**
    * Fetches posts from discourse
    * @param {String} username: the name of the user to use to access the Discourse API
    * @param {Number} topicId the id of the topic that is parent to the posts
@@ -195,7 +211,7 @@ module.exports = (logger) => {
       separator = '&';
     });
 
-    return getClient().get(`/t/${topicId}/posts.json?${postIdsFilter}`, {
+    return getClient().get(`/t/${topicId}/posts.json?include_raw=1&${postIdsFilter}`, {
       params: {
         api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
       },
@@ -229,6 +245,29 @@ module.exports = (logger) => {
         api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
       },
     });
+  }
+
+  /**
+   * Uploads image
+   * @param {String} username user uploading the image
+   * @param {Object} file image file to upload
+   * @return {Promise} promise
+   */
+  function uploadImage(username, file) {
+    const data = new FormData();
+    data.append('type', 'composer');
+    data.append('synchronous', 'true');
+    data.append('file', fs.createReadStream(file.path), { filename: file.originalname, contentType: file.mimetype });
+
+    return getClient().post('/uploads.json', data,
+      {
+        headers: {
+          'Content-Type': `multipart/form-data; boundary=${data.getBoundary()}`,
+        },
+        params: {
+          api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
+        },
+      });
   }
 
   /**
@@ -290,7 +329,9 @@ module.exports = (logger) => {
     createPost,
     updatePost,
     deletePost,
+    uploadImage,
     createPrivatePost,
+    getPost,
     getPosts,
     markTopicPostsRead,
   };

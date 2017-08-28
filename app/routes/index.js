@@ -10,9 +10,12 @@ const topicListHandler = require('./topics/list');
 const topicCreateHandler = require('./topics/create');
 const topicUpdateHandler = require('./topics/update');
 const topicDeleteHandler = require('./topics/delete');
+const syncUsersHandler = require('./topics/syncUsers');
 
+const uploadImageHandler = require('./image/upload');
 const createPostHandler = require('./posts/create');
-const getPostsHandler = require('./posts/get');
+const listPostsHandler = require('./posts/list');
+const getPostHandler = require('./posts/get');
 const updatePostHandler = require('./posts/update');
 const deletePostHandler = require('./posts/delete');
 const systemUserFilter = require('../middleware/system-user-filter.js');
@@ -99,13 +102,20 @@ module.exports = (logger, db) => {
 
   router.route('/v4/topics/:topicId/posts')
     .post(createPostHandler(db))
-    .get(getPostsHandler(db));
+    .get(listPostsHandler(db));
 
   router.route('/v4/topics/:topicId/posts/:postId')
-    .delete(deletePostHandler(db));
+    .delete(deletePostHandler(db))
+    .get(getPostHandler(db));
 
   router.route('/v4/topics/:topicId/posts/:postId/edit')
     .post(updatePostHandler(db));
+
+  router.route('/v4/topics/image')
+    .post(uploadImageHandler());
+
+  router.route('/v4/topics/syncUsers')
+    .put(syncUsersHandler(db));
 
   // register error handler
   router.use((err, req, res, next) => { // eslint-disable-line

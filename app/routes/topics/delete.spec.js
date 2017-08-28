@@ -39,7 +39,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
 
   it('should return 200 response with valid jwt token and payload', (done) => {
     const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/1.json').resolves({ data: topicJson });
+      .withArgs('/t/1.json?include_raw=1').resolves({ data: topicJson });
     const deleteStub = sandbox.stub(axios, 'delete').resolves({});
     request(server)
             .delete(apiPath)
@@ -63,7 +63,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
 
   it('should return 200 response if topic does not exist in db but in discourse', (done) => {
     const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/2000.json').resolves({ data: topicJson });
+      .withArgs('/t/2000.json?include_raw=1').resolves({ data: topicJson });
     const deleteStub = sandbox.stub(axios, 'delete').resolves({});
     request(server)
             .delete('/v4/topics/2000')
@@ -84,7 +84,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
 
   it('should return 200 response if topic exist in db but not in discourse', (done) => {
     const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/1.json').rejects({
+      .withArgs('/t/1.json?include_raw=1').rejects({
         response: {
           status: 410,
         },
@@ -111,7 +111,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
     const topicHasComments = _.cloneDeep(topicJson);
     topicHasComments.post_stream.posts = [topicHasComments.post_stream.posts[0], topicHasComments.post_stream.posts[0]];
     const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/1.json').resolves({ data: topicHasComments });
+      .withArgs('/t/1.json?include_raw=1').resolves({ data: topicHasComments });
     const deleteStub = sandbox.stub(axios, 'delete').resolves({});
     request(server)
             .delete(apiPath)
@@ -136,7 +136,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
 
   it('should return 404 response if topic does not exist', (done) => {
     const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/2000.json').resolves({});
+      .withArgs('/t/2000.json?include_raw=1').resolves({});
     const deleteStub = sandbox.stub(axios, 'delete').resolves({});
     request(server)
       .delete('/v4/topics/2000')
@@ -157,7 +157,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
   });
 
   it('should return 500 response if error getting topic', (done) => {
-    const getStub = sandbox.stub(axios, 'get').withArgs('/t/1.json').rejects({
+    const getStub = sandbox.stub(axios, 'get').withArgs('/t/1.json?include_raw=1').rejects({
       response: {
         status: 500,
       },
@@ -183,7 +183,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
 
   it('should return 500 response if error deleting topic', (done) => {
     const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/1.json').resolves({ data: topicJson });
+      .withArgs('/t/1.json?include_raw=1').resolves({ data: topicJson });
     sandbox.stub(axios, 'delete').rejects({
       response: {
         status: 500,

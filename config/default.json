@@ -13,6 +13,8 @@
   "referenceLookupTimeout": 3000,
   "createTopicRetryDelay": 2000,
   "createTopicTimeout": 180000,
+  "syncUsersRetryDelay": 2000,
+  "syncUsersTimeout": 180000,
   "version": "v4",
   "userServiceUrl": "http://local.topcoder-dev.com:3001/users",
   "identityServiceEndpoint": "http://local.topcoder-dev.com:3001/",

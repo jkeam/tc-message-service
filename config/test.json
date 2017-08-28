@@ -5,5 +5,7 @@
   "dbConfig": {
     "masterUrl": "postgres://coder:mysecretpassword@local.topcoder-dev.com:5432/messages_test"
   },
-  "systemUserIds": "0"
+  "systemUserIds": "0",
+  "syncUsersRetryDelay": 500,
+  "syncUsersTimeout": 1000
 }

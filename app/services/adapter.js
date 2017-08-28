@@ -43,6 +43,7 @@ function Adapter(logger, db) {
         userId,
         read: true,
         body: postBody,
+        rawContent: input.raw,
         type: 'post',
       }));
   }
@@ -127,6 +128,7 @@ function Adapter(logger, db) {
                     userId,
                     read: discoursePost.read,
                     body: postBody,
+                    rawContent: discoursePost.raw,
                     type: 'post',
                   });
                 }
