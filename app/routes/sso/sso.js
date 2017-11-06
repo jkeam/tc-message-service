@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const querystring = require('querystring');
 const axios = require('axios');
+const util = require('tc-core-library-js').util(config);
 
 
 /**
@@ -58,7 +59,7 @@ module.exports = logger =>
 
          const userId = decoded.userId.toString();
          const handle = decoded.handle;
-         const isAdmin = _.indexOf(decoded.roles, 'administrator') >= 0;
+         const isAdmin = _.indexOf(util.getRoles(decoded), 'administrator') >= 0;
 
             // get user info from identity service
          axios.get(`${config.userServiceUrl}/${userId}`, {

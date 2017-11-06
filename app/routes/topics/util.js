@@ -2,7 +2,10 @@
 import _ from 'lodash';
 import config from 'config';
 import Promise from 'bluebird';
+import _util from 'tc-core-library-js';
 import { USER_ROLE } from '../../constants';
+
+const util = _util.util(config);
 
 /**
  * Retrieves topic from discourse
@@ -22,7 +25,7 @@ const retrieveTopic = Promise.coroutine(function* a(logger, dbTopic, authUser, d
     logger.info(`Failed to get topic from discourse: ${dbTopic.discourseTopicId}`);
     logger.error(error);
     // check if user is admin or manager - they can view topics without being a part of the team
-    if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], authUser.roles).length > 0) {
+    if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], util.getRoles(authUser)).length > 0) {
       isReadOnlyForAdmins = true;
       logger.info(`Retrieving Discourse topic for admin/manager: ${dbTopic.discourseTopicId}`);
       try {

@@ -18,7 +18,7 @@ module.exports = db => (req, resp, next) => {
 
   // Get the posts as the system user if the logged is user is an admin
   let effectiveUserId = req.authUser.userId.toString();
-  if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], req.authUser.roles).length > 0) {
+  if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], util.getRoles(req.authUser)).length > 0) {
     effectiveUserId = config.get('discourseSystemUsername');
   }
 
