@@ -18,5 +18,7 @@
   "identityServiceEndpoint": "IDENTITY_SERVICE_ENDPOINT",
   "systemUserClientId": "SYSTEM_USER_CLIENT_ID",
   "systemUserClientSecret": "SYSTEM_USER_CLIENT_SECRET",
-  "rabbitmqUrl": "RABBITMQ_URL"
+  "rabbitmqUrl": "RABBITMQ_URL",
+  "validIssuers": "VALID_ISSUERS",
+  "jwksUri": "JWKS_URI"
 }
