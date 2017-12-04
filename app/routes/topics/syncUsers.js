@@ -81,51 +81,41 @@ module.exports = db =>
           });
           const topicPromises = dbTopics.map(dbTopic => discourseClient
             .getTopic(dbTopic.discourseTopicId, DISCOURSE_SYSTEM_USERNAME));
-          const topics = yield Promise.all(topicPromises);
+          let topics = yield Promise.all(topicPromises);
+          topics = _.orderBy(topics, ['last_posted_at'], ['asc']);
 
           // Compare project users and topic users
-          const allUsersToAdd = {};
-          const removeAccessPromises = [];
-          _.each(topics, (topic) => {
+          yield Promise.each(topics, (topic) => {
             const topicId = topic.id;
             const topicUsers = _.map(topic.details.allowed_users, 'username');
 
             const usersToAdd = _.difference(users, topicUsers);
             const usersToRemove = _.difference(topicUsers, users);
 
-            _.each(usersToAdd, (userId) => {
-              if (!allUsersToAdd[userId]) {
-                allUsersToAdd[userId] = [topicId];
-              } else {
-                allUsersToAdd[userId].push(topicId);
-              }
+            const promises = [];
+            promises.push(Promise.each(usersToAdd, (userId) => {
+              logger.info(`Get or provision user (${userId})`);
+              return helper.getUserOrProvision(userId);
+            }));
+
+            const addRemovePromise = new Promise((resolve, reject) => {
+              Promise.all(promises).then(() => {
+                const allPromises = [];
+                allPromises.push(Promise.each(usersToAdd, (userId) => {
+                  logger.info(`Add user (${userId}) to topic ${topicId}`);
+                  return discourseClient.grantAccess(userId, topicId);
+                }));
+
+                allPromises.push(Promise.each(usersToRemove, (userId) => {
+                  logger.info(`Remove user (${userId}) from topic ${topicId}`);
+                  return discourseClient.removeAccess(userId, topicId);
+                }));
+                Promise.all(allPromises).then(() => { resolve(); }).catch((err) => { reject(err); });
+              }).catch((err) => { reject(err); });
             });
 
-            _.each(usersToRemove, (userId) => {
-              logger.info(`Remove user (${userId}) from topic ${topicId}`);
-              removeAccessPromises.push(discourseClient.removeAccess(userId, topicId));
-            });
+            return addRemovePromise;
           });
-
-          // Remove users access
-          yield Promise.all(removeAccessPromises);
-
-          // Ensure users exist in discourse (create if necessary)
-          const userExistsPromises = [];
-          _.each(_.keys(allUsersToAdd), (userId) => {
-            userExistsPromises.push(helper.getUserOrProvision(userId));
-          });
-          yield Promise.all(userExistsPromises);
-
-          // Add users access
-          const addAccessPromises = [];
-          _.each(_.keys(allUsersToAdd), (userId) => {
-            _.each(allUsersToAdd[userId], (topicId) => {
-              logger.info(`Add user (${userId}) to topic ${topicId}`);
-              addAccessPromises.push(discourseClient.grantAccess(userId, topicId));
-            });
-          });
-          yield Promise.all(addAccessPromises);
 
           return resp.status(200).send(util.wrapResponse(req.id, {}));
         } catch (e) {
