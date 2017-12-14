@@ -40,6 +40,7 @@ function Adapter(logger, db) {
       .then(postBody => ({
         id: input.id,
         date: input.created_at,
+        updatedDate: input.updated_at,
         userId,
         read: true,
         body: postBody,
@@ -80,6 +81,7 @@ function Adapter(logger, db) {
           reference: pgTopic ? pgTopic.reference : undefined,
           referenceId: pgTopic ? pgTopic.referenceId : undefined,
           date: discourseTopic.created_at,
+          updatedDate: discourseTopic.updated_at,
           lastActivityAt: discourseTopic.created_at,
           title: discourseTopic.title,
           read: discourseTopic.post_stream.posts[0].read,
@@ -125,6 +127,7 @@ function Adapter(logger, db) {
                   result.topic.posts.push({
                     id: discoursePost.id,
                     date: discoursePost.created_at,
+                    updatedDate: discoursePost.updated_at,
                     userId,
                     read: discoursePost.read,
                     body: postBody,

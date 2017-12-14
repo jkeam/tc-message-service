@@ -8,14 +8,16 @@ const fs = require('fs');
 const FormData = require('form-data');
 
 const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername');
+
+/**
+ * Discourse client configuration
+ */
+let client = null;
+
 /*
  * Service to facilitate communication with the discourse api
  */
 module.exports = (logger) => {
-  /**
-   * Discourse client configuration
-   */
-  let client = null;
   /**
    * Returns axios client
    * @return {Object} axios client
