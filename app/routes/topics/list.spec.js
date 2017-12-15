@@ -132,11 +132,9 @@ describe('GET /v4/topics ', () => {
   });
 
   it('should return topics even if user is not part of project team but is a manager', (done) => {
-    const getStub = sandbox.stub(axios, 'get')
-      .onFirstCall().rejects({ status: 404 })
-      .onSecondCall().resolves({ data: topicJson });
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicJson });
     // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({});
+    // const postStub = sandbox.stub(axios, 'post').resolves({});
 
     request(server)
       .get(apiPath)
@@ -148,18 +146,16 @@ describe('GET /v4/topics ', () => {
           return done(err);
         }
         res.body.result.content.should.be.of.length(1);
-        sinon.assert.calledTwice(getStub);
-        sinon.assert.notCalled(postStub);
+        sinon.assert.calledOnce(getStub);
+        // sinon.assert.notCalled(postStub);
         return done();
       });
   });
 
   it('should return topics even if user is not part of project team but is a admin', (done) => {
-    const getStub = sandbox.stub(axios, 'get')
-      .onFirstCall().rejects({ })
-      .onSecondCall().resolves({ data: topicJson });
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicJson });
     // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({});
+    // const postStub = sandbox.stub(axios, 'post').resolves({});
 
     request(server)
       .get(apiPath)
@@ -173,8 +169,8 @@ describe('GET /v4/topics ', () => {
           return done(err);
         }
         res.body.result.content.should.be.of.length(1);
-        sinon.assert.calledTwice(getStub);
-        sinon.assert.notCalled(postStub);
+        sinon.assert.calledOnce(getStub);
+        // sinon.assert.notCalled(postStub);
         return done();
       });
   });

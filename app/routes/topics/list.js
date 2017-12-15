@@ -1,4 +1,5 @@
 import { retrieveTopic } from './util';
+import { USER_ROLE } from '../../constants';
 
 const _ = require('lodash');
 const config = require('config');
@@ -61,7 +62,12 @@ module.exports = db =>
       }
 
       logger.info('Topics exist in pg, fetching from discourse');
-      const topicPromises = dbTopics.map(dbTopic => retrieveTopic(logger, dbTopic, req.authUser, discourseClient));
+      let userId = req.authUser.userId.toString();
+      // check if user is admin or manager - they can view topics without being a part of the team
+      if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], req.authUser.roles).length > 0) {
+        userId = config.get('discourseSystemUsername');
+      }
+      const topicPromises = dbTopics.map(dbTopic => retrieveTopic(logger, dbTopic, userId, discourseClient));
 
       return Promise.all(topicPromises)
       .then((topicResponses) => {
@@ -91,7 +97,7 @@ module.exports = db =>
           });
         }
         logger.debug('adapting topics');
-        return adapter.adaptTopics(topics);
+        return adapter.adaptTopics({ topics, dbTopics });
       })
       .then(result => resp.status(200).send(util.wrapResponse(req.id, result)));
     }).catch((error) => {

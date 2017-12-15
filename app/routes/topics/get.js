@@ -1,6 +1,8 @@
+import _ from 'lodash';
 import errors from 'common-errors';
 import config from 'config';
 
+import { USER_ROLE } from '../../constants';
 import Discourse from '../../services/discourse';
 import Adapter from '../../services/adapter';
 import { retrieveTopic } from './util';
@@ -38,8 +40,13 @@ module.exports = db =>
           const err = new errors.HttpStatusError(404, 'Topic does not exist');
           return next(err);
         }
+        let userId = req.authUser.userId.toString();
+        // check if user is admin or manager - they can view topics without being a part of the team
+        if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], req.authUser.roles).length > 0) {
+          userId = config.get('discourseSystemUsername');
+        }
 
-        return retrieveTopic(logger, dbTopic, req.authUser, discourseClient)
+        return retrieveTopic(logger, dbTopic, userId, discourseClient)
           .then(({ isReadOnlyForAdmins, topic }) => {
             if (!topic) {
               const err = new errors.HttpStatusError(500, 'Unable to retrieve topic from discourse');
@@ -63,7 +70,7 @@ module.exports = db =>
           })
           .then((topic) => {
             logger.info('returning topic');
-            return adapter.adaptTopics(topic, req.authToken);
+            return adapter.adaptTopic({ topic, dbTopic });
           })
           .then(result => resp.status(200).send(util.wrapResponse(req.id, result)))
           .catch(err => next(err));

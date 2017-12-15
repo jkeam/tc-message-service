@@ -1,5 +1,6 @@
 
 
+const _ = require('lodash');
 const Helper = require('./helper.js');
 const Promise = require('bluebird');
 const config = require('config');
@@ -12,7 +13,7 @@ const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername');
 const handleMap = { system: 'system' };
 handleMap[DISCOURSE_SYSTEM_USERNAME] = DISCOURSE_SYSTEM_USERNAME;
 
-function Adapter(logger, db) {
+function Adapter(logger, db) {// eslint-disable-line
   const helper = Helper(logger);
 
   this.userIdLookup = function userIdLookup(handle) {
@@ -60,9 +61,16 @@ function Adapter(logger, db) {
     return convertPost(input);
   };
 
+  this.adaptTopic = function a(input) {
+    const { topic, dbTopic } = input;
+    this.adaptTopics({ topics: [topic], dbTopics: [dbTopic] });
+  };
+
   this.adaptTopics = function a(input) {
     const topics = [];
-    let discourseTopics = input;
+    // console.log(input, 'input');
+    let { topics: discourseTopics } = input;
+    const pgTopics = input.dbTopics;
     if (!(discourseTopics instanceof Array)) {
       discourseTopics = [discourseTopics];
     }
@@ -70,79 +78,65 @@ function Adapter(logger, db) {
     return Promise.each(discourseTopics, (discourseTopic) => {
       let userId = discourseTopic.post_stream.posts[0].username;
       userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId, 10) : userId;
-      return db.topics.find({
-        where: {
-          discourseTopicId: discourseTopic.id,
-        },
-      }).then((pgTopic) => {
-        const topic = {
-          id: discourseTopic.id,
-          dbId: pgTopic ? pgTopic.id : undefined,
-          reference: pgTopic ? pgTopic.reference : undefined,
-          referenceId: pgTopic ? pgTopic.referenceId : undefined,
-          date: discourseTopic.created_at,
-          updatedDate: discourseTopic.updated_at,
-          lastActivityAt: discourseTopic.created_at,
-          title: discourseTopic.title,
-          read: discourseTopic.post_stream.posts[0].read,
-          userId,
-          tag: discourseTopic.tag,
-          totalPosts: discourseTopic.post_stream.stream.length,
-          retrievedPosts: discourseTopic.post_stream.posts.length,
-          postIds: discourseTopic.post_stream.stream,
-          posts: [],
-        };
 
-        return {
-          discourseTopic,
-          topic,
-        };
-      })
-        .catch((err) => {
-          logger.debug('Topic not found', discourseTopic.id, err);
-        }).then((result) => {
-        // logger.debug('result', result)
-          if (result.discourseTopic.post_stream && result.discourseTopic.post_stream.posts) {
-            return Promise.each(result.discourseTopic.post_stream.posts,
-              discoursePost => helper.mentionUserIdToHandle(discoursePost.cooked)
-              .then((postBody) => {
-                let userId = discoursePost.username; //eslint-disable-line
-                userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId, 10) : userId;
-                // ignore createdAt for invited_user type posts
-                if (discoursePost.action_code !== 'invited_user'
-                  && discoursePost.created_at > result.topic.lastActivityAt) {
-                  result.topic.lastActivityAt = discoursePost.created_at; //eslint-disable-line
-                }
-                if (discoursePost.action_code === 'invited_user' && discoursePost.action_code_who) {
-                  result.topic.retrievedPosts -= 1; // eslint-disable-line
-                  result.topic.posts.push({
-                    id: discoursePost.id,
-                    date: discoursePost.created_at,
-                    userId,
-                    read: true,
-                    body: `${discoursePost.action_code_who} joined the discussion`,
-                    type: 'user-joined',
-                  });
-                } else {
-                  result.topic.posts.push({
-                    id: discoursePost.id,
-                    date: discoursePost.created_at,
-                    updatedDate: discoursePost.updated_at,
-                    userId,
-                    read: discoursePost.read,
-                    body: postBody,
-                    rawContent: discoursePost.raw,
-                    type: 'post',
-                  });
-                }
-              })).then(() => result);
-          }
-          return result;
-        })
-        .then((result) => {
-          topics.push(result.topic);
-          return topics;
+      const pgTopic = _.find(pgTopics, pt => pt.id === discourseTopic.id);
+      const topic = {
+        id: discourseTopic.id,
+        dbId: pgTopic ? pgTopic.id : undefined,
+        reference: pgTopic ? pgTopic.reference : undefined,
+        referenceId: pgTopic ? pgTopic.referenceId : undefined,
+        date: discourseTopic.created_at,
+        updatedDate: discourseTopic.updated_at,
+        lastActivityAt: discourseTopic.created_at,
+        title: discourseTopic.title,
+        read: discourseTopic.post_stream.posts[0].read,
+        userId,
+        tag: discourseTopic.tag,
+        totalPosts: discourseTopic.post_stream.stream.length,
+        retrievedPosts: discourseTopic.post_stream.posts.length,
+        postIds: discourseTopic.post_stream.stream,
+        posts: [],
+      };
+
+      if (discourseTopic.post_stream && discourseTopic.post_stream.posts) {
+        return Promise.each(discourseTopic.post_stream.posts,
+          discoursePost => helper.mentionUserIdToHandle(discoursePost.cooked)
+          .then((postBody) => {
+            let userId = discoursePost.username; //eslint-disable-line
+            userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId, 10) : userId;
+            // ignore createdAt for invited_user type posts
+            if (discoursePost.action_code !== 'invited_user'
+              && discoursePost.created_at > topic.lastActivityAt) {
+              topic.lastActivityAt = discoursePost.created_at; //eslint-disable-line
+            }
+            if (discoursePost.action_code === 'invited_user' && discoursePost.action_code_who) {
+              topic.retrievedPosts -= 1; // eslint-disable-line
+              topic.posts.push({
+                id: discoursePost.id,
+                date: discoursePost.created_at,
+                userId,
+                read: true,
+                body: `${discoursePost.action_code_who} joined the discussion`,
+                type: 'user-joined',
+              });
+            } else {
+              topic.posts.push({
+                id: discoursePost.id,
+                date: discoursePost.created_at,
+                updatedDate: discoursePost.updated_at,
+                userId,
+                read: discoursePost.read,
+                body: postBody,
+                rawContent: discoursePost.raw,
+                type: 'post',
+              });
+            }
+          })//eslint-disable-line
+        ).then(() => {
+          topics.push(topic);
         });
+      }
+      return topics;
     }).then(() => topics);
   };
 
