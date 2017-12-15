@@ -17,7 +17,7 @@ dependencies:
 
 deployment:
   development:
-    branch: dev
+    branch: [dev, 'feature/reduce-number-of-calls']
     commands:
       - ./ebs_deploy.sh tc-message-service DEV $CIRCLE_BUILD_NUM
 
