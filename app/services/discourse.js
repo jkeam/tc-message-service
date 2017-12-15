@@ -18,7 +18,6 @@ let client = null;
  * Service to facilitate communication with the discourse api
  */
 module.exports = (logger) => {
-  
   /**
    * Returns axios client
    * @return {Object} axios client
