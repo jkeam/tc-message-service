@@ -12,7 +12,7 @@ const server = require('../../app');
 const axios = require('axios');
 const sinon = require('sinon');
 
-// const topicJson = require('../../tests/topic.json');
+const topicJson = require('../../tests/topic.json');
 
 const username = 'test1';
 
@@ -344,16 +344,20 @@ describe('POST /v4/topics ', () => {
       });
   });
 
-  it.skip('should return 200 response if success to createPrivatePost', (done) => {
+  it('should return 200 response if success to createPrivatePost', (done) => {
     const data = {
       result: {
         status: 200,
         content: 'content',
       },
-      topic_id: 1,
+      topic_id: 100,
     };
-    sandbox.stub(axios, 'get').resolves({
-      data,
+    const getStub = sandbox.stub(axios, 'get');
+    const topicData = Object.assign({}, topicJson, { id: 100 });
+
+    getStub.onFirstCall().resolves({ data: { result: { status: 200, content: [{ userId: 40051333 }] } } });
+    getStub.onSecondCall().resolves({
+      data: topicData,
     });
     sandbox.stub(axios, 'post').resolves({
       data,
@@ -367,6 +371,7 @@ describe('POST /v4/topics ', () => {
       .expect(200)
       .end((err) => {
         if (err) {
+          console.log(err, 'error');
           return done(err);
         }
         return done();
