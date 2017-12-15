@@ -150,16 +150,16 @@ module.exports = db =>
 
         return pgTopic.save().then(() => {
           logger.info('topic saved in Postgres');
-          return response.data;
+          return { topic: response.data, dbTopic: pgTopic };
         });
       })
-      .then((topic) => {
+      .then(({ topic, dbTopic }) => {
         logger.info('returning topic');
         return discourseClient.getTopic(topic.topic_id, req.authUser.userId.toString())
         .then((fTopic) => {
           const fullTopic = fTopic;
           fullTopic.tag = params.tag;
-          return adapter.adaptTopics(fullTopic).then((result) => {
+          return adapter.adaptTopic({ topic: fullTopic, dbTopic }).then((result) => {
             if ((result instanceof Array) && result.length === 1) {
               result = result[0]; // eslint-disable-line
             }
