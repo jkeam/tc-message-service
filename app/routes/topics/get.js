@@ -1,10 +1,8 @@
-import _ from 'lodash';
 import errors from 'common-errors';
 import config from 'config';
-
-import { USER_ROLE } from '../../constants';
 import Discourse from '../../services/discourse';
 import Adapter from '../../services/adapter';
+import HelperService from '../../services/helper';
 import { retrieveTopic } from './util';
 
 const util = require('tc-core-library-js').util(config);
@@ -28,7 +26,7 @@ module.exports = db =>
   (req, resp, next) => {
     const logger = req.log;
     const discourseClient = Discourse(logger);
-    //  const helper = HelperService(logger, db);
+    const helper = HelperService(logger, db);
     const adapter = new Adapter(logger, db);
     const topicId = req.params.topicId;
 
@@ -42,7 +40,7 @@ module.exports = db =>
         }
         let userId = req.authUser.userId.toString();
         // check if user is admin or manager - they can view topics without being a part of the team
-        if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], req.authUser.roles).length > 0) {
+        if (helper.isAdmin(req)) {
           userId = config.get('discourseSystemUsername');
         }
 

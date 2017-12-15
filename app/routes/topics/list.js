@@ -1,5 +1,5 @@
 import { retrieveTopic } from './util';
-import { USER_ROLE } from '../../constants';
+import HelperService from '../../services/helper';
 
 const _ = require('lodash');
 const config = require('config');
@@ -28,6 +28,7 @@ module.exports = db =>
   (req, resp, next) => { // eslint-disable-line
     const logger = req.log;
     const discourseClient = Discourse(logger);
+    const helper = HelperService(logger, db);
     const adapter = new Adapter(logger, db);
 
     // Validate request parameters
@@ -64,7 +65,7 @@ module.exports = db =>
       logger.info('Topics exist in pg, fetching from discourse');
       let userId = req.authUser.userId.toString();
       // check if user is admin or manager - they can view topics without being a part of the team
-      if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], req.authUser.roles).length > 0) {
+      if (helper.isAdmin(req)) {
         userId = config.get('discourseSystemUsername');
       }
       const topicPromises = dbTopics.map(dbTopic => retrieveTopic(logger, dbTopic, userId, discourseClient));

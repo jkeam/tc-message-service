@@ -1,10 +1,10 @@
+import HelperService from '../../services/helper';
+
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
 const Discourse = require('../../services/discourse');
 const errors = require('common-errors');
 const Adapter = require('../../services/adapter');
-const _ = require('lodash');
-const { USER_ROLE } = require('../../constants');
 
 /**
  * Get posts from Discourse
@@ -14,6 +14,7 @@ const { USER_ROLE } = require('../../constants');
 module.exports = db => (req, resp, next) => {
   const logger = req.log;
   const discourseClient = Discourse(logger);
+  const helper = HelperService(logger, db);
   const adapter = new Adapter(logger, db);
 
   if (!req.query.postIds) {
@@ -24,7 +25,7 @@ module.exports = db => (req, resp, next) => {
 
   // Get the posts as the system user if the logged is user is an admin
   let effectiveUserId = req.authUser.userId.toString();
-  if (_.intersection([USER_ROLE.TOPCODER_ADMIN, USER_ROLE.MANAGER], req.authUser.roles).length > 0) {
+  if (helper.isAdmin(req)) {
     effectiveUserId = config.get('discourseSystemUsername');
   }
 
