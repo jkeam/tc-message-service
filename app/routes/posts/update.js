@@ -5,6 +5,7 @@ const Discourse = require('../../services/discourse');
 const errors = require('common-errors');
 const Adapter = require('../../services/adapter');
 const Joi = require('joi');
+const { EVENT } = require('../../constants');
 
 /**
  * Save a post to a topic in Discourse
@@ -29,7 +30,10 @@ module.exports = db => (req, resp, next) => {
     logger.info('Post saved', response.data);
     return adapter.adaptPost(response.data.post);
   })
-  .then(post => resp.status(200).send(util.wrapResponse(req.id, post)))
+  .then((post) => {
+    req.app.emit(EVENT.POST_UPDATED, { post, req });
+    resp.status(200).send(util.wrapResponse(req.id, post));
+  })
   .catch((error) => {
     logger.error(error);
     next(new errors.HttpStatusError(

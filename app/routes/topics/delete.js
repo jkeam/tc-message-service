@@ -5,6 +5,7 @@ const Discourse = require('../../services/discourse');
 const errors = require('common-errors');
 const Joi = require('joi');
 const Promise = require('bluebird');
+const { EVENT } = require('../../constants');
 
 /**
  * Delete a topic from Discourse and Postgresql
@@ -57,6 +58,8 @@ module.exports = db => (req, resp, next) => {
     } else {
       logger.warn('Topic does not exist in postgresql, maybe already deleted');
     }
+
+    req.app.emit(EVENT.TOPIC_DELETED, { topic: dbTopic, req });
 
     return Promise.all(deletePromises);
   })

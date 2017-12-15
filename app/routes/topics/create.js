@@ -9,7 +9,7 @@ const HelperService = require('../../services/helper');
 const errors = require('common-errors');
 const Joi = require('joi');
 const Adapter = require('../../services/adapter');
-
+const { EVENT } = require('../../constants');
 
 const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername');
   /**
@@ -150,6 +150,7 @@ module.exports = db =>
 
         return pgTopic.save().then(() => {
           logger.info('topic saved in Postgres');
+          req.app.emit(EVENT.TOPIC_CREATED, { topic: pgTopic, req });
           return response.data;
         });
       })
