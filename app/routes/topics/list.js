@@ -62,7 +62,7 @@ module.exports = db =>
         return resp.status(200).send(util.wrapResponse(req.id, []));
       }
 
-      logger.info('Topics exist in pg, fetching from discourse');
+      logger.info(`${dbTopics.length} topics exist in pg, fetching from discourse`);
       let userId = req.authUser.userId.toString();
       // check if user is admin or manager - they can view topics without being a part of the team
       if (helper.isAdmin(req)) {
@@ -74,6 +74,7 @@ module.exports = db =>
       .then((topicResponses) => {
         // filter null topics and sort in the  order of the last activity date descending (more recent activity first)
         let topics = _.map(topicResponses, 'topic');
+        logger.info(`${dbTopics.length} topics fetched from discourse`);
         if (topics.length === 0) {
           throw new errors.HttpStatusError(404, 'Topic does not exist');
         }
@@ -84,7 +85,7 @@ module.exports = db =>
           .orderBy(['last_posted_at'], ['desc'])
           .value();
 
-        logger.info('returning topics');
+        logger.info(`${topics.length} topics after filter`);
         if (!isReadOnlyForAdmins) {
           // Mark all unread topics as read.
           Promise.all(topics.filter(topic => !topic.read).map((topic) => {
