@@ -344,7 +344,7 @@ describe('POST /v4/topics ', () => {
       });
   });
 
-  it('should return 200 response if success to createPrivatePost', (done) => {
+  it.skip('should return 200 response if success to createPrivatePost', (done) => {
     const data = {
       result: {
         status: 200,
