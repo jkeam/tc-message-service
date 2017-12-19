@@ -19,7 +19,8 @@ dependencies:
     - pip install awsebcli
     - sudo service postgresql stop
     - pip install 'docker-compose==1.9.0'
-    - cd local && docker-compose up && cd..
+    - cd local && docker-compose up && cd.. :
+        background: true
   override:
     - npm install
 
