@@ -1,4 +1,6 @@
 machine:
+  services:
+    - docker
   node:
     version: v6.9.4
   environment:
