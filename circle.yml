@@ -21,6 +21,7 @@ dependencies:
     - pip install 'docker-compose==1.9.0'
     - cd local && docker-compose up && cd.. :
         background: true
+    - sleep 60
   override:
     - npm install
 
