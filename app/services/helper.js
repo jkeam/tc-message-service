@@ -88,7 +88,7 @@ module.exports = (logger, db, _discourseClient = null) => {
     .then((result) => {
       if (!result) {
         logger.debug('no result');
-        return [false, null]; // if nothing exists in the referenceLookup table, the entity should be open,
+        return [true, null]; // if nothing exists in the referenceLookup table, the entity should be open,
         // and anyone should be able to see the threads
       }
       const referenceLookup = result;
