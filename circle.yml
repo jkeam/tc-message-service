@@ -6,7 +6,8 @@ machine:
   node:
     version: v6.9.4
   environment:
-    DB_MASTER_URL: postgres://ubuntu:@127.0.0.1:5432/circle_test
+    #DB_MASTER_URL: postgres://ubuntu:@127.0.0.1:5432/circle_test
+    DB_MASTER_URL: postgres://coder:mysecretpassword@127.0.0.1:5432/messages
     #RABBITMQ_URL: amqp://localhost:5672
     AUTH_SECRET: secret
     AUTH_DOMAIN: topcoder-dev.com
@@ -16,6 +17,9 @@ machine:
 dependencies:
   pre:
     - pip install awsebcli
+    - sudo service postgresql stop
+    - pip install 'docker-compose==1.9.0'
+    - cd local && docker-compose up && cd..
   override:
     - npm install
 
