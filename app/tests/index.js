@@ -40,7 +40,7 @@ function prepareDB(done) {
     .then(() => {
       const promises = [
         models.topics.create({
-          id: 1,
+          // id: 1,
           reference: 'reference',
           referenceId: 'referenceId',
           discourseTopicId: 1,
