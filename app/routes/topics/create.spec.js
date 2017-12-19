@@ -362,7 +362,6 @@ describe('POST /v4/topics ', () => {
     });
     // put stub for axios
     const putStub = sandbox.stub(axios, 'put');
-    console.log(`/admin/users/${adminUser.userId}/trust_level`);
     putStub.withArgs(`/admin/users/${adminUser.userId}/trust_level`, sinon.match.any)
     .resolves({
       status: 200,
