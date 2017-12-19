@@ -376,10 +376,11 @@ describe('POST /v4/topics ', () => {
       })
       .send(testBody)
       .expect(200)
-      .end((err) => {
+      .end((err, res) => {
         if (err) {
           return done(err);
         }
+        res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
         return done();
       });
   });
