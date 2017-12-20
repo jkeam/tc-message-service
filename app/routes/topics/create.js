@@ -65,12 +65,12 @@ module.exports = db =>
         logger.debug('Users that should be added to topic: ', users);
         return discourseClient
           .createPrivatePost(params.title, params.body, users.join(','), req.authUser.userId.toString())
-          .then(response => response).catch((error) => {
+          .then(response => response)
+          .catch((error) => {
             // logger.debug('Error creating private post', error);
             // logger.debug(error.response && error.response.status);
             // logger.debug(error.response && error.response.data);
-            logger.info('Failed to create topic in Discourse');
-            logger.error(error);
+            logger.error('Failed to create topic in Discourse', error);
 
             // If 403 or 422, it is possible that the user simply hasn't been created in Discourse yet
             if (error.response &&
@@ -116,7 +116,7 @@ module.exports = db =>
                   }
                 })();
               }).catch((err) => {
-                logger.debug('Some error', err);
+                logger.debug('Error in provisioning user in discourse', err);
                 logger.debug(err.response && err.response.status);
                 logger.debug(err.response && err.response.data);
                 throw err;
@@ -150,16 +150,16 @@ module.exports = db =>
 
         return pgTopic.save().then(() => {
           logger.info('topic saved in Postgres');
-          return response.data;
+          return { topic: response.data, dbTopic: pgTopic };
         });
       })
-      .then((topic) => {
+      .then(({ topic, dbTopic }) => {
         logger.info('returning topic');
         return discourseClient.getTopic(topic.topic_id, req.authUser.userId.toString())
         .then((fTopic) => {
           const fullTopic = fTopic;
           fullTopic.tag = params.tag;
-          return adapter.adaptTopics(fullTopic).then((result) => {
+          return adapter.adaptTopic({ topic: fullTopic, dbTopic }).then((result) => {
             if ((result instanceof Array) && result.length === 1) {
               result = result[0]; // eslint-disable-line
             }

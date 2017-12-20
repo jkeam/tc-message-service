@@ -1,4 +1,5 @@
 import { retrieveTopic } from './util';
+import HelperService from '../../services/helper';
 
 const _ = require('lodash');
 const config = require('config');
@@ -27,6 +28,7 @@ module.exports = db =>
   (req, resp, next) => { // eslint-disable-line
     const logger = req.log;
     const discourseClient = Discourse(logger);
+    const helper = HelperService(logger, db);
     const adapter = new Adapter(logger, db);
 
     // Validate request parameters
@@ -60,13 +62,19 @@ module.exports = db =>
         return resp.status(200).send(util.wrapResponse(req.id, []));
       }
 
-      logger.info('Topics exist in pg, fetching from discourse');
-      const topicPromises = dbTopics.map(dbTopic => retrieveTopic(logger, dbTopic, req.authUser, discourseClient));
+      logger.info(`${dbTopics.length} topics exist in pg, fetching from discourse`);
+      let userId = req.authUser.userId.toString();
+      // check if user is admin or manager - they can view topics without being a part of the team
+      if (helper.isAdmin(req)) {
+        userId = config.get('discourseSystemUsername');
+      }
+      const topicPromises = dbTopics.map(dbTopic => retrieveTopic(logger, dbTopic, userId, discourseClient));
 
       return Promise.all(topicPromises)
       .then((topicResponses) => {
         // filter null topics and sort in the  order of the last activity date descending (more recent activity first)
         let topics = _.map(topicResponses, 'topic');
+        logger.info(`${dbTopics.length} topics fetched from discourse`);
         if (topics.length === 0) {
           throw new errors.HttpStatusError(404, 'Topic does not exist');
         }
@@ -77,7 +85,7 @@ module.exports = db =>
           .orderBy(['last_posted_at'], ['desc'])
           .value();
 
-        logger.info('returning topics');
+        logger.info(`${topics.length} topics after filter`);
         if (!isReadOnlyForAdmins) {
           // Mark all unread topics as read.
           Promise.all(topics.filter(topic => !topic.read).map((topic) => {
@@ -91,7 +99,7 @@ module.exports = db =>
           });
         }
         logger.debug('adapting topics');
-        return adapter.adaptTopics(topics);
+        return adapter.adaptTopics({ topics, dbTopics });
       })
       .then(result => resp.status(200).send(util.wrapResponse(req.id, result)));
     }).catch((error) => {

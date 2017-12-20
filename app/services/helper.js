@@ -7,6 +7,7 @@ const axios = require('axios');
 const errors = require('common-errors');
 const util = require('../util');
 const Promise = require('bluebird');
+const { USER_ROLE } = require('../constants');
 
 /**
  * Returns helper service containing common functions used in route handlers
@@ -87,7 +88,7 @@ module.exports = (logger, db, _discourseClient = null) => {
     .then((result) => {
       if (!result) {
         logger.debug('no result');
-        return [false, null]; // if nothing exists in the referenceLookup table, the entity should be open,
+        return [true, null]; // if nothing exists in the referenceLookup table, the entity should be open,
         // and anyone should be able to see the threads
       }
       const referenceLookup = result;
@@ -230,6 +231,14 @@ module.exports = (logger, db, _discourseClient = null) => {
     }));
   }
 
+  function isAdmin(req) {
+    return _.intersection([
+      USER_ROLE.TOPCODER_ADMIN,
+      USER_ROLE.CONNECT_ADMIN,
+      USER_ROLE.MANAGER,
+    ], req.authUser.roles).length > 0;
+  }
+
   return {
     getTopcoderUser,
     lookupUserHandles,
@@ -239,5 +248,6 @@ module.exports = (logger, db, _discourseClient = null) => {
     checkAccessAndProvision,
     getContentFromMatch,
     mentionUserIdToHandle,
+    isAdmin,
   };
 };
