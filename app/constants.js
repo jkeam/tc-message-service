@@ -6,4 +6,8 @@ module.exports = {
     MANAGER: 'Connect Manager',
     COPILOT: 'Connect Copilot',
   },
+
+  REFERENCE_LOOKUPS: {
+    PROJECT: 'project',
+  },
 };

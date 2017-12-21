@@ -41,14 +41,14 @@ function prepareDB(done) {
       const promises = [
         models.topics.create({
           // id: 1,
-          reference: 'reference',
+          reference: 'project',
           referenceId: 'referenceId',
           discourseTopicId: 1,
           tag: 'tag',
         }),
         models.referenceLookups.create({
           id: 1,
-          reference: 'reference',
+          reference: 'project',
           endpoint: 'http://reftest/{id}', // eslint-disable-line
         }),
       ];

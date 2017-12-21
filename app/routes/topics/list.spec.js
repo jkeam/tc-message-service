@@ -14,7 +14,7 @@ const topicJson = require('../../tests/topic.json');
 describe('GET /v4/topics ', () => {
   const apiPath = '/v4/topics';
   const testQuery = {
-    filter: 'tag=tag&reference=reference&referenceId=referenceId',
+    filter: 'tag=tag&reference=project&referenceId=referenceId',
   };
   const testQuery2 = {
     filter: 'tag=notexist&reference=notexist&referenceId=notexist',
@@ -194,6 +194,35 @@ describe('GET /v4/topics ', () => {
       });
   });
 
+  it('should return topics even if user is not part of project team but is a manager (not in members list)', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicJson });
+    // resolves call (with 200) to reference endpoint in helper.userHasAccessToEntity
+    // but members list does not the calling user's id
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
+    });
+    // mark read
+    const postStub = sandbox.stub(axios, 'post').resolves({});
+
+    request(server)
+      .get(apiPath)
+      .set({ Authorization: `Bearer ${jwts.manager}` })
+      .query(testQuery)
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        res.body.result.content.should.be.of.length(1);
+        // once for reference endpoint call  and once for getting the topics from discourse
+        sinon.assert.calledTwice(getStub);
+        // should not call post endpoint because it should not call discourse.markTopicPostsRead
+        // when using manager access
+        sinon.assert.notCalled(postStub);
+        return done();
+      });
+  });
+
   it('should return topics even if user is not part of project team but is a admin', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicJson });
     // rejects to reference endpoint in helper.userHasAccessToEntity
@@ -254,13 +283,44 @@ describe('GET /v4/topics ', () => {
       });
   });
 
+  it('should return topics even if user is not part of project team but is a admin (non in members list)', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicJson });
+    // resolves call (with 200) to reference endpoint in helper.userHasAccessToEntity
+    // but members list does not the calling user's id
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
+    });
+    // mark read
+    const postStub = sandbox.stub(axios, 'post').resolves({});
+
+    request(server)
+      .get(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.admin}`,
+      })
+      .query(testQuery)
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        res.body.result.content.should.be.of.length(1);
+        // once for reference endpoint call  and once for getting the topics from discourse
+        sinon.assert.calledTwice(getStub);
+        // should not call post endpoint because it should not call discourse.markTopicPostsRead
+        // when using admin access
+        sinon.assert.notCalled(postStub);
+        return done();
+      });
+  });
+
   // FIXME valid use case
   it('should return 200 response with matching topicLookup', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicJson });
 
     // resolves call (with 200) to reference endpoint in helper.userHasAccessToEntity
     getStub.withArgs('http://reftest/referenceId').resolves({
-      data: { result: { status: 200, content: [{ userId: memberUser.userId }] } },
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({});
