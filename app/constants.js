@@ -17,7 +17,7 @@ module.exports = {
   REFERENCE_LOOKUPS: {
     PROJECT: 'project',
   },
-  
+
   BUS_API_EVENT: {
     TOPIC_CREATED: 'connect.project.topic.created',
     TOPIC_DELETED: 'connect.project.topic.deleted',
