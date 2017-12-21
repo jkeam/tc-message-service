@@ -1,4 +1,5 @@
 const models = require('../models');
+const jwt = require('jsonwebtoken');
 
 
 const jwts = {
@@ -12,6 +13,10 @@ const jwts = {
   // eslint-disable-next-line
   manager: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJDb25uZWN0IE1hbmFnZXIiXSwiaXNzIjoiaHR0cHM6Ly9hcGkudG9wY29kZXItZGV2LmNvbSIsImhhbmRsZSI6InRlc3QxIiwiZXhwIjoyNTYzMDc2Njg5LCJ1c2VySWQiOiI0MDA1MTMzNCIsImlhdCI6MTQ2MzA3NjA4OSwiZW1haWwiOiJ0ZXN0QHRvcGNvZGVyLmNvbSIsImp0aSI6ImIzM2I3N2NkLWI1MmUtNDBmZS04MzdlLWJlYjhlMGFlNmE0YSJ9.YTYWbA5JmjdC_dVA1kQjcWtpKIeWs7FwDa8B-xsnhN0',
 };
+
+function getDecodedToken(token) {
+  return jwt.decode(token);
+}
 
 function clearDBPromise() {
   return models.sequelize.sync()
@@ -35,7 +40,7 @@ function prepareDB(done) {
     .then(() => {
       const promises = [
         models.topics.create({
-          id: 1,
+          // id: 1,
           reference: 'reference',
           referenceId: 'referenceId',
           discourseTopicId: 1,
@@ -44,7 +49,7 @@ function prepareDB(done) {
         models.referenceLookups.create({
           id: 1,
           reference: 'reference',
-          endpoint: 'http://reftest/${id}', // eslint-disable-line
+          endpoint: 'http://reftest/{id}', // eslint-disable-line
         }),
       ];
       return Promise.all(promises);
@@ -56,4 +61,5 @@ module.exports = {
   prepareDB,
   clearDB,
   jwts,
+  getDecodedToken,
 };

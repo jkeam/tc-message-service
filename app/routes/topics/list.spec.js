@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions, newline-per-chained-call */
 
-import { clearDB, prepareDB, jwts } from '../../tests';
+import { clearDB, prepareDB, jwts, getDecodedToken } from '../../tests';
 
 require('should-sinon');
 
@@ -22,6 +22,13 @@ describe('GET /v4/topics ', () => {
   // const testQuery3 = {
   //   filter: 'tag=tag&reference=notexist&referenceId=referenceId',
   // };
+  const memberUser = {
+    handle: getDecodedToken(jwts.member).handle,
+    userId: getDecodedToken(jwts.member).userId,
+    firstName: 'fname',
+    lastName: 'lName',
+    email: 'some@abc.com',
+  };
   let sandbox;
   beforeEach((done) => {
     sandbox = sinon.sandbox.create();
@@ -132,9 +139,11 @@ describe('GET /v4/topics ', () => {
   });
 
   it('should return topics even if user is not part of project team but is a manager', (done) => {
-    const getStub = sandbox.stub(axios, 'get')
-      .onFirstCall().rejects({ status: 404 })
-      .onSecondCall().resolves({ data: topicJson });
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicJson });
+    // resolves call (with 403) to reference endpoint in helper.userHasAccessToEntity
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 403 } },
+    });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({});
 
@@ -148,23 +157,56 @@ describe('GET /v4/topics ', () => {
           return done(err);
         }
         res.body.result.content.should.be.of.length(1);
+        // once for reference endpoint call  and once for getting the topics from discourse
         sinon.assert.calledTwice(getStub);
+        // should not call post endpoint because it should not call discourse.markTopicPostsRead
+        // when using manager access
+        sinon.assert.notCalled(postStub);
+        return done();
+      });
+  });
+
+  it('should return topics even if user is not part of project team but is a manager (ref lookup error)', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicJson });
+    // resolves call (with 403) to reference endpoint in helper.userHasAccessToEntity
+    getStub.withArgs('http://reftest/referenceId').rejects({
+      message: 'ERROR_IN_ACCESSING_REF_ENDPOINT',
+    });
+    // mark read
+    const postStub = sandbox.stub(axios, 'post').resolves({});
+
+    request(server)
+      .get(apiPath)
+      .set({ Authorization: `Bearer ${jwts.manager}` })
+      .query(testQuery)
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        res.body.result.content.should.be.of.length(1);
+        // once for reference endpoint call  and once for getting the topics from discourse
+        sinon.assert.calledTwice(getStub);
+        // should not call post endpoint because it should not call discourse.markTopicPostsRead
+        // when using manager access
         sinon.assert.notCalled(postStub);
         return done();
       });
   });
 
   it('should return topics even if user is not part of project team but is a admin', (done) => {
-    const getStub = sandbox.stub(axios, 'get')
-      .onFirstCall().rejects({ })
-      .onSecondCall().resolves({ data: topicJson });
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicJson });
+    // rejects to reference endpoint in helper.userHasAccessToEntity
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 403 } },
+    });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({});
 
     request(server)
       .get(apiPath)
       .set({
-        Authorization: `Bearer ${jwts.manager}`,
+        Authorization: `Bearer ${jwts.admin}`,
       })
       .query(testQuery)
       .expect(200)
@@ -173,7 +215,40 @@ describe('GET /v4/topics ', () => {
           return done(err);
         }
         res.body.result.content.should.be.of.length(1);
+        // once for reference endpoint call  and once for getting the topics from discourse
         sinon.assert.calledTwice(getStub);
+        // should not call post endpoint because it should not call discourse.markTopicPostsRead
+        // when using admin access
+        sinon.assert.notCalled(postStub);
+        return done();
+      });
+  });
+
+  it('should return topics even if user is not part of project team but is a admin (Ref lookup error)', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicJson });
+    // rejects to reference endpoint in helper.userHasAccessToEntity
+    getStub.withArgs('http://reftest/referenceId').rejects({
+      message: 'ERROR_IN_ACCESSING_REF_ENDPOINT',
+    });
+    // mark read
+    const postStub = sandbox.stub(axios, 'post').resolves({});
+
+    request(server)
+      .get(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.admin}`,
+      })
+      .query(testQuery)
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        res.body.result.content.should.be.of.length(1);
+        // once for reference endpoint call  and once for getting the topics from discourse
+        sinon.assert.calledTwice(getStub);
+        // should not call post endpoint because it should not call discourse.markTopicPostsRead
+        // when using admin access
         sinon.assert.notCalled(postStub);
         return done();
       });
@@ -182,9 +257,14 @@ describe('GET /v4/topics ', () => {
   // FIXME valid use case
   it('should return 200 response with matching topicLookup', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicJson });
-    // mark read
 
+    // resolves call (with 200) to reference endpoint in helper.userHasAccessToEntity
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: [{ userId: memberUser.userId }] } },
+    });
+    // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({});
+
     request(server)
       .get(apiPath)
       .set({ Authorization: `Bearer ${jwts.member}` })
@@ -194,7 +274,9 @@ describe('GET /v4/topics ', () => {
         if (err) {
           return done(err);
         }
-        sinon.assert.calledOnce(getStub);
+        // once for reference endpoint call  and once for getting the topics from discourse
+        sinon.assert.calledTwice(getStub);
+        // should call post endpoint in discourse.markTopicPostsRead as it not using admin access
         sinon.assert.calledOnce(postStub);
         return done();
       });

@@ -1,4 +1,5 @@
 import { retrieveTopic } from './util';
+import HelperService from '../../services/helper';
 
 const _ = require('lodash');
 const config = require('config');
@@ -27,6 +28,7 @@ module.exports = db =>
   (req, resp, next) => { // eslint-disable-line
     const logger = req.log;
     const discourseClient = Discourse(logger);
+    const helper = HelperService(logger, db);
     const adapter = new Adapter(logger, db);
 
     // Validate request parameters
@@ -51,7 +53,6 @@ module.exports = db =>
       return next(new errors.HttpStatusError(400, 'Please provide reference and referenceId filter parameters'));
     }
 
-    let isReadOnlyForAdmins = false;
     // Get topics from the Postgres database
     db.topics.findAll({ where: filter })
     .then((dbTopics) => {
@@ -60,40 +61,56 @@ module.exports = db =>
         return resp.status(200).send(util.wrapResponse(req.id, []));
       }
 
-      logger.info('Topics exist in pg, fetching from discourse');
-      const topicPromises = dbTopics.map(dbTopic => retrieveTopic(logger, dbTopic, req.authUser, discourseClient));
-
-      return Promise.all(topicPromises)
-      .then((topicResponses) => {
-        // filter null topics and sort in the  order of the last activity date descending (more recent activity first)
-        let topics = _.map(topicResponses, 'topic');
-        if (topics.length === 0) {
-          throw new errors.HttpStatusError(404, 'Topic does not exist');
+      logger.info(`${dbTopics.length} topics exist in pg, fetching from discourse`);
+      let userId = req.authUser.userId.toString();
+      return helper.userHasAccessToEntity(req.authToken, req.id, filter.reference, filter.referenceId)
+      .then((hasAccessResp) => {
+        logger.info('Checking if user has access to identity');
+        const hasAccess = hasAccessResp[0];
+        if (!hasAccess && !helper.isAdmin(req)) {
+          throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
         }
-        isReadOnlyForAdmins = _.every(_.map(topicResponses, 'isReadOnlyForAdmins'));
-        // console.log(topics);
-        topics = _.chain(topics)
-          .filter(topic => topic != null)
-          .orderBy(['last_posted_at'], ['desc'])
-          .value();
 
-        logger.info('returning topics');
-        if (!isReadOnlyForAdmins) {
-          // Mark all unread topics as read.
-          Promise.all(topics.filter(topic => !topic.read).map((topic) => {
-            if (topic.post_stream && topic.post_stream.posts && topic.post_stream.posts.length > 0) {
-              const postIds = topic.post_stream.posts.map(post => post.post_number);
-              return discourseClient.markTopicPostsRead(req.authUser.userId.toString(), topic.id, postIds);
-            }
-            return Promise.resolve();
-          })).catch((error) => {
-            logger.error('error marking topic posts read', error);
-          });
+        // if user does not have access but if user is admin or manager, use discourse system user to make API calls
+        // - they can view topics without being a part of the team
+        const usingAdminAccess = !hasAccess && helper.isAdmin(req);
+        if (usingAdminAccess) {
+          userId = config.get('discourseSystemUsername');
         }
-        logger.debug('adapting topics');
-        return adapter.adaptTopics(topics);
-      })
-      .then(result => resp.status(200).send(util.wrapResponse(req.id, result)));
+        const topicPromises = dbTopics.map(dbTopic => retrieveTopic(logger, dbTopic, userId, discourseClient));
+
+        return Promise.all(topicPromises)
+        .then((topicResponses) => {
+          // filter null topics and sort in the  order of the last activity date descending (more recent activity first)
+          let topics = _.map(topicResponses, 'topic');
+          logger.info(`${dbTopics.length} topics fetched from discourse`);
+          if (topics.length === 0) {
+            throw new errors.HttpStatusError(404, 'Topic does not exist');
+          }
+
+          topics = _.chain(topics)
+            .filter(topic => topic != null)
+            .orderBy(['last_posted_at'], ['desc'])
+            .value();
+
+          logger.info(`${topics.length} topics after filter`);
+          if (!usingAdminAccess) {
+            // Mark all unread topics as read.
+            Promise.all(topics.filter(topic => !topic.read).map((topic) => {
+              if (topic.post_stream && topic.post_stream.posts && topic.post_stream.posts.length > 0) {
+                const postIds = topic.post_stream.posts.map(post => post.post_number);
+                return discourseClient.markTopicPostsRead(req.authUser.userId.toString(), topic.id, postIds);
+              }
+              return Promise.resolve();
+            })).catch((error) => {
+              logger.error('error marking topic posts read', error);
+            });
+          }
+          logger.debug('adapting topics');
+          return adapter.adaptTopics({ topics, dbTopics });
+        })
+        .then(result => resp.status(200).send(util.wrapResponse(req.id, result)));
+      });
     }).catch((error) => {
       next(error);
     });
