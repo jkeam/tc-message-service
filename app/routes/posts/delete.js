@@ -4,10 +4,11 @@ const util = require('tc-core-library-js').util(config);
 const Discourse = require('../../services/discourse');
 const errors = require('common-errors');
 const Joi = require('joi');
+const { EVENT } = require('../../constants');
 
 /**
  * Delete a post in Discourse
- * @return {object} response
+ * @return {Object} response
  */
 module.exports = () => (req, resp, next) => {
   const logger = req.log;
@@ -23,6 +24,7 @@ module.exports = () => (req, resp, next) => {
     req.params.postId)
   .then(() => {
     logger.info('Post deleted');
+    req.app.emit(EVENT.POST_DELETED, { req });
     resp.status(200).send(util.wrapResponse(req.id));
   })
   .catch((error) => {
