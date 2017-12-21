@@ -20,7 +20,7 @@ const username = 'test1';
 describe('POST /v4/topics ', () => {
   const apiPath = '/v4/topics';
   const testBody = {
-    reference: 'reference',
+    reference: 'project',
     referenceId: '1',
     tag: 'tag',
     title: 'title',
@@ -180,7 +180,7 @@ describe('POST /v4/topics ', () => {
     const stub = sandbox.stub(axios, 'get');
     // resolves call to reference endpoint in helper.userHasAccessToEntity
     stub.withArgs('http://reftest/1').resolves({
-      data: { result: { status: 200, content: [{ userId: adminUser.userId }] } },
+      data: { result: { status: 200, content: { members: [{ userId: adminUser.userId }] } } },
     });
     // Rejects the discourse get user call
     stub.withArgs(`/users/${adminUser.userId}.json?api_username=${adminUser.userId}`)
@@ -229,7 +229,7 @@ describe('POST /v4/topics ', () => {
     const stub = sandbox.stub(axios, 'get');
     // resolves call to reference endpoint in helper.userHasAccessToEntity
     stub.withArgs('http://reftest/1').resolves({
-      data: { result: { status: 200, content: [{ userId: adminUser.userId }] } },
+      data: { result: { status: 200, content: { members: [{ userId: adminUser.userId }] } } },
     });
     // Rejects the discourse get user call
     stub.withArgs(`/users/${adminUser.userId}.json?api_username=${adminUser.userId}`)
@@ -278,7 +278,7 @@ describe('POST /v4/topics ', () => {
     const stub = sandbox.stub(axios, 'get');
     // resolves call to reference endpoint in helper.userHasAccessToEntity
     stub.withArgs('http://reftest/1').resolves({
-      data: { result: { status: 200, content: [{ userId: adminUser.userId }] } },
+      data: { result: { status: 200, content: { members: [{ userId: adminUser.userId }] } } },
     });
     // Rejects the discourse get user call
     stub.withArgs(`/users/${adminUser.userId}.json?api_username=${adminUser.userId}`)

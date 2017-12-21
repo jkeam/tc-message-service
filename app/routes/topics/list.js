@@ -9,6 +9,7 @@ const Discourse = require('../../services/discourse');
 const errors = require('common-errors');
 const Joi = require('joi');
 const Adapter = require('../../services/adapter');
+const { REFERENCE_LOOKUPS } = require('../../constants');
 
 
 /**
@@ -66,7 +67,14 @@ module.exports = db =>
       return helper.userHasAccessToEntity(req.authToken, req.id, filter.reference, filter.referenceId)
       .then((hasAccessResp) => {
         logger.info('Checking if user has access to identity');
-        const hasAccess = hasAccessResp[0];
+        let hasAccess = hasAccessResp[0];
+        if (filter.reference.toLowerCase() === REFERENCE_LOOKUPS.PROJECT) {
+          const projectMembers = _.get(hasAccessResp[1], 'members', []);
+            // get users list
+          const isMember = _.filter(projectMembers, member => member.userId.toString() === userId).length > 0;
+          logger.debug(isMember, 'isMember');
+          hasAccess = isMember;
+        }
         if (!hasAccess && !helper.isAdmin(req)) {
           throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
         }
