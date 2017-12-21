@@ -17,7 +17,7 @@ dependencies:
 
 deployment:
   development:
-    branch: feature/busEvents
+    branch: dev
     commands:
       - ./ebs_deploy.sh tc-message-service DEV $CIRCLE_BUILD_NUM
 
