@@ -647,6 +647,58 @@
           "totalCount": 1
         }
       }
+    },
+    {
+      "id": 2,
+      "version": "v4",
+      "result": {
+        "success": true,
+        "status": 200,
+        "content": {
+          "id": 12,
+          "directProjectId": 10588,
+          "billingAccountId": null,
+          "name": "Test forum 2",
+          "description": "Test forum description 2",
+          "external": null,
+          "bookmarks": [],
+          "estimatedPrice": null,
+          "actualPrice": null,
+          "terms": [],
+          "type": "visual_design",
+          "status": "draft",
+          "details": {
+            "devices": [
+              "phone"
+            ],
+            "utm": {
+              "code": "TC"
+            }
+          },
+          "challengeEligibility": [],
+          "createdAt": "2016-10-28T16:20:12.000Z",
+          "updatedAt": "2016-10-28T16:20:12.000Z",
+          "createdBy": 40011578,
+          "updatedBy": 40011578,
+          "members": [
+            {
+              "id": 1200,
+              "userId": 40011578,
+              "role": "manager",
+              "isPrimary": true,
+              "createdAt": "2016-11-02T15:49:15.000Z",
+              "updatedAt": "2016-11-02T15:49:15.000Z",
+              "createdBy": 40011578,
+              "updatedBy": 40011578,
+              "projectId": 1
+            }
+          ],
+          "attachments": []
+        },
+        "metadata": {
+          "totalCount": 1
+        }
+      }
     }
   ]
 }

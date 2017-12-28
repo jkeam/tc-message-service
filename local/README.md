@@ -74,8 +74,8 @@ The following describes how to setup Discourse locally:
 
 ```shell
 # Boot docker container, use 3002 port, you can change to suit your environment
-docker pull discourse/discourse_dev:release
-docker run -d -p 1080:1080 -p 3002:3002 --hostname=discourse --name=discourse_dev discourse/discourse_dev:release /sbin/boot
+docker pull discourse/discourse_dev:1.4.0
+docker run -d -p 1080:1080 -p 3002:3002 --hostname=discourse --name=discourse_dev discourse/discourse_dev:1.4.0 /sbin/boot
 
 # Checkout Discourse source, stable branch
 git clone https://github.com/discourse/discourse.git

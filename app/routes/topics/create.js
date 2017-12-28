@@ -9,7 +9,7 @@ const HelperService = require('../../services/helper');
 const errors = require('common-errors');
 const Joi = require('joi');
 const Adapter = require('../../services/adapter');
-
+const { REFERENCE_LOOKUPS, EVENT } = require('../../constants');
 
 const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername');
   /**
@@ -50,7 +50,7 @@ module.exports = db =>
         logger.info('Checking if user has access to identity');
         const hasAccess = hasAccessResp[0];
         if (!hasAccess) { throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity'); }
-        if (params.reference.toLowerCase() === 'project') {
+        if (params.reference.toLowerCase() === REFERENCE_LOOKUPS.PROJECT) {
           const projectMembers = _.get(hasAccessResp[1], 'members', []);
             // get users list
           const topicUsers = _.map(projectMembers, member => member.userId.toString());
@@ -150,6 +150,7 @@ module.exports = db =>
 
         return pgTopic.save().then(() => {
           logger.info('topic saved in Postgres');
+          req.app.emit(EVENT.TOPIC_CREATED, { topic: pgTopic, req });
           return { topic: response.data, dbTopic: pgTopic };
         });
       })
