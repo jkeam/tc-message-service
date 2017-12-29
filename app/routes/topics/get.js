@@ -61,6 +61,10 @@ module.exports = db =>
                 })
                 .catch((error) => {
                   logger.error('error marking topic posts read', error);
+                  // discourse just throws error in marking topics as read for non member
+                  // we should not mind calling this end point once for each topic
+                  // however, we may avoid this call if we make extra call to check if user has access to entity
+                  return Promise.resolve(topic);
                 });
             } else { // eslint-disable-line
               return Promise.resolve(topic);
