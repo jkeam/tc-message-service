@@ -63,7 +63,8 @@ function Adapter(logger, db) {// eslint-disable-line
 
   this.adaptTopic = function a(input) {
     const { topic, dbTopic } = input;
-    return this.adaptTopics({ topics: [topic], dbTopics: [dbTopic] });
+    const adaptedTopics = this.adaptTopics({ topics: [topic], dbTopics: [dbTopic] });
+    return adaptedTopics && adaptedTopics.length > 0 ? adaptedTopics[0] : topic;
   };
 
   this.adaptTopics = function a(input) {
