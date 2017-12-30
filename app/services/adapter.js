@@ -80,7 +80,7 @@ function Adapter(logger, db) {// eslint-disable-line
       let userId = discourseTopic.post_stream.posts[0].username;
       userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId, 10) : userId;
 
-      const pgTopic = _.find(pgTopics, pt => pt.id === discourseTopic.id);
+      const pgTopic = _.find(pgTopics, pt => pt.discourseTopicId === discourseTopic.id);
       const topic = {
         id: discourseTopic.id,
         dbId: pgTopic ? pgTopic.id : undefined,

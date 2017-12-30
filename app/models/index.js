@@ -6,6 +6,9 @@
 
 const fs = require('fs');
 const path = require('path');
+// https://github.com/sequelize/sequelize/issues/1774#issuecomment-126714889
+require('pg').defaults.parseInt8 = true;
+
 const Sequelize = require('sequelize');
 const config = require('config');
 

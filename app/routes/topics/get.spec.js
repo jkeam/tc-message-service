@@ -59,8 +59,10 @@ describe('GET /v4/topics/:topicId', () => {
   });
 
   it('should return 200 response when called by project member and should mark topic read', (done) => {
+    // sample response for discourse topic calls
+    const topicData = Object.assign({}, topicJson, { id: 1 });
     const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/1.json?include_raw=1').resolves({ data: topicJson });
+      .withArgs('/t/1.json?include_raw=1').resolves({ data: topicData });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({});
 
@@ -70,18 +72,22 @@ describe('GET /v4/topics/:topicId', () => {
         Authorization: `Bearer ${jwts.member}`,
       })
       .expect(200)
-      .end((err) => {
+      .end((err, res) => {
         if (err) {
           return done(err);
         }
         sinon.assert.calledOnce(getStub);
         sinon.assert.calledOnce(postStub);
+        res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
+        res.body.should.have.propertyByPath('result', 'content', 'reference').eql('project');
         return done();
       });
   });
 
   it('should return 200 response when called by admin not on project team and not mark topic as read', (done) => {
-    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicJson });
+    // sample response for discourse topic calls
+    const topicData = Object.assign({}, topicJson, { id: 1 });
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({});
 
@@ -99,7 +105,8 @@ describe('GET /v4/topics/:topicId', () => {
         // FIXME: Should it be called or not? If discourse just throws error in marking topics as read for non member
         // we should not mind calling this end point once for each topic
         sinon.assert.calledOnce(postStub);
-        res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicJson.id);
+        res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
+        res.body.should.have.propertyByPath('result', 'content', 'reference').eql('project');
         return done();
       });
   });
