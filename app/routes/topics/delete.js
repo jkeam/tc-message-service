@@ -42,7 +42,7 @@ module.exports = db => (req, resp, next) => {
     if (topic && topic.post_stream && topic.post_stream.posts) {
       // Only count the posts which are not invited_user/removed_user action
       const postLength = topic.post_stream.posts.filter(
-        post => post.action_code !== 'invited_user' && post.action_code !== 'removed_user').length;
+        post => ['invited_user', 'removed_user', 'user_left'].indexOf(post.action_code) === -1).length;
       if (postLength > 1) {
         throw new errors.HttpStatusError(422, 'Topic has comments and can not be deleted');
       }

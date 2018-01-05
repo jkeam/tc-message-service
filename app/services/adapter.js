@@ -105,8 +105,7 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
             let userId = discoursePost.username; //eslint-disable-line
             userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId, 10) : userId;
             // ignore createdAt for invited_user type posts
-            if (discoursePost.action_code !== 'invited_user'
-              && discoursePost.action_code !== 'removed_user'
+            if (['invited_user', 'removed_user', 'user_left'].indexOf(discoursePost.action_code) === -1
               && discoursePost.updated_at > topic.lastActivityAt) {
               topic.lastActivityAt = discoursePost.updated_at;
             }
@@ -120,7 +119,8 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
                 body: `${discoursePost.action_code_who} joined the discussion`,
                 type: 'user-joined',
               });
-            } else if (discoursePost.action_code === 'removed_user' && discoursePost.action_code_who) {
+            } else if (['removed_user', 'user_left'].indexOf(discoursePost.action_code) !== -1
+              && discoursePost.action_code_who) {
               topic.retrievedPosts -= 1;
               topic.posts.push({
                 id: discoursePost.id,

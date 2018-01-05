@@ -86,7 +86,7 @@ describe('GET /v4/topics/:topicId', () => {
         sinon.assert.calledOnce(postStub);
         res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', 'posts').length(3);
+        res.body.should.have.propertyByPath('result', 'content', 'posts').length(4);
         res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt').eql('2017-03-14T20:55:55.356Z');
         return done();
       });
@@ -121,7 +121,7 @@ describe('GET /v4/topics/:topicId', () => {
         sinon.assert.calledOnce(postStub);
         res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', 'posts').length(3);
+        res.body.should.have.propertyByPath('result', 'content', 'posts').length(4);
         res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt').eql('2017-03-14T20:55:55.356Z');
         return done();
       });
@@ -164,9 +164,9 @@ describe('GET /v4/topics/:topicId', () => {
         sinon.assert.calledOnce(postStub);
         res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', 'reference').eql('project');
-        // although /topic/{topicId} returns topic with only 3 posts,
-        // /topic/{topicId}/posts returns 4 posts, so, final output should have 4 posts
-        res.body.should.have.propertyByPath('result', 'content', 'posts').length(4);
+        // although /topic/{topicId} returns topic with only 4 posts,
+        // /topic/{topicId}/posts returns 5 posts, so, final output should have 5 posts
+        res.body.should.have.propertyByPath('result', 'content', 'posts').length(5);
         // lastActivityAt should refelct the updated_at date of the newest post
         res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt').eql('2018-01-04T20:55:55.356Z');
         return done();
