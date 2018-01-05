@@ -61,8 +61,14 @@ describe('GET /v4/topics/:topicId', () => {
   it('should return 200 response when called by project member and should mark topic read', (done) => {
     // sample response for discourse topic calls
     const topicData = Object.assign({}, topicJson, { id: 1 });
-    const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/1.json?include_raw=1').resolves({ data: topicData });
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves discourse's /topics/{topicId} call with test topic
+    getStub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\.json.*`)))
+      .resolves({ data: topicData });
+    // resolves discourse's posts endpoint discourse.getPosts
+    getStub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\/posts\\.json\\?.*`)))
+    .resolves({ data: { post_stream: topicData.post_stream } });
+
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({});
 
@@ -76,10 +82,12 @@ describe('GET /v4/topics/:topicId', () => {
         if (err) {
           return done(err);
         }
-        sinon.assert.calledOnce(getStub);
+        sinon.assert.calledTwice(getStub);
         sinon.assert.calledOnce(postStub);
         res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', 'reference').eql('project');
+        res.body.should.have.propertyByPath('result', 'content', 'posts').length(3);
+        res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt').eql('2017-03-14T20:55:55.356Z');
         return done();
       });
   });
@@ -87,7 +95,13 @@ describe('GET /v4/topics/:topicId', () => {
   it('should return 200 response when called by admin not on project team and not mark topic as read', (done) => {
     // sample response for discourse topic calls
     const topicData = Object.assign({}, topicJson, { id: 1 });
-    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves discourse's /topics/{topicId} call with test topic
+    getStub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\.json.*`)))
+      .resolves({ data: topicData });
+    // resolves discourse's posts endpoint discourse.getPosts
+    getStub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\/posts\\.json\\?.*`)))
+    .resolves({ data: { post_stream: topicData.post_stream } });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({});
 
@@ -101,12 +115,60 @@ describe('GET /v4/topics/:topicId', () => {
         if (err) {
           return done(err);
         }
-        sinon.assert.calledOnce(getStub);
+        sinon.assert.calledTwice(getStub);
         // FIXME: Should it be called or not? If discourse just throws error in marking topics as read for non member
         // we should not mind calling this end point once for each topic
         sinon.assert.calledOnce(postStub);
         res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', 'reference').eql('project');
+        res.body.should.have.propertyByPath('result', 'content', 'posts').length(3);
+        res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt').eql('2017-03-14T20:55:55.356Z');
+        return done();
+      });
+  });
+
+  it('should return 200 response with new additional post, when there is a new post after get topic call', (done) => {
+    // sample response for discourse topic calls
+    const topicData = Object.assign({}, topicJson, { id: 1 });
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves discourse's /topics/{topicId} call with test topic
+    getStub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\.json.*`)))
+      .resolves({ data: topicData });
+    const postStream = topicData.post_stream;
+    const newPost = Object.assign({}, postStream.posts[0], { updated_at: '2018-01-04T20:55:55.356Z' });
+    // resolves discourse's posts endpoint discourse.getPosts
+    getStub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\/posts\\.json\\?.*`)))
+    .resolves({
+      data: {
+        post_stream: {
+          stream: postStream.stream,
+          posts: [...postStream.posts, newPost],
+        },
+      },
+    });
+
+    // mark read
+    const postStub = sandbox.stub(axios, 'post').resolves({});
+
+    request(server)
+      .get(`${apiPathPrefix}1`)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        sinon.assert.calledTwice(getStub);
+        sinon.assert.calledOnce(postStub);
+        res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
+        res.body.should.have.propertyByPath('result', 'content', 'reference').eql('project');
+        // although /topic/{topicId} returns topic with only 3 posts,
+        // /topic/{topicId}/posts returns 4 posts, so, final output should have 4 posts
+        res.body.should.have.propertyByPath('result', 'content', 'posts').length(4);
+        // lastActivityAt should refelct the updated_at date of the newest post
+        res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt').eql('2018-01-04T20:55:55.356Z');
         return done();
       });
   });
