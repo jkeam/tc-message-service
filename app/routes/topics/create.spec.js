@@ -345,6 +345,9 @@ describe('POST /v4/topics ', () => {
     // resolves discourse get topic call for discourse.getTopic
     stub.withArgs(`/t/${topicData.id}.json?include_raw=1`)
     .resolves({ data: topicData });
+    // resolves discourse's posts endpoint discourse.getPosts
+    stub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\/posts\\.json\\?.*`)))
+    .resolves({ data: { post_stream: topicData.post_stream } });
     // post stub for axios
     const postStub = sandbox.stub(axios, 'post');
     // rejects discourse API call for discourse.createPrivatePost method
@@ -482,6 +485,9 @@ describe('POST /v4/topics ', () => {
     getStub.onSecondCall().resolves({
       data: topicData,
     });
+    // resolves discourse's posts endpoint discourse.getPosts
+    getStub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\/posts\\.json\\?.*`)))
+    .resolves({ data: { post_stream: topicData.post_stream } });
     sandbox.stub(axios, 'post').resolves({
       data,
     });
@@ -521,6 +527,9 @@ describe('POST /v4/topics ', () => {
     stub.withArgs(`/t/${data.topic_id}.json?include_raw=1`).resolves({
       data: topicData,
     });
+    // resolves discourse's posts endpoint discourse.getPosts
+    stub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\/posts\\.json\\?.*`)))
+    .resolves({ data: { post_stream: topicData.post_stream } });
     stub.withArgs(`${config.memberServiceUrl}/${username}`, sinon.match.any)
       .resolves({
         data: {
@@ -585,6 +594,9 @@ describe('POST /v4/topics ', () => {
     stub.withArgs(`/t/${data.topic_id}.json?include_raw=1`).resolves({
       data: topicData,
     });
+    // resolves discourse's posts endpoint discourse.getPosts
+    stub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\/posts\\.json\\?.*`)))
+    .resolves({ data: { post_stream: topicData.post_stream } });
     stub.resolves({
       data,
     });

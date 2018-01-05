@@ -27,7 +27,7 @@ module.exports = db =>
     const logger = req.log;
     const discourseClient = Discourse(logger);
     const helper = HelperService(logger, db);
-    const adapter = new Adapter(logger, db);
+    const adapter = new Adapter(logger, db, discourseClient);
     const topicId = req.params.topicId;
 
     // Get topic from the Postgres database

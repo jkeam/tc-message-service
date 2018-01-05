@@ -1,7 +1,6 @@
-
-
 const _ = require('lodash');
 const Helper = require('./helper.js');
+const Discourse = require('./discourse');
 const Promise = require('bluebird');
 const config = require('config');
 
@@ -13,8 +12,9 @@ const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername');
 const handleMap = { system: 'system' };
 handleMap[DISCOURSE_SYSTEM_USERNAME] = DISCOURSE_SYSTEM_USERNAME;
 
-function Adapter(logger, db) {// eslint-disable-line
+function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
   const helper = Helper(logger);
+  const discourseClient = _discourseClient || new Discourse(logger);
 
   this.userIdLookup = function userIdLookup(handle) {
     return new Promise((resolve, reject) => { // eslint-disable-line
@@ -98,20 +98,20 @@ function Adapter(logger, db) {// eslint-disable-line
         postIds: discourseTopic.post_stream.stream,
         posts: [],
       };
-
-      if (discourseTopic.post_stream && discourseTopic.post_stream.posts) {
-        return Promise.each(discourseTopic.post_stream.posts,
+      return discourseClient.getPosts(DISCOURSE_SYSTEM_USERNAME, discourseTopic.id, topic.postIds).then(posts => (
+        Promise.each(posts.data.post_stream.posts,
           discoursePost => helper.mentionUserIdToHandle(discoursePost.cooked)
           .then((postBody) => {
             let userId = discoursePost.username; //eslint-disable-line
             userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId, 10) : userId;
             // ignore createdAt for invited_user type posts
             if (discoursePost.action_code !== 'invited_user'
-              && discoursePost.created_at > topic.lastActivityAt) {
-              topic.lastActivityAt = discoursePost.created_at; //eslint-disable-line
+              && discoursePost.action_code !== 'removed_user'
+              && discoursePost.updated_at > topic.lastActivityAt) {
+              topic.lastActivityAt = discoursePost.updated_at;
             }
             if (discoursePost.action_code === 'invited_user' && discoursePost.action_code_who) {
-              topic.retrievedPosts -= 1; // eslint-disable-line
+              topic.retrievedPosts -= 1;
               topic.posts.push({
                 id: discoursePost.id,
                 date: discoursePost.created_at,
@@ -119,6 +119,16 @@ function Adapter(logger, db) {// eslint-disable-line
                 read: true,
                 body: `${discoursePost.action_code_who} joined the discussion`,
                 type: 'user-joined',
+              });
+            } else if (discoursePost.action_code === 'removed_user' && discoursePost.action_code_who) {
+              topic.retrievedPosts -= 1;
+              topic.posts.push({
+                id: discoursePost.id,
+                date: discoursePost.created_at,
+                userId,
+                read: true,
+                body: `${discoursePost.action_code_who} unfollowed the discussion`,
+                type: 'user-removed',
               });
             } else {
               topic.posts.push({
@@ -135,9 +145,8 @@ function Adapter(logger, db) {// eslint-disable-line
           })//eslint-disable-line
         ).then(() => {
           topics.push(topic);
-        });
-      }
-      return topics;
+        })
+      ));
     }).then(() => topics);
   };
 
