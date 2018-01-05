@@ -169,7 +169,7 @@ describe('GET /v4/topics ', () => {
         sinon.assert.notCalled(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(3);
+        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(4);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2017-03-14T20:55:55.356Z');
         return done();
       });
@@ -206,7 +206,7 @@ describe('GET /v4/topics ', () => {
         sinon.assert.notCalled(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(3);
+        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(4);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2017-03-14T20:55:55.356Z');
         return done();
       });
@@ -244,7 +244,7 @@ describe('GET /v4/topics ', () => {
         sinon.assert.notCalled(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(3);
+        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(4);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2017-03-14T20:55:55.356Z');
         return done();
       });
@@ -283,7 +283,7 @@ describe('GET /v4/topics ', () => {
         sinon.assert.notCalled(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(3);
+        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(4);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2017-03-14T20:55:55.356Z');
         return done();
       });
@@ -322,7 +322,7 @@ describe('GET /v4/topics ', () => {
         sinon.assert.notCalled(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(3);
+        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(4);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2017-03-14T20:55:55.356Z');
         return done();
       });
@@ -362,7 +362,7 @@ describe('GET /v4/topics ', () => {
         sinon.assert.notCalled(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(3);
+        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(4);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2017-03-14T20:55:55.356Z');
         return done();
       });
@@ -399,7 +399,7 @@ describe('GET /v4/topics ', () => {
         sinon.assert.calledOnce(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(3);
+        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(4);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2017-03-14T20:55:55.356Z');
         return done();
       });

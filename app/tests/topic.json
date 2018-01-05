@@ -106,6 +106,17 @@
         "read": true,
         "raw": "removed_user message",
         "cooked": "removed_user message"
+      },
+      {
+        "id": 402,
+        "username": "system",
+        "action_code": "user_left",
+        "action_code_who": "system",
+        "created_at": "2018-01-03T20:55:55.356Z",
+        "updated_at": "2018-01-04T20:55:55.356Z",
+        "read": true,
+        "raw": "user_left message",
+        "cooked": "user_left message"
       }
     ],
     "stream": [
