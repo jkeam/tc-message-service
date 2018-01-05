@@ -1,10 +1,11 @@
+import { clearDB, prepareDB, jwts } from '../../tests';
+
 const _ = require('lodash');
 const request = require('supertest');
 const axios = require('axios');
 const sinon = require('sinon');
 const server = require('../../app');
 const db = require('../../models');
-const { jwts } = require('../../tests');
 require('should-sinon');
 
 describe('PUT /v4/topics/syncUsers', () => {
@@ -34,7 +35,7 @@ describe('PUT /v4/topics/syncUsers', () => {
   let removedUsers = {};
   let addedUsers = {};
 
-  beforeEach(() => {
+  beforeEach((done) => {
     sandbox = sinon.sandbox.create();
     removedUsers = {};
     addedUsers = {};
@@ -60,9 +61,11 @@ describe('PUT /v4/topics/syncUsers', () => {
       }
       return Promise.reject(new Error('Unknown path'));
     });
+    prepareDB(done);
   });
-  afterEach(() => {
+  afterEach((done) => {
     sandbox.restore();
+    clearDB(done);
   });
 
   it('should return 403 response without a jwt token', (done) => {

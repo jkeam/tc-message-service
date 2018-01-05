@@ -84,10 +84,32 @@
         "edit_reason": null,
         "can_view_edit_history": true,
         "wiki": false
+      },
+      {
+        "id": 400,
+        "username": "system",
+        "action_code": "invited_user",
+        "action_code_who": 40152934,
+        "created_at": "2018-01-01T20:55:55.356Z",
+        "updated_at": "2018-01-02T20:55:55.356Z",
+        "read": true,
+        "raw": "invited_user message",
+        "cooked": "invited_user message"
+      },
+      {
+        "id": 401,
+        "username": "system",
+        "action_code": "removed_user",
+        "action_code_who": 40152934,
+        "created_at": "2018-01-02T20:55:55.356Z",
+        "updated_at": "2018-01-03T20:55:55.356Z",
+        "read": true,
+        "raw": "removed_user message",
+        "cooked": "removed_user message"
       }
     ],
     "stream": [
-      399
+      399, 400, 401
     ]
   },
   "timeline_lookup": [
