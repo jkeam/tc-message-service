@@ -13,6 +13,7 @@ module.exports = (app, db, logger) => {
         topicTitle: req.body.title,
         userId: req.authUser.userId,
         projectId: topic.referenceId,
+        initiatorUserId: req.authUser.userId,
       });
     }
   });
@@ -23,6 +24,7 @@ module.exports = (app, db, logger) => {
         topicId: req.params.topicId,
         userId: req.authUser.userId,
         projectId: topic.referenceId,
+        initiatorUserId: req.authUser.userId,
       });
     }
   });
@@ -37,6 +39,7 @@ module.exports = (app, db, logger) => {
           postContent: post.body,
           userId: req.authUser.userId,
           projectId: topic.referenceId,
+          initiatorUserId: req.authUser.userId,
         });
       }
     });
@@ -51,6 +54,7 @@ module.exports = (app, db, logger) => {
           postId: req.params.postId,
           userId: req.authUser.userId,
           projectId: topic.referenceId,
+          initiatorUserId: req.authUser.userId,
         });
       }
     });
@@ -59,13 +63,13 @@ module.exports = (app, db, logger) => {
   app.on(EVENT.POST_UPDATED, ({ req, post }) => {
     db.topics.findOne({ where: { discourseTopicId: req.params.topicId } })
     .then((topic) => {
-      logger.debug('haha', topic);
       if (topic && topic.reference.toLowerCase() === 'project') {
         createEvent(BUS_API_EVENT.POST_UPDATED, {
           topicId: req.params.topicId,
           postId: post.id,
           userId: req.authUser.userId,
           projectId: topic.referenceId,
+          initiatorUserId: req.authUser.userId,
         });
       }
     });
