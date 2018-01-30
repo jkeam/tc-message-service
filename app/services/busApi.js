@@ -36,6 +36,7 @@ function getClient() {
  * Any errors will be simply ignored
  * @param {String} type the event type, should be a dot separated fully qualitied name
  * @param {Object} message the message, should be a JSON object
+ * @param {Object} logger object
  * @return {Promise} new event promise
  */
 function createEvent(type, message, logger) {
@@ -45,7 +46,7 @@ function createEvent(type, message, logger) {
     message: body,
   })
   .then(resp => resp)
-  .catch(error => {
+  .catch((error) => {
     logger.debug(`Error sending event to bus-api: ${error}`);
     Promise.resolve();     // eslint-disable-line
   });
