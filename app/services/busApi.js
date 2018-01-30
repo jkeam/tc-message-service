@@ -38,14 +38,17 @@ function getClient() {
  * @param {Object} message the message, should be a JSON object
  * @return {Promise} new event promise
  */
-function createEvent(type, message) {
+function createEvent(type, message, logger) {
   const body = JSON.stringify(message);
   return getClient().post('/eventbus/events', {
     type,
     message: body,
   })
   .then(resp => resp)
-  .catch(error => Promise.resolve());    // eslint-disable-line
+  .catch(error => {
+    logger.debug(`Error sending event to bus-api: ${error}`);
+    Promise.resolve();     // eslint-disable-line
+  });
 }
 
 
