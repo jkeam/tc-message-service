@@ -41,17 +41,23 @@ function getClient() {
  */
 function createEvent(type, message, logger) {
   const body = JSON.stringify(message);
+  logger.debug(`Sending message: ${JSON.stringify(message)}`);
   return getClient().post('/eventbus/events', {
     type,
     message: body,
   })
-  .then(resp => resp)
+  .then((resp) => {
+    logger.debug('Sent event to bus-api');
+    logger.debug(`Sent event to bus-api [data]: ${resp.data}`);
+    logger.debug(`Sent event to bus-api [status]: ${resp.status}`);
+  })
   .catch((error) => {
-    logger.debug(`Error sending event to bus-api: ${error}`);
+    logger.debug('Error sending event to bus-api');
+    logger.debug(`Error sending event to bus-api [message]: ${error.message}`);
+    logger.debug(`Error sending event to bus-api [detail]: ${error.response.data.message}`);
     Promise.resolve();     // eslint-disable-line
   });
 }
-
 
 module.exports = {
   createEvent,
