@@ -1,32 +1,33 @@
 
-// import _ from 'lodash';
+import _ from 'lodash';
 // import config from 'config';
 import Promise from 'bluebird';
 // import { USER_ROLE } from '../../constants';
 
 /**
- * Retrieves topic from discourse
+ * Retrieves topics from discourse
  * @param {Object} logger logging
- * @param {Object} dbTopic topic retrieved from db
+ * @param {Object} dbTopics topics retrieved from db
  * @param {String} userId id of the user which should be used for fetching topic
  * @param {Object} discourseClient client to invoke calls to discourse
  */
-const retrieveTopic = Promise.coroutine(function* a(logger, dbTopic, userId, discourseClient) {
+const retrieveTopics = Promise.coroutine(function* a(logger, dbTopics, userId, discourseClient) {
   // attempt to retrieve discourse Topic
-  let topic = null;
+  let topics = null;
   try {
-    topic = yield discourseClient.getTopic(dbTopic.discourseTopicId, userId);
-    topic.tag = dbTopic.tag;
+    topics = yield discourseClient.getTopics(_.map(dbTopics, t=>t.discourseTopicId), userId);
+    logger.debug(topics);
+    _.each(topics, t=>{
+      t.tag = _.find(dbTopics, {discourseTopicId:t.id}).tag;
+    })
   } catch (error) {
-    logger.info(`Failed to get topic from discourse: ${dbTopic.discourseTopicId}`);
+    logger.info(`Failed to get topics from discourse`);
     logger.error(error);
     topic = null;
   }
-  return {
-    topic,
-  };
+  return topics;
 });
 
 module.exports = {
-  retrieveTopic,
+  retrieveTopics,
 };

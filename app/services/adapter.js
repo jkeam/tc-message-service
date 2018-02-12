@@ -63,21 +63,19 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
 
   this.adaptTopic = function a(input) {
     const { topic, dbTopic } = input;
-    return this.adaptTopics({ topics: [topic], dbTopics: [dbTopic] })
-      .then(topics => (topics && topics.length > 0 ? topics[0] : topic));
+    let topics = this.adaptTopics({ topics: [topic], dbTopics: [dbTopic] });
+    return topics && topics.length > 0 ? topics[0] : topic;
   };
 
   this.adaptTopics = function a(input) {
-    const topics = [];
-    // console.log(input, 'input');
     let { topics: discourseTopics } = input;
     const pgTopics = input.dbTopics;
     if (!(discourseTopics instanceof Array)) {
       discourseTopics = [discourseTopics];
     }
 
-    return Promise.each(discourseTopics, (discourseTopic) => {
-      let userId = discourseTopic.post_stream.posts[0].username;
+    const topics = _.map(discourseTopics, (discourseTopic) => {
+      let userId = discourseTopic.user_id;
       userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId, 10) : userId;
 
       const pgTopic = _.find(pgTopics, pt => pt.discourseTopicId === discourseTopic.id);
@@ -88,66 +86,32 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
         referenceId: pgTopic ? pgTopic.referenceId : undefined,
         date: discourseTopic.created_at,
         updatedDate: discourseTopic.updated_at,
-        lastActivityAt: discourseTopic.created_at,
+        lastActivityAt: discourseTopic.last_posted_at,
         title: discourseTopic.title,
-        read: discourseTopic.post_stream.posts[0].read,
+        read: discourseTopic.posts[0].read,
         userId,
         tag: discourseTopic.tag,
-        totalPosts: discourseTopic.post_stream.stream.length,
-        retrievedPosts: discourseTopic.post_stream.posts.length,
-        postIds: discourseTopic.post_stream.stream,
+        totalPosts: discourseTopic.posts.length,
+        retrievedPosts: discourseTopic.posts.length,
+        postIds: _.map(discourseTopic.posts, p=>p.id),
         posts: [],
       };
-      return discourseClient.getPosts(DISCOURSE_SYSTEM_USERNAME, discourseTopic.id, topic.postIds).then(posts => (
-        Promise.each(posts.data.post_stream.posts,
-          discoursePost => helper.mentionUserIdToHandle(discoursePost.cooked)
-          .then((postBody) => {
-            let userId = discoursePost.username; //eslint-disable-line
-            userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId, 10) : userId;
-            // ignore createdAt for invited_user type posts
-            if (['invited_user', 'removed_user', 'user_left'].indexOf(discoursePost.action_code) === -1
-              && discoursePost.updated_at > topic.lastActivityAt) {
-              topic.lastActivityAt = discoursePost.updated_at;
-            }
-            if (discoursePost.action_code === 'invited_user' && discoursePost.action_code_who) {
-              topic.retrievedPosts -= 1;
-              topic.posts.push({
-                id: discoursePost.id,
-                date: discoursePost.created_at,
-                userId,
-                read: true,
-                body: `${discoursePost.action_code_who} joined the discussion`,
-                type: 'user-joined',
-              });
-            } else if (['removed_user', 'user_left'].indexOf(discoursePost.action_code) !== -1
-              && discoursePost.action_code_who) {
-              topic.retrievedPosts -= 1;
-              topic.posts.push({
-                id: discoursePost.id,
-                date: discoursePost.created_at,
-                userId,
-                read: true,
-                body: `${discoursePost.action_code_who} unfollowed the discussion`,
-                type: 'user-removed',
-              });
-            } else {
-              topic.posts.push({
-                id: discoursePost.id,
-                date: discoursePost.created_at,
-                updatedDate: discoursePost.updated_at,
-                userId,
-                read: discoursePost.read,
-                body: postBody,
-                rawContent: discoursePost.raw,
-                type: 'post',
-              });
-            }
-          })//eslint-disable-line
-        ).then(() => {
-          topics.push(topic);
-        })
-      ));
-    }).then(() => topics);
+      _.each(discourseTopic.posts, discoursePost=>{
+        topic.posts.push({
+          id: discoursePost.id,
+          date: discoursePost.created_at,
+          updatedDate: discoursePost.updated_at,
+          userId,
+          read: discoursePost.read,
+          body: discoursePost.cooked,
+          rawContent: discoursePost.raw,
+          type: 'post',
+        });
+      });
+      topic.posts = _.orderBy(topic.posts, ['date'], ['asc']);
+      return topic;
+    });
+    return topics;
   };
 
   return this;

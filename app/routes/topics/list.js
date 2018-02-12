@@ -1,4 +1,4 @@
-import { retrieveTopic } from './util';
+import { retrieveTopics } from './util';
 import HelperService from '../../services/helper';
 
 const _ = require('lodash');
@@ -85,16 +85,12 @@ module.exports = db =>
         if (usingAdminAccess) {
           userId = config.get('discourseSystemUsername');
         }
-        const topicPromises = dbTopics.map(dbTopic => retrieveTopic(logger, dbTopic, userId, discourseClient));
 
-        return Promise.all(topicPromises)
-        .then((topicResponses) => {
-          // filter null topics and sort in the  order of the last activity date descending (more recent activity first)
-          let topics = _.map(topicResponses, 'topic');
-          logger.info(`${dbTopics.length} topics fetched from discourse`);
-          if (topics.length === 0) {
-            throw new errors.HttpStatusError(404, 'Topic does not exist');
-          }
+
+        return retrieveTopics(logger, dbTopics, userId, discourseClient)
+        .then((topics) => {
+          
+          logger.info(`${topics.length} topics fetched from discourse`);
 
           topics = _.chain(topics)
             .filter(topic => topic != null)
@@ -105,8 +101,8 @@ module.exports = db =>
           if (!usingAdminAccess) {
             // Mark all unread topics as read.
             Promise.all(topics.filter(topic => !topic.read).map((topic) => {
-              if (topic.post_stream && topic.post_stream.posts && topic.post_stream.posts.length > 0) {
-                const postIds = topic.post_stream.posts.map(post => post.post_number);
+              if (topic.posts && topic.posts.length > 0) {
+                const postIds = topic.posts.map(post => post.post_number);
                 return discourseClient.markTopicPostsRead(req.authUser.userId.toString(), topic.id, postIds);
               }
               return Promise.resolve();

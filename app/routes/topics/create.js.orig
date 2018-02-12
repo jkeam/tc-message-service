@@ -9,7 +9,7 @@ const HelperService = require('../../services/helper');
 const errors = require('common-errors');
 const Joi = require('joi');
 const Adapter = require('../../services/adapter');
-const { REFERENCE_LOOKUPS, EVENT } = require('../../constants');
+const { EVENT } = require('../../constants');
 
 const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername');
   /**
@@ -50,7 +50,7 @@ module.exports = db =>
         logger.info('Checking if user has access to identity');
         const hasAccess = hasAccessResp[0];
         if (!hasAccess) { throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity'); }
-        if (params.reference.toLowerCase() === REFERENCE_LOOKUPS.PROJECT) {
+        if (params.reference.toLowerCase() === 'project') {
           const projectMembers = _.get(hasAccessResp[1], 'members', []);
             // get users list
           const topicUsers = _.map(projectMembers, member => member.userId.toString());
@@ -150,15 +150,19 @@ module.exports = db =>
 
         return pgTopic.save().then(() => {
           logger.info('topic saved in Postgres');
-          req.app.emit(EVENT.TOPIC_CREATED, { topic: pgTopic, req });
+<<<<<<< HEAD
           return { topic: response.data, dbTopic: pgTopic };
+=======
+          req.app.emit(EVENT.TOPIC_CREATED, { topic: pgTopic, req });
+          return response.data;
+>>>>>>> feature/busEvents
         });
       })
       .then(({ topic, dbTopic }) => {
         logger.info('returning topic');
-        return discourseClient.getTopics([topic.topic_id], req.authUser.userId.toString())
+        return discourseClient.getTopic(topic.topic_id, req.authUser.userId.toString())
         .then((fTopic) => {
-          const fullTopic = fTopic[0];
+          const fullTopic = fTopic;
           fullTopic.tag = params.tag;
           return adapter.adaptTopic({ topic: fullTopic, dbTopic }).then((result) => {
             if ((result instanceof Array) && result.length === 1) {
