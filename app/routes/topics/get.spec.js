@@ -59,16 +59,15 @@ describe('GET /v4/topics/:topicId', () => {
   });
 
   it('should return 200 response when called by project member and should mark topic read', (done) => {
-    
     // sample response for discourse topic calls
     const topicData = Object.assign({}, topicJson, { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({data: topicData});
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
 
     // resolves discourse's posts endpoint discourse.getPosts
     getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query',id:1 }] },
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
 
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
@@ -100,11 +99,11 @@ describe('GET /v4/topics/:topicId', () => {
     const topicData = Object.assign({}, topicJson, { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({data: topicData});
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
 
     // resolves discourse's posts endpoint discourse.getPosts
     getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query',id:1 }] },
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
 
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
@@ -134,11 +133,11 @@ describe('GET /v4/topics/:topicId', () => {
     topicData.rows.push(topicData.rows[0]);
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({data: topicData});
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
 
     // resolves discourse's posts endpoint discourse.getPosts
     getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query',id:1 }] },
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
 
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))

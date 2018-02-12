@@ -34,6 +34,7 @@
   "dependencies": {
     "amqplib": "^0.5.1",
     "axios": "^0.16.1",
+    "babel-eslint": "^8.2.1",
     "bluebird": "^3.4.1",
     "body-parser": "^1.15.2",
     "common-errors": "^1.0.0",

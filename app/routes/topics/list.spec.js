@@ -143,11 +143,11 @@ describe('GET /v4/topics ', () => {
     const topicData = Object.assign({}, topicJson, { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({data: topicData});
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
 
     // resolves discourse's posts endpoint discourse.getPosts
     getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query',id:1 }] },
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
 
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
@@ -157,7 +157,7 @@ describe('GET /v4/topics ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 403 } },
     });
-    
+
 
     request(server)
       .get(apiPath)
@@ -177,7 +177,8 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2018-02-12 01:35:20.169883');
+        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+        .eql('2018-02-12 01:35:20.169883');
         return done();
       });
   });
@@ -187,11 +188,11 @@ describe('GET /v4/topics ', () => {
     const topicData = Object.assign({}, topicJson, { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({data: topicData});
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
 
     // resolves discourse's posts endpoint discourse.getPosts
     getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query',id:1 }] },
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
 
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
@@ -221,7 +222,8 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2018-02-12 01:35:20.169883');
+        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+        .eql('2018-02-12 01:35:20.169883');
         return done();
       });
   });
@@ -231,11 +233,11 @@ describe('GET /v4/topics ', () => {
     const topicData = Object.assign({}, topicJson, { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({data: topicData});
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
 
     // resolves discourse's posts endpoint discourse.getPosts
     getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query',id:1 }] },
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
 
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
@@ -265,7 +267,8 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2018-02-12 01:35:20.169883');
+        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+        .eql('2018-02-12 01:35:20.169883');
         return done();
       });
   });
@@ -275,11 +278,11 @@ describe('GET /v4/topics ', () => {
     const topicData = Object.assign({}, topicJson, { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({data: topicData});
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
 
     // resolves discourse's posts endpoint discourse.getPosts
     getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query',id:1 }] },
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
 
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
@@ -290,7 +293,6 @@ describe('GET /v4/topics ', () => {
       data: { result: { status: 403 } },
     });
 
-    
 
     request(server)
       .get(apiPath)
@@ -312,7 +314,8 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2018-02-12 01:35:20.169883');
+        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+        .eql('2018-02-12 01:35:20.169883');
         return done();
       });
   });
@@ -322,11 +325,11 @@ describe('GET /v4/topics ', () => {
     const topicData = Object.assign({}, topicJson, { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({data: topicData});
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
 
     // resolves discourse's posts endpoint discourse.getPosts
     getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query',id:1 }] },
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
 
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
@@ -357,7 +360,8 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2018-02-12 01:35:20.169883');
+        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+        .eql('2018-02-12 01:35:20.169883');
         return done();
       });
   });
@@ -367,11 +371,11 @@ describe('GET /v4/topics ', () => {
     const topicData = Object.assign({}, topicJson, { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({data: topicData});
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
 
     // resolves discourse's posts endpoint discourse.getPosts
     getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query',id:1 }] },
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
 
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
@@ -404,7 +408,8 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2018-02-12 01:35:20.169883');
+        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+        .eql('2018-02-12 01:35:20.169883');
         return done();
       });
   });
@@ -415,11 +420,11 @@ describe('GET /v4/topics ', () => {
     const topicData = Object.assign({}, topicJson, { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({data: topicData});
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
 
     // resolves discourse's posts endpoint discourse.getPosts
     getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query',id:1 }] },
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
 
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
@@ -447,7 +452,8 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt').eql('2018-02-12 01:35:20.169883');
+        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+        .eql('2018-02-12 01:35:20.169883');
         return done();
       });
   });

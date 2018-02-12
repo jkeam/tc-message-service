@@ -89,18 +89,17 @@ module.exports = db =>
 
         return retrieveTopics(logger, dbTopics, userId, discourseClient)
         .then((topics) => {
-          
           logger.info(`${topics.length} topics fetched from discourse`);
 
-          topics = _.chain(topics)
+          const topicsFiltered = _.chain(topics)
             .filter(topic => topic != null)
             .orderBy(['last_posted_at'], ['desc'])
             .value();
 
-          logger.info(`${topics.length} topics after filter`);
+          logger.info(`${topicsFiltered.length} topics after filter`);
           if (!usingAdminAccess) {
             // Mark all unread topics as read.
-            Promise.all(topics.filter(topic => !topic.read).map((topic) => {
+            Promise.all(topicsFiltered.filter(topic => !topic.read).map((topic) => {
               if (topic.posts && topic.posts.length > 0) {
                 const postIds = topic.posts.map(post => post.post_number);
                 return discourseClient.markTopicPostsRead(req.authUser.userId.toString(), topic.id, postIds);
@@ -111,7 +110,7 @@ module.exports = db =>
             });
           }
           logger.debug('adapting topics');
-          return adapter.adaptTopics({ topics, dbTopics });
+          return adapter.adaptTopics({ topicsFiltered, dbTopics });
         })
         .then(result => resp.status(200).send(util.wrapResponse(req.id, result)));
       });

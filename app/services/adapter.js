@@ -1,6 +1,5 @@
 const _ = require('lodash');
 const Helper = require('./helper.js');
-const Discourse = require('./discourse');
 const Promise = require('bluebird');
 const config = require('config');
 
@@ -14,7 +13,6 @@ handleMap[DISCOURSE_SYSTEM_USERNAME] = DISCOURSE_SYSTEM_USERNAME;
 
 function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
   const helper = Helper(logger);
-  const discourseClient = _discourseClient || new Discourse(logger);
 
   this.userIdLookup = function userIdLookup(handle) {
     return new Promise((resolve, reject) => { // eslint-disable-line
@@ -63,7 +61,7 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
 
   this.adaptTopic = function a(input) {
     const { topic, dbTopic } = input;
-    let topics = this.adaptTopics({ topics: [topic], dbTopics: [dbTopic] });
+    const topics = this.adaptTopics({ topics: [topic], dbTopics: [dbTopic] });
     return topics && topics.length > 0 ? topics[0] : topic;
   };
 
@@ -93,10 +91,10 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
         tag: discourseTopic.tag,
         totalPosts: discourseTopic.posts.length,
         retrievedPosts: discourseTopic.posts.length,
-        postIds: _.map(discourseTopic.posts, p=>p.id),
+        postIds: _.map(discourseTopic.posts, p => p.id),
         posts: [],
       };
-      _.each(discourseTopic.posts, discoursePost=>{
+      _.each(discourseTopic.posts, (discoursePost) => {
         topic.posts.push({
           id: discoursePost.id,
           date: discoursePost.created_at,
@@ -108,7 +106,7 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
           type: 'post',
         });
       });
-      topic.posts = _.orderBy(topic.posts, ['date'], ['asc']);
+      topic.posts = _.orderBy(topic.posts, ['date'], ['asc']);
       return topic;
     });
     return topics;

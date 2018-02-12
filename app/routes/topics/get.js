@@ -46,7 +46,7 @@ module.exports = db =>
 
         return retrieveTopics(logger, [dbTopic], userId, discourseClient)
           .then((topics) => {
-            let topic = topics.length>0 ? topics[0] : null;
+            const topic = topics.length > 0 ? topics[0] : null;
             if (!topic) {
               const err = new errors.HttpStatusError(500, 'Unable to retrieve topic from discourse');
               return next(err);
