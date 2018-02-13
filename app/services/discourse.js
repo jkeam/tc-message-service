@@ -124,6 +124,7 @@ module.exports = (logger) => {
           },
         })
       .then((response) => {
+        logger.debug('got response', response);
         const columns = response.data.columns;
         const rows = response.data.rows;
         const topicsById = _.groupBy(rows, row => row[columns.indexOf('topic_id')]);
@@ -137,8 +138,12 @@ module.exports = (logger) => {
             updated_at: topicsById[topicId][0][columns.indexOf('topic_updated_at')],
             last_posted_at: topicsById[topicId][0][columns.indexOf('topic_last_posted_at')],
             title: topicsById[topicId][0][columns.indexOf('topic_title')],
+            allowed_users: topicsById[topicId][0][columns.indexOf('allowed_users')],
             posts: [],
           };
+          if (topic.allowed_users) {
+            topic.allowed_users = topic.allowed_users.split(',');
+          }
           _.forEach(topicsById[topicId], (row) => {
             const post = {
               id: row[columns.indexOf('post_id')],
@@ -174,7 +179,7 @@ module.exports = (logger) => {
         client.topicsQueryId = _.find(response.data.queries, { name: 'Connect_Topics_Query' }).id;
       })
       .catch((err) => {
-        logger.error('Error getting qauery id');
+        logger.error('Error getting query id');
         logger.error(err);
         return Promise.reject(err);
       })

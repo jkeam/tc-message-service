@@ -8,6 +8,7 @@ const request = require('supertest');
 const server = require('../../app');
 const axios = require('axios');
 const sinon = require('sinon');
+const _ = require('lodash');
 
 const topicJson = require('../../tests/topic.json');
 
@@ -140,7 +141,7 @@ describe('GET /v4/topics ', () => {
 
   it('should return topics even if user is not part of project team but is a manager', (done) => {
     // sample response for discourse topic calls
-    const topicData = Object.assign({}, topicJson, { id: 1 });
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
@@ -170,7 +171,7 @@ describe('GET /v4/topics ', () => {
         }
         res.body.result.content.should.be.of.length(1);
         // once for reference endpoint call  and once for getting the topics from discourse
-        sinon.assert.calledTwice(getStub);
+        sinon.assert.calledOnce(getStub);
         // should not call post endpoint because it should not call discourse.markTopicPostsRead
         // when using manager access
         sinon.assert.calledOnce(postStub);
@@ -185,7 +186,7 @@ describe('GET /v4/topics ', () => {
 
   it('should return topics even if user is not part of project team but is a manager (ref lookup error)', (done) => {
     // sample response for discourse topic calls
-    const topicData = Object.assign({}, topicJson, { id: 1 });
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
@@ -230,7 +231,7 @@ describe('GET /v4/topics ', () => {
 
   it('should return topics even if user is not part of project team but is a manager (not in members list)', (done) => {
     // sample response for discourse topic calls
-    const topicData = Object.assign({}, topicJson, { id: 1 });
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
@@ -275,7 +276,7 @@ describe('GET /v4/topics ', () => {
 
   it('should return topics even if user is not part of project team but is a admin', (done) => {
     // sample response for discourse topic calls
-    const topicData = Object.assign({}, topicJson, { id: 1 });
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
@@ -322,7 +323,7 @@ describe('GET /v4/topics ', () => {
 
   it('should return topics even if user is not part of project team but is a admin (Ref lookup error)', (done) => {
     // sample response for discourse topic calls
-    const topicData = Object.assign({}, topicJson, { id: 1 });
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
@@ -368,7 +369,7 @@ describe('GET /v4/topics ', () => {
 
   it('should return topics even if user is not part of project team but is a admin (non in members list)', (done) => {
     // sample response for discourse topic calls
-    const topicData = Object.assign({}, topicJson, { id: 1 });
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
@@ -417,7 +418,7 @@ describe('GET /v4/topics ', () => {
   // FIXME valid use case
   it('should return 200 response with matching topicLookup', (done) => {
     // sample response for discourse topic calls
-    const topicData = Object.assign({}, topicJson, { id: 1 });
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
     const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
     // mark read
     const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });

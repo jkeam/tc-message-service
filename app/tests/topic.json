@@ -6,7 +6,7 @@
     "topic_list": "24",
     "uid": "-1"
   },
-  "columns": ["topic_id", "topic_user_id", "topic_created_at", "topic_updated_at", "topic_last_posted_at", "topic_title", "post_id", "post_cooked", "post_raw", "post_user_id", "post_created_at", "post_updated_at", "post_post_number", "post_read"],
+  "columns": ["topic_id", "topic_user_id", "topic_created_at", "topic_updated_at", "topic_last_posted_at", "topic_title", "allowed_users", "post_id", "post_cooked", "post_raw", "post_user_id", "post_created_at", "post_updated_at", "post_post_number", "post_read"],
   "colrender": {
     "0": "topic",
     "1": "user",
@@ -32,6 +32,6 @@
     }]
   },
   "rows": [
-    [1, "40152856", "2018-02-12 01:35:19.503893", "2018-02-12 01:35:19.331521", "2018-02-12 01:35:20.169883", "What was that", 14, "\u003cp\u003ehow was your day today?\u003c/p\u003e", "how was your day today?", "40152856", "2018-02-12 01:35:20.169883", "2018-02-12 01:35:20.169883", 1, false]
+    [1, "40152856", "2018-02-12 01:35:19.503893", "2018-02-12 01:35:19.331521", "2018-02-12 01:35:20.169883", "What was that", "333,40051331,system", 14, "\u003cp\u003ehow was your day today?\u003c/p\u003e", "how was your day today?", "40152856", "2018-02-12 01:35:20.169883", "2018-02-12 01:35:20.169883", 1, false]
   ]
 }

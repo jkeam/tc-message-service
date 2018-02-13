@@ -79,15 +79,14 @@ module.exports = db =>
             attributes: ['discourseTopicId'],
             raw: true,
           });
-          const topicPromises = dbTopics.map(dbTopic => discourseClient
-            .getTopic(dbTopic.discourseTopicId, DISCOURSE_SYSTEM_USERNAME));
-          let topics = yield Promise.all(topicPromises);
+          let topics = yield discourseClient
+                              .getTopics(dbTopics.map(dbTopic => dbTopic.discourseTopicId), DISCOURSE_SYSTEM_USERNAME);
           topics = _.orderBy(topics, ['last_posted_at'], ['asc']);
 
           // Compare project users and topic users
           yield Promise.each(topics, (topic) => {
             const topicId = topic.id;
-            const topicUsers = _.map(topic.details.allowed_users, 'username');
+            const topicUsers = topic.allowed_users;
 
             const usersToAdd = _.difference(users, topicUsers);
             const usersToRemove = _.difference(topicUsers, users);

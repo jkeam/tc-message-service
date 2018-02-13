@@ -84,7 +84,6 @@ describe('GET /v4/topics/:topicId', () => {
         if (err) {
           return done(err);
         }
-        sinon.assert.calledOnce(getStub);
         sinon.assert.calledTwice(postStub);
         res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', 'reference').eql('project');

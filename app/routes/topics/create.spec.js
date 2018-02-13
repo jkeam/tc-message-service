@@ -324,7 +324,8 @@ describe('POST /v4/topics ', () => {
 
   it('should return 200 response if error to get user and success to create discourse user', (done) => {
     // sample response for discourse topic calls
-    const topicData = Object.assign({}, topicJson, { id: 100 });
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 100 });
+    topicData.rows[0][0] = 100;
     // get stub for axios
     const stub = sandbox.stub(axios, 'get');
     // resolves call to reference endpoint in helper.userHasAccessToEntity
@@ -343,13 +344,15 @@ describe('POST /v4/topics ', () => {
     stub.withArgs(`${config.memberServiceUrl}/${adminUser.handle}`, sinon.match.any)
       .resolves(getMemberAPIResponse(adminUser));
     // resolves discourse get topic call for discourse.getTopic
-    stub.withArgs(`/t/${topicData.id}.json?include_raw=1`)
-    .resolves({ data: topicData });
     // resolves discourse's posts endpoint discourse.getPosts
-    stub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\/posts\\.json\\?.*`)))
-    .resolves({ data: { post_stream: topicData.post_stream } });
-    // post stub for axios
+    stub.withArgs(sinon.match(/\/admin\/plugins\/explorer\/queries.json/)).resolves({
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+    });
+
     const postStub = sandbox.stub(axios, 'post');
+    postStub.withArgs(sinon.match(/admin\/plugins\/explorer\/queries\/.*/))
+    .resolves({ data: topicData });
+
     // rejects discourse API call for discourse.createPrivatePost method
     postStub.withArgs('/posts', sinon.match.any)
     .onFirstCall().rejects({
@@ -391,12 +394,15 @@ describe('POST /v4/topics ', () => {
     const data = {
       topic_id: 100,
     };
-    const topicData = Object.assign({}, topicJson, { id: 100, topic_id: 100 });
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 100 });
+    topicData.rows[0][0] = 100;
     sandbox.stub(axios, 'get').resolves({ data: topicData });
-    sandbox.stub(axios, 'post').resolves({
+    const postStub = sandbox.stub(axios, 'post').resolves({
       status: 200,
       data,
     });
+    postStub.withArgs(sinon.match(/admin\/plugins\/explorer\/queries\/.*/))
+    .resolves({ data: topicData });
     request(server)
       .post(apiPath)
       .set({
@@ -476,21 +482,26 @@ describe('POST /v4/topics ', () => {
       topic_id: 100,
     };
     const getStub = sandbox.stub(axios, 'get');
-    const topicData = Object.assign({}, topicJson, { id: 100 });
-
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 100 });
+    topicData.rows[0][0] = 100;
     const adminUserId = getDecodedToken(jwts.admin).userId;
     getStub.withArgs('http://reftest/1').resolves({
       data: { result: { status: 200, content: [{ userId: adminUserId }] } },
     });
-    getStub.onSecondCall().resolves({
-      data: topicData,
-    });
-    // resolves discourse's posts endpoint discourse.getPosts
-    getStub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\/posts\\.json\\?.*`)))
-    .resolves({ data: { post_stream: topicData.post_stream } });
-    sandbox.stub(axios, 'post').resolves({
+    // mark read
+    const postStub = sandbox.stub(axios, 'post').resolves({
       data,
     });
+
+    // resolves discourse's posts endpoint discourse.getPosts
+    getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+    });
+
+    postStub.withArgs(sinon.match(/admin\/plugins\/explorer\/queries\/.*/))
+    .resolves({ data: topicData });
+
+
     request(server)
       .post(apiPath)
       .set({
@@ -516,7 +527,8 @@ describe('POST /v4/topics ', () => {
       topic_id: 100,
     };
     const stub = sandbox.stub(axios, 'get');
-    const topicData = Object.assign({}, topicJson, { id: 100 });
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 100 });
+    topicData.rows[0][0] = 100;
 
     stub.withArgs(`/users/${username}.json`, sinon.match.any)
       .resolves({});
@@ -524,12 +536,16 @@ describe('POST /v4/topics ', () => {
     stub.withArgs('http://reftest/1').resolves({
       data: { result: { status: 200, content: [{ userId: adminUserId }] } },
     });
-    stub.withArgs(`/t/${data.topic_id}.json?include_raw=1`).resolves({
-      data: topicData,
-    });
     // resolves discourse's posts endpoint discourse.getPosts
-    stub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\/posts\\.json\\?.*`)))
-    .resolves({ data: { post_stream: topicData.post_stream } });
+    stub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+    });
+
+    const postStub = sandbox.stub(axios, 'post');
+    postStub.withArgs(sinon.match(/admin\/plugins\/explorer\/queries\/.*/))
+    .resolves({ data: topicData });
+
+
     stub.withArgs(`${config.memberServiceUrl}/${username}`, sinon.match.any)
       .resolves({
         data: {
@@ -547,7 +563,7 @@ describe('POST /v4/topics ', () => {
     stub.resolves({
       data,
     });
-    const postStub = sandbox.stub(axios, 'post');
+
 
     const userTokenStub = sandbox.stub(util, 'getSystemUserToken').resolves('token'); // eslint-disable-line
     postStub.onFirstCall().returnsPromise = postStub.returnsPromise;
@@ -556,74 +572,12 @@ describe('POST /v4/topics ', () => {
         status: 403,
       },
     });
-    postStub.resolves({
+    postStub.onSecondCall().resolves({
       data,
     });
-    request(server)
-      .post(apiPath)
-      .set({
-        Authorization: `Bearer ${jwts.admin}`,
-      })
-      .send(testBody)
-      .expect(200)
-      .end((err) => {
-        if (err) {
-          return done(err);
-        }
-        return done();
-      });
-  });
-  // eslint-disable-next-line
-  it('should return 200 response if error on first createPrivatePost, success to create user and success on third createPrivatePost', (done) => {
-    const data = {
-      result: {
-        status: 200,
-        content: 'content',
-      },
-      topic_id: 100,
-    };
-    const stub = sandbox.stub(axios, 'get');
-    const topicData = Object.assign({}, topicJson, { id: 100 });
-
-    stub.withArgs(`/users/${username}.json`, sinon.match.any)
-      .resolves({});
-    stub.withArgs(`${config.memberServiceUrl}/${username}`, sinon.match.any)
-      .resolves({
-        data,
-      });
-    stub.withArgs(`/t/${data.topic_id}.json?include_raw=1`).resolves({
+    postStub.onThirdCall().resolves({
       data: topicData,
     });
-    // resolves discourse's posts endpoint discourse.getPosts
-    stub.withArgs(sinon.match(new RegExp(`\\/t\\/${topicData.id}\\/posts\\.json\\?.*`)))
-    .resolves({ data: { post_stream: topicData.post_stream } });
-    stub.resolves({
-      data,
-    });
-    const postStub = sandbox.stub(axios, 'post');
-    postStub.onFirstCall().returnsPromise = postStub.returnsPromise;
-    postStub.onSecondCall().returnsPromise = postStub.returnsPromise;
-    postStub.onFirstCall().rejects({
-      response: {
-        status: 403,
-      },
-    });
-    postStub.onSecondCall().rejects({
-      response: {
-        status: 403,
-      },
-    });
-    postStub.resolves({
-      data,
-    });
-    const configStub = sandbox.stub(config, 'get');
-    configStub.withArgs('validIssuers')
-    .returns('["https://topcoder-newauth.auth0.com/","https://api.topcoder-dev.com"]');
-    configStub.withArgs('authSecret').returns('secret');
-    configStub.withArgs('authDomain').returns('topcoder.com');
-    configStub.withArgs('systemUserIds').returns('0');
-    configStub.withArgs('createTopicRetryDelay').returns(0);
-    configStub.withArgs('createTopicTimeout').returns(2000);
     request(server)
       .post(apiPath)
       .set({

@@ -24,12 +24,12 @@ module.exports = db => (req, resp, next) => {
   const username = req.authUser.userId.toString();
   const promises = [
     db.topics.findOne({ where: { discourseTopicId: topicId } }),
-    discourseClient.getTopic(topicId, username).catch((error) => {
-      if (error.response && error.response.status && error.response.status === 410) {
-        // 410, already deleted from discourse
+    discourseClient.getTopics([topicId], username).then((topics) => {
+      logger.info('got topics: ', topics);
+      if (topics.length < 1) {
         return null;
       }
-      return Promise.reject(error);
+      return topics[0];
     }),
   ];
   return Promise.all(promises)
@@ -39,13 +39,8 @@ module.exports = db => (req, resp, next) => {
     if (!dbTopic && !topic) {
       throw new errors.HttpStatusError(404, 'Topic does not exist');
     }
-    if (topic && topic.post_stream && topic.post_stream.posts) {
-      // Only count the posts which are not invited_user/removed_user action
-      const postLength = topic.post_stream.posts.filter(
-        post => ['invited_user', 'removed_user', 'user_left'].indexOf(post.action_code) === -1).length;
-      if (postLength > 1) {
-        throw new errors.HttpStatusError(422, 'Topic has comments and can not be deleted');
-      }
+    if (topic && topic.posts.length > 1) {
+      throw new errors.HttpStatusError(422, 'Topic has comments and can not be deleted');
     }
     const deletePromises = [];
     if (topic) {

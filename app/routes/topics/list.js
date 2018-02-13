@@ -109,8 +109,8 @@ module.exports = db =>
               logger.error('error marking topic posts read', error);
             });
           }
-          logger.debug('adapting topics');
-          return adapter.adaptTopics({ topicsFiltered, dbTopics });
+          logger.debug('adapting topics', topicsFiltered);
+          return adapter.adaptTopics({ topics: topicsFiltered, dbTopics });
         })
         .then(result => resp.status(200).send(util.wrapResponse(req.id, result)));
       });
