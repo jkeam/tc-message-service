@@ -354,16 +354,19 @@ describe('POST /v4/topics ', () => {
     .resolves({ data: topicData });
 
     // rejects discourse API call for discourse.createPrivatePost method
-    postStub.withArgs('/posts', sinon.match.any)
+    postStub.withArgs(sinon.match(/\/posts.*/))
     .onFirstCall().rejects({
       message: 'DISCOURSE_USER_DOES_NOT_EXIST',
       response: { status: 403 },
     })
     .onSecondCall().resolves({
       data: Object.assign({}, topicData, { topic_id: 100 }),
+    })
+    .onThirdCall().resolves({
+      data: topicData,
     });
     // rejects discourse API call for user creation
-    postStub.withArgs('/users', sinon.match.any).resolves({
+    postStub.withArgs(sinon.match(/\/users.*/)).resolves({
       data: { success: true, user_id: adminUser.userId },
     });
     // put stub for axios
@@ -400,12 +403,11 @@ describe('POST /v4/topics ', () => {
     stub.withArgs(sinon.match(/\/admin\/plugins\/explorer\/queries.json/)).resolves({
       data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
-    const postStub = sandbox.stub(axios, 'post').resolves({
+    sandbox.stub(axios, 'post').resolves({
       status: 200,
-      data,
+      data: Object.assign({}, topicData, { topic_id: 100 }),
     });
-    postStub.withArgs(sinon.match(/admin\/plugins\/explorer\/queries\/.*/))
-    .resolves({ data: topicData });
+
     request(server)
       .post(apiPath)
       .set({
