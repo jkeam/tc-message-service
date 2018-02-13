@@ -83,38 +83,39 @@ module.exports = db =>
                               .getTopics(dbTopics.map(dbTopic => dbTopic.discourseTopicId), DISCOURSE_SYSTEM_USERNAME);
           topics = _.orderBy(topics, ['last_posted_at'], ['asc']);
 
+          let usersToProvision = [];
+          let addUsersPairs = [];
+          let removeUsersPairs = [];
+
           // Compare project users and topic users
-          yield Promise.each(topics, (topic) => {
+          _.each(topics, (topic) => {
             const topicId = topic.id;
             const topicUsers = topic.allowed_users;
 
             const usersToAdd = _.difference(users, topicUsers);
             const usersToRemove = _.difference(topicUsers, users);
 
-            const promises = [];
-            promises.push(Promise.each(usersToAdd, (userId) => {
-              logger.info(`Get or provision user (${userId})`);
-              return helper.getUserOrProvision(userId);
-            }));
-
-            const addRemovePromise = new Promise((resolve, reject) => {
-              Promise.all(promises).then(() => {
-                const allPromises = [];
-                allPromises.push(Promise.each(usersToAdd, (userId) => {
-                  logger.info(`Add user (${userId}) to topic ${topicId}`);
-                  return discourseClient.grantAccess(userId, topicId);
-                }));
-
-                allPromises.push(Promise.each(usersToRemove, (userId) => {
-                  logger.info(`Remove user (${userId}) from topic ${topicId}`);
-                  return discourseClient.removeAccess(userId, topicId);
-                }));
-                Promise.all(allPromises).then(() => { resolve(); }).catch((err) => { reject(err); });
-              }).catch((err) => { reject(err); });
-            });
-
-            return addRemovePromise;
+            usersToProvision = _.union(usersToProvision, usersToAdd);
+            addUsersPairs = _.union(addUsersPairs, _.map(usersToAdd, u => [u, topicId]));
+            removeUsersPairs = _.union(removeUsersPairs, _.map(usersToRemove, u => [u, topicId]));
           });
+          logger.debug(`users to provision ${usersToProvision} `);
+          logger.debug(`users to add ${addUsersPairs}`);
+          logger.debug(`users to remove ${removeUsersPairs}`);
+
+
+          yield Promise.map(usersToProvision, (userId) => {
+            logger.info(`Get or provision user (${userId})`);
+            return helper.getUserOrProvision(userId);
+          }, { concurrency: 4 })
+          .then(() => Promise.map(addUsersPairs, (pair) => {
+            logger.info(`Add user (${pair[0]}) to topic ${pair[1]}`);
+            return discourseClient.grantAccess(pair[0], pair[1]);
+          }, { concurrency: 4 }))
+          .then(() => Promise.map(removeUsersPairs, (pair) => {
+            logger.info(`Remove user (${pair[0]}) from topic ${pair[1]}`);
+            return discourseClient.removeAccess(pair[0], pair[1]);
+          }, { concurrency: 4 }));
 
           return resp.status(200).send(util.wrapResponse(req.id, {}));
         } catch (e) {
