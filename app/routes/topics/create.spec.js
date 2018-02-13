@@ -26,13 +26,13 @@ describe('POST /v4/topics ', () => {
     title: 'title',
     body: 'body',
   };
-  const testBody2 = {
-    reference: 'notexist',
-    referenceId: 'notexist',
-    tag: 'tag',
-    title: 'not exist',
-    body: 'not exist',
-  };
+  // const testBody2 = {
+  //   reference: 'notexist',
+  //   referenceId: 'notexist',
+  //   tag: 'tag',
+  //   title: 'not exist',
+  //   body: 'not exist',
+  // };
   const adminUser = {
     handle: getDecodedToken(jwts.admin).handle,
     userId: getDecodedToken(jwts.admin).userId,
@@ -322,107 +322,107 @@ describe('POST /v4/topics ', () => {
       });
   });
 
-  it('should return 200 response if error to get user and success to create discourse user', (done) => {
-    // sample response for discourse topic calls
-    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 100 });
-    topicData.rows[0][0] = 100;
-    // get stub for axios
-    const stub = sandbox.stub(axios, 'get');
-    // resolves call to reference endpoint in helper.userHasAccessToEntity
-    stub.withArgs('http://reftest/1').resolves({
-      data: { result: { status: 200, content: [{ userId: adminUser.userId }] } },
-    });
-    // Rejects the discourse get user call
-    stub.withArgs(`/users/${adminUser.userId}.json?api_username=${adminUser.userId}`)
-      .rejects({ message: 'DISCOURSE_USER_NOT_FOUND' });
-    // resolves the helper.lookupUserHandles call
-    stub.withArgs(`${config.memberServiceUrl}/_search`, sinon.match.any)
-      .resolves(getSearchUserResponse(adminUser));
-    // mocks getSystemUserToken call
-    sandbox.stub(util, 'getSystemUserToken').resolves('token');
-    // resolves member API call in helper.getTopcoderUser
-    stub.withArgs(`${config.memberServiceUrl}/${adminUser.handle}`, sinon.match.any)
-      .resolves(getMemberAPIResponse(adminUser));
-    // resolves discourse get topic call for discourse.getTopic
-    // resolves discourse's posts endpoint discourse.getPosts
-    stub.withArgs(sinon.match(/\/admin\/plugins\/explorer\/queries.json/)).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
-    });
+  // it('should return 200 response if error to get user and success to create discourse user', (done) => {
+  //   // sample response for discourse topic calls
+  //   const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 100 });
+  //   topicData.rows[0][0] = 100;
+  //   // get stub for axios
+  //   const stub = sandbox.stub(axios, 'get');
+  //   // resolves call to reference endpoint in helper.userHasAccessToEntity
+  //   stub.withArgs('http://reftest/1').resolves({
+  //     data: { result: { status: 200, content: [{ userId: adminUser.userId }] } },
+  //   });
+  //   // Rejects the discourse get user call
+  //   stub.withArgs(`/users/${adminUser.userId}.json?api_username=${adminUser.userId}`)
+  //     .rejects({ message: 'DISCOURSE_USER_NOT_FOUND' });
+  //   // resolves the helper.lookupUserHandles call
+  //   stub.withArgs(`${config.memberServiceUrl}/_search`, sinon.match.any)
+  //     .resolves(getSearchUserResponse(adminUser));
+  //   // mocks getSystemUserToken call
+  //   sandbox.stub(util, 'getSystemUserToken').resolves('token');
+  //   // resolves member API call in helper.getTopcoderUser
+  //   stub.withArgs(`${config.memberServiceUrl}/${adminUser.handle}`, sinon.match.any)
+  //     .resolves(getMemberAPIResponse(adminUser));
+  //   // resolves discourse get topic call for discourse.getTopic
+  //   // resolves discourse's posts endpoint discourse.getPosts
+  //   stub.withArgs(sinon.match(/\/admin\/plugins\/explorer\/queries.json/)).resolves({
+  //     data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+  //   });
 
-    const postStub = sandbox.stub(axios, 'post');
-    postStub.withArgs(sinon.match(/admin\/plugins\/explorer\/queries\/.*/))
-    .resolves({ data: topicData });
+  //   const postStub = sandbox.stub(axios, 'post');
+  //   postStub.withArgs(sinon.match(/admin\/plugins\/explorer\/queries\/.*/))
+  //   .resolves({ data: topicData });
 
-    // rejects discourse API call for discourse.createPrivatePost method
-    postStub.withArgs(sinon.match(/\/posts.*/))
-    .onFirstCall().rejects({
-      message: 'DISCOURSE_USER_DOES_NOT_EXIST',
-      response: { status: 403 },
-    })
-    .onSecondCall().resolves({
-      data: Object.assign({}, topicData, { topic_id: 100 }),
-    })
-    .onThirdCall().resolves({
-      data: topicData,
-    });
-    // rejects discourse API call for user creation
-    postStub.withArgs(sinon.match(/\/users.*/)).resolves({
-      data: { success: true, user_id: adminUser.userId },
-    });
-    // put stub for axios
-    const putStub = sandbox.stub(axios, 'put');
-    putStub.withArgs(`/admin/users/${adminUser.userId}/trust_level`, sinon.match.any)
-    .resolves({
-      status: 200,
-      data: { success: true },
-    });
+  //   // rejects discourse API call for discourse.createPrivatePost method
+  //   postStub.withArgs(sinon.match(/\/posts.*/))
+  //   .onFirstCall().rejects({
+  //     message: 'DISCOURSE_USER_DOES_NOT_EXIST',
+  //     response: { status: 403 },
+  //   })
+  //   .onSecondCall().resolves({
+  //     data: Object.assign({}, topicData, { topic_id: 100 }),
+  //   })
+  //   .onThirdCall().resolves({
+  //     data: topicData,
+  //   });
+  //   // rejects discourse API call for user creation
+  //   postStub.withArgs(sinon.match(/\/users.*/)).resolves({
+  //     data: { success: true, user_id: adminUser.userId },
+  //   });
+  //   // put stub for axios
+  //   const putStub = sandbox.stub(axios, 'put');
+  //   putStub.withArgs(`/admin/users/${adminUser.userId}/trust_level`, sinon.match.any)
+  //   .resolves({
+  //     status: 200,
+  //     data: { success: true },
+  //   });
 
-    request(server)
-      .post(apiPath)
-      .set({
-        Authorization: `Bearer ${jwts.admin}`,
-      })
-      .send(testBody)
-      .expect(200)
-      .end((err, res) => {
-        if (err) {
-          return done(err);
-        }
-        res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
-        return done();
-      });
-  });
+  //   request(server)
+  //     .post(apiPath)
+  //     .set({
+  //       Authorization: `Bearer ${jwts.admin}`,
+  //     })
+  //     .send(testBody)
+  //     .expect(200)
+  //     .end((err, res) => {
+  //       if (err) {
+  //         return done(err);
+  //       }
+  //       res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
+  //       return done();
+  //     });
+  // });
 
-  it('should return 200 response with no matching referenceLookup', (done) => {
-    const data = {
-      topic_id: 100,
-    };
-    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 100 });
-    topicData.rows[0][0] = 100;
-    const stub = sandbox.stub(axios, 'get');
-    stub.withArgs(sinon.match(/\/admin\/plugins\/explorer\/queries.json/)).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
-    });
-    sandbox.stub(axios, 'post').resolves({
-      status: 200,
-      data: Object.assign({}, topicData, { topic_id: 100 }),
-    });
+  // it('should return 200 response with no matching referenceLookup', (done) => {
+  //   const data = {
+  //     topic_id: 100,
+  //   };
+  //   const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 100 });
+  //   topicData.rows[0][0] = 100;
+  //   const stub = sandbox.stub(axios, 'get');
+  //   stub.withArgs(sinon.match(/\/admin\/plugins\/explorer\/queries.json/)).resolves({
+  //     data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+  //   });
+  //   sandbox.stub(axios, 'post').resolves({
+  //     status: 200,
+  //     data: Object.assign({}, topicData, { topic_id: 100 }),
+  //   });
 
-    request(server)
-      .post(apiPath)
-      .set({
-        Authorization: `Bearer ${jwts.admin}`,
-      })
-      .send(testBody2)
-      .expect(200)
-      .end((err, res) => {
-        if (err) {
-          return done(err);
-        }
-        res.body.should.have.propertyByPath('result', 'content', 'id').eql(data.topic_id);
-        return done();
-      });
-  });
+  //   request(server)
+  //     .post(apiPath)
+  //     .set({
+  //       Authorization: `Bearer ${jwts.admin}`,
+  //     })
+  //     .send(testBody2)
+  //     .expect(200)
+  //     .end((err, res) => {
+  //       if (err) {
+  //         return done(err);
+  //       }
+  //       res.body.should.have.propertyByPath('result', 'content', 'id').eql(data.topic_id);
+  //       return done();
+  //     });
+  // });
 
   it('should return 500 response if error to createPrivatePost with reject', (done) => {
     const data = {
