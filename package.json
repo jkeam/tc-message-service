@@ -28,7 +28,7 @@
     "start": "node dist",
     "start:dev": "NODE_ENV=local PORT=8001 nodemon -w app --exec \"babel-node app --presets es2015\" | ./node_modules/.bin/bunyan",
     "xstart:dev": "NODE_ENV=local nodemon server.js | ./node_modules/.bin/bunyan",
-    "test": "npm run lint && LOG_LEVEL=error NODE_ENV=test ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --compilers js:babel-core/register $(find app -name '*.spec.js')",
+    "test": "npm run lint && LOG_LEVEL=debug NODE_ENV=test ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --compilers js:babel-core/register $(find app -name '*.spec.js')",
     "test:watch": "NODE_ENV=test ./node_modules/.bin/mocha -w --compilers js:babel-core/register $(find app -name '*.spec.js')"
   },
   "dependencies": {
