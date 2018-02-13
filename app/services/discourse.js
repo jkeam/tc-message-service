@@ -38,7 +38,7 @@ module.exports = (logger) => {
       return res;
     }, function (error) { // eslint-disable-line
       logger.error('Discourse call failed: ', _.pick(error, ['config.url', 'response.status',
-        'response.data', 'response.data.errors']));
+        'response.data', 'response.data.errors', 'response.request']));
       return Promise.reject(error);
     });
 

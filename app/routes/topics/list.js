@@ -64,6 +64,7 @@ module.exports = db =>
 
       logger.info(`${dbTopics.length} topics exist in pg, fetching from discourse`);
       let userId = req.authUser.userId.toString();
+      logger.debug(`token ${req.authToken}`);
       return helper.userHasAccessToEntity(req.authToken, req.id, filter.reference, filter.referenceId)
       .then((hasAccessResp) => {
         logger.info('Checking if user has access to identity');
