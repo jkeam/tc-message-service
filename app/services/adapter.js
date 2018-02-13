@@ -107,6 +107,7 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
         });
       });
       topic.posts = _.orderBy(topic.posts, ['date'], ['asc']);
+      topic.lastActivityAt = topic.posts[topic.posts.length-1].date;
       return topic;
     });
     return topics;

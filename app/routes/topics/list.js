@@ -64,7 +64,6 @@ module.exports = db =>
 
       logger.info(`${dbTopics.length} topics exist in pg, fetching from discourse`);
       let userId = req.authUser.userId.toString();
-      logger.debug(`token ${req.authToken}`);
       return helper.userHasAccessToEntity(req.authToken, req.id, filter.reference, filter.referenceId)
       .then((hasAccessResp) => {
         logger.info('Checking if user has access to identity');
@@ -111,7 +110,7 @@ module.exports = db =>
             });
           }
           logger.debug('adapting topics', topicsFiltered);
-          return adapter.adaptTopics({ topics: topicsFiltered, dbTopics });
+          return adapter.adaptTopics({ topics: topicsFiltered, dbTopics }).orderBy(['lastActivityAt'], ['desc']);
         })
         .then(result => resp.status(200).send(util.wrapResponse(req.id, result)));
       });
