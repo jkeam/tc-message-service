@@ -396,7 +396,10 @@ describe('POST /v4/topics ', () => {
     };
     const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 100 });
     topicData.rows[0][0] = 100;
-    sandbox.stub(axios, 'get').resolves({ data: topicData });
+    const stub = sandbox.stub(axios, 'get');
+    stub.withArgs(sinon.match(/\/admin\/plugins\/explorer\/queries.json/)).resolves({
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+    });
     const postStub = sandbox.stub(axios, 'post').resolves({
       status: 200,
       data,

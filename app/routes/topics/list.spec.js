@@ -151,9 +151,6 @@ describe('GET /v4/topics ', () => {
       data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
 
-    postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
-    .resolves({ data: topicData });
-
     // resolves call (with 403) to reference endpoint in helper.userHasAccessToEntity
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 403 } },
@@ -177,7 +174,6 @@ describe('GET /v4/topics ', () => {
         sinon.assert.calledOnce(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
         .eql('2018-02-12 01:35:20.169883');
         return done();
@@ -222,7 +218,6 @@ describe('GET /v4/topics ', () => {
         sinon.assert.calledOnce(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
         .eql('2018-02-12 01:35:20.169883');
         return done();
@@ -267,7 +262,6 @@ describe('GET /v4/topics ', () => {
         sinon.assert.calledOnce(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
         .eql('2018-02-12 01:35:20.169883');
         return done();
@@ -314,7 +308,6 @@ describe('GET /v4/topics ', () => {
         sinon.assert.calledOnce(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
         .eql('2018-02-12 01:35:20.169883');
         return done();
@@ -360,7 +353,6 @@ describe('GET /v4/topics ', () => {
         sinon.assert.calledOnce(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
         .eql('2018-02-12 01:35:20.169883');
         return done();
@@ -408,7 +400,6 @@ describe('GET /v4/topics ', () => {
         sinon.assert.calledOnce(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
         .eql('2018-02-12 01:35:20.169883');
         return done();
@@ -452,7 +443,6 @@ describe('GET /v4/topics ', () => {
         sinon.assert.calledTwice(postStub);
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'posts').length(1);
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
         .eql('2018-02-12 01:35:20.169883');
         return done();

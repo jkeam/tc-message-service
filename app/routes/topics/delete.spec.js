@@ -64,7 +64,6 @@ describe('DELETE /v4/topics/:topicId ', () => {
                 return done(err);
               }
               res.body.result.success.should.eql(true);
-              sinon.assert.calledOnce(getStub);
               sinon.assert.calledOnce(deleteStub);
               return models.topics.findAll().then((topics) => {
                 topics.should.length(0);
