@@ -110,7 +110,8 @@ module.exports = db =>
             });
           }
           logger.debug('adapting topics', topicsFiltered);
-          return adapter.adaptTopics({ topics: topicsFiltered, dbTopics }).orderBy(['lastActivityAt'], ['desc']);
+          const adaptedTopics = adapter.adaptTopics({ topics: topicsFiltered, dbTopics });
+          return _.orderBy(adaptedTopics, ['lastActivityAt'], ['desc']);
         })
         .then(result => resp.status(200).send(util.wrapResponse(req.id, result)));
       });
