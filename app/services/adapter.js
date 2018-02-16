@@ -99,7 +99,7 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
           id: discoursePost.id,
           date: discoursePost.created_at,
           updatedDate: discoursePost.updated_at,
-          userId,
+          userId: discoursePost.user_id,
           read: discoursePost.read,
           body: discoursePost.cooked,
           rawContent: discoursePost.raw,
