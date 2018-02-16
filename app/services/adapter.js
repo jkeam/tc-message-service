@@ -107,7 +107,17 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
         });
       });
       topic.posts = _.orderBy(topic.posts, ['date'], ['asc']);
-      topic.lastActivityAt = topic.posts[topic.posts.length - 1].date;
+      const lastPost = topic.posts[topic.posts.length - 1];
+      topic.lastActivityAt = lastPost.updatedDate ? lastPost.updatedDate : lastPost.date;
+
+      // add utc timezone to timestamp fields
+      topic.date = topic.date ? `${topic.date}Z` : null;
+      topic.updatedDate = topic.updatedDate ? `${topic.updatedDate}Z` : null;
+      topic.lastActivityAt = topic.lastActivityAt ? `${topic.lastActivityAt}Z` : null;
+      _.each(topic.posts, (post) => {
+        post.date = post.date ? `${post.date}Z` : null;// eslint-disable-line
+        post.updatedDate = post.updatedDate ? `${post.updatedDate}Z` : null;// eslint-disable-line
+      });
       return topic;
     });
     return topics;

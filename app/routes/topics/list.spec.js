@@ -175,7 +175,7 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883');
+        .eql('2018-02-12 01:35:20.169883Z');
         return done();
       });
   });
@@ -219,7 +219,7 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883');
+        .eql('2018-02-12 01:35:20.169883Z');
         return done();
       });
   });
@@ -263,7 +263,7 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883');
+        .eql('2018-02-12 01:35:20.169883Z');
         return done();
       });
   });
@@ -309,7 +309,7 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883');
+        .eql('2018-02-12 01:35:20.169883Z');
         return done();
       });
   });
@@ -354,7 +354,7 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883');
+        .eql('2018-02-12 01:35:20.169883Z');
         return done();
       });
   });
@@ -401,7 +401,7 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883');
+        .eql('2018-02-12 01:35:20.169883Z');
         return done();
       });
   });
@@ -444,7 +444,7 @@ describe('GET /v4/topics ', () => {
         res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883');
+        .eql('2018-02-12 01:35:20.169883Z');
         return done();
       });
   });

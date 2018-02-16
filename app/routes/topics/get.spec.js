@@ -88,7 +88,7 @@ describe('GET /v4/topics/:topicId', () => {
         res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', 'posts').length(1);
-        res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt').eql('2018-02-12 01:35:20.169883');
+        res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt').eql('2018-02-12 01:35:20.169883Z');
         return done();
       });
   });
@@ -121,7 +121,7 @@ describe('GET /v4/topics/:topicId', () => {
         res.body.should.have.propertyByPath('result', 'content', 'id').eql(topicData.id);
         res.body.should.have.propertyByPath('result', 'content', 'reference').eql('project');
         res.body.should.have.propertyByPath('result', 'content', 'posts').length(1);
-        res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt').eql('2018-02-12 01:35:20.169883');
+        res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt').eql('2018-02-12 01:35:20.169883Z');
         return done();
       });
   });
@@ -158,7 +158,7 @@ describe('GET /v4/topics/:topicId', () => {
         // /topic/{topicId}/posts returns 5 posts, so, final output should have 5 posts
         res.body.should.have.propertyByPath('result', 'content', 'posts').length(2);
         // lastActivityAt should refelct the updated_at date of the newest post
-        res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt').eql('2018-02-12 01:35:20.169883');
+        res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt').eql('2018-02-12 01:35:20.169883Z');
         return done();
       });
   });
