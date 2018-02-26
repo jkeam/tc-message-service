@@ -73,39 +73,19 @@ We will refer to this folder henceforth as tc-message-service.
 The following describes how to setup Discourse locally:
 
 ```shell
-# Boot docker container, use 3002 port, you can change to suit your environment
-docker pull discourse/discourse_dev:1.4.0
-docker run -d -p 1080:1080 -p 3002:3002 --hostname=discourse --name=discourse_dev discourse/discourse_dev:1.4.0 /sbin/boot
-
 # Checkout Discourse source, stable branch
 git clone https://github.com/discourse/discourse.git
 cd discourse
-git checkout stable
+git checkout master
 
-# Copy source files to container
-docker cp . discourse_dev:/src
-docker exec -it discourse_dev /bin/bash -c "chown -R discourse:discourse /src"
+# edit discourse/bin/docker/boot_dev and change port 3000:3000 to 3002:3002
+./bin/docker/boot_dev
 
 # Install bundle and sso plugin
 ./bin/docker/bundle install
 ./bin/docker/rake plugin:install["https://github.com/FutureProofGames/discourse_sso_redirect.git"]
+./bin/docker/rake plugin:install["https://github.com/discourse/discourse-data-explorer.git"]
 
-# Migrate db
-./bin/docker/rake db:migrate
-
-# Create an admin account
-./bin/docker/rake admin:create
-# Answer the following questions:
-#   Email: admin@test.com
-#   Password: 1234
-#   Repeat password: 1234
-#
-#   Ensuring account is active!
-#
-#   Account created successfully with username example
-#   Do you want to grant Admin privileges to this account? (Y/n) Y
-#
-#   Your account now has Admin privileges!
 
 # Get api_key, this will be used later to set env
 ./bin/docker/rake api_key:get
@@ -149,7 +129,47 @@ curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/enable_emoji?api_key=<a
 
 ```
 
+go to http://local.topcoder-dev:3002/admin/plugins/explorer, log in with admin credentials and create a new query called `Connect_Topics_Query` with the following contents
+```
+-- [params]
+-- int_list :topic_list
+-- string :uid
 
+SELECT 
+    t.id as topic_id,
+    tu.username as topic_user_id,
+    t.created_at as topic_created_at,
+    t.updated_at as topic_updated_at,
+    t.last_posted_at as topic_last_posted_at,
+    t.title as topic_title,
+    (SELECT string_agg(au.username,',') from 
+        topic_allowed_users as tau
+        left join users au on au.id=tau.user_id
+        where tau.topic_id=t.id) as allowed_users,
+    
+    p.id as post_id,
+	p.cooked as post_cooked,
+	p.raw as post_raw,
+	pu.username as post_user_id,
+	p.created_at as post_created_at,
+	p.updated_at as post_updated_at,
+	p.post_number as post_post_number,
+	pt.post_number is not null as post_read
+    
+
+from posts p
+left join users pu on pu.id=p.user_id
+left join topics t on p.topic_id=t.id
+left join users tu on tu.id=t.user_id
+left join users ptu on ptu.username = :uid
+left join post_timings pt on pt.topic_id=t.id and pt.post_number=p.post_number and pt.user_id=ptu.id
+
+where 
+t.deleted_at is null and 
+p.deleted_at is null and
+p.post_type=1
+and t.id in (:topic_list)
+```
 
 # Starting the Application
 
