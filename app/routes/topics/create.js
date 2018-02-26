@@ -54,7 +54,6 @@ module.exports = db =>
           const projectMembers = _.get(hasAccessResp[1], 'members', []);
             // get users list
           const topicUsers = _.map(projectMembers, member => member.userId.toString());
-          logger.debug(topicUsers);
           return topicUsers;
         }
         return new Promise.resolve([req.authUser.userId.toString()]); // eslint-disable-line
@@ -156,16 +155,11 @@ module.exports = db =>
       })
       .then(({ topic, dbTopic }) => {
         logger.info('returning topic');
-        return discourseClient.getTopic(topic.topic_id, req.authUser.userId.toString())
+        return discourseClient.getTopics([topic.topic_id], req.authUser.userId.toString())
         .then((fTopic) => {
-          const fullTopic = fTopic;
+          const fullTopic = fTopic[0];
           fullTopic.tag = params.tag;
-          return adapter.adaptTopic({ topic: fullTopic, dbTopic }).then((result) => {
-            if ((result instanceof Array) && result.length === 1) {
-              result = result[0]; // eslint-disable-line
-            }
-            return resp.status(200).send(util.wrapResponse(req.id, result));
-          });
+          return resp.status(200).send(util.wrapResponse(req.id, adapter.adaptTopic({ topic: fullTopic, dbTopic })));
         });
       })
       .catch(error => next(error));

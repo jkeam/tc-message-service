@@ -31,9 +31,9 @@ module.exports = (logger, db, _discourseClient = null) => {
         query: _.map(userIds, i => `userId:${i}`).join(' OR '),
       },
     }).then((response) => {
-      // logger.debug('UserHandle response', response.data)
       const data = _.get(response, 'data.result.content', null);
       if (!data) { throw new Error('Response does not have result.content'); }
+      logger.debug('UserHandle response', data);
       return _.map(data, 'handle').filter(i => i);
     });
   }

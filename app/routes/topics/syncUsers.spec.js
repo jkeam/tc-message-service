@@ -7,6 +7,7 @@ const sinon = require('sinon');
 const server = require('../../app');
 const db = require('../../models');
 require('should-sinon');
+const topicJson = require('../../tests/topic.json');
 
 describe('PUT /v4/topics/syncUsers', () => {
   const apiPath = '/v4/topics/syncUsers';
@@ -28,7 +29,6 @@ describe('PUT /v4/topics/syncUsers', () => {
   };
   const dbTopics = [
     { discourseTopicId: 1 },
-    { discourseTopicId: 2 },
   ];
 
   let sandbox;
@@ -36,9 +36,9 @@ describe('PUT /v4/topics/syncUsers', () => {
   let addedUsers = {};
 
   beforeEach((done) => {
-    sandbox = sinon.sandbox.create();
     removedUsers = {};
     addedUsers = {};
+    sandbox = sinon.sandbox.create();
     sandbox.stub(db.topics, 'findAll').resolves(dbTopics);
     sandbox.stub(db.referenceLookups, 'findOne').resolves({ endpoint: 'https://api/{id}' });
     sandbox.stub(axios, 'put').callsFake((path, payload) => {
@@ -47,16 +47,6 @@ describe('PUT /v4/topics/syncUsers', () => {
         const user = payload.username;
         removedUsers[user] = removedUsers[user] || [];
         removedUsers[user].push(parseInt(match[1], 10));
-        return Promise.resolve({ data: {} });
-      }
-      return Promise.reject(new Error('Unknown path'));
-    });
-    sandbox.stub(axios, 'post').callsFake((path, payload) => {
-      const match = path.match(/^\/t\/(.*)\/invite$/);
-      if (match) {
-        const user = payload.user;
-        addedUsers[user] = addedUsers[user] || [];
-        addedUsers[user].push(parseInt(match[1], 10));
         return Promise.resolve({ data: {} });
       }
       return Promise.reject(new Error('Unknown path'));
@@ -131,39 +121,33 @@ describe('PUT /v4/topics/syncUsers', () => {
   });
 
   it('should return 200 response and user accesses are added/removed', (done) => {
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
+
     sandbox.stub(axios, 'get').callsFake((path) => {
       if (path === `https://api/${testBody.referenceId}`) {
         return Promise.resolve({ data: project });
       }
-      if (path === `/t/${dbTopics[0].discourseTopicId}.json?include_raw=1`) {
-        return Promise.resolve({ data: {
-          id: dbTopics[0].discourseTopicId,
-          details: {
-            allowed_users: [
-              { username: '333' },
-              { username: '40051331' },
-              { username: 'system' },
-            ],
-          },
-        },
-        });
-      }
-      if (path === `/t/${dbTopics[1].discourseTopicId}.json?include_raw=1`) {
-        return Promise.resolve({ data: {
-          id: dbTopics[1].discourseTopicId,
-          details: {
-            allowed_users: [
-              { username: '222' },
-              { username: '333' },
-              { username: '40051331' },
-              { username: 'system' },
-            ],
-          },
-        },
+      if (path === 'admin/plugins/explorer/queries.json') {
+        return Promise.resolve({
+          data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
         });
       }
       if (/\/users\/.*\.json\?api_username=.*/.test(path)) {
         return Promise.resolve({ data: {} });
+      }
+      return Promise.reject(new Error('Unknown path'));
+    });
+
+
+    sandbox.stub(axios, 'post').callsFake((path, payload) => {
+      const match = path.match(/^\/t\/(.*)\/invite$/);
+      if (match) {
+        const user = payload.user;
+        addedUsers[user] = addedUsers[user] || [];
+        addedUsers[user].push(parseInt(match[1], 10));
+        return Promise.resolve({ data: {} });
+      } else if (path.match(/admin\/plugins\/explorer\/queries\/.*/)) {
+        return Promise.resolve({ data: topicData });
       }
       return Promise.reject(new Error('Unknown path'));
     });
@@ -180,11 +164,11 @@ describe('PUT /v4/topics/syncUsers', () => {
           return done(err);
         }
         addedUsers.should.deepEqual({
-          111: [dbTopics[0].discourseTopicId, dbTopics[1].discourseTopicId],
+          111: [dbTopics[0].discourseTopicId],
           222: [dbTopics[0].discourseTopicId],
         });
         removedUsers.should.deepEqual({
-          333: [dbTopics[0].discourseTopicId, dbTopics[1].discourseTopicId],
+          333: [dbTopics[0].discourseTopicId],
         });
         return done();
       });
@@ -195,33 +179,29 @@ describe('PUT /v4/topics/syncUsers', () => {
       if (path === `https://api/${testBody.referenceId}`) {
         return Promise.resolve({ data: project });
       }
-      if (path === `/t/${dbTopics[0].discourseTopicId}.json?include_raw=1`) {
-        return Promise.resolve({ data: {
-          id: dbTopics[0].discourseTopicId,
-          details: {
-            allowed_users: [
-              { username: '40051331' },
-              { username: 'system' },
-            ],
-          },
-        },
-        });
-      }
-      if (path === `/t/${dbTopics[1].discourseTopicId}.json?include_raw=1`) {
-        return Promise.resolve({ data: {
-          id: dbTopics[1].discourseTopicId,
-          details: {
-            allowed_users: [
-              { username: '222' },
-              { username: '40051331' },
-              { username: 'system' },
-            ],
-          },
-        },
+      if (path === 'admin/plugins/explorer/queries.json') {
+        return Promise.resolve({
+          data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
         });
       }
       if (/\/users\/.*\.json\?api_username=.*/.test(path)) {
         return Promise.resolve({ data: {} });
+      }
+      return Promise.reject(new Error('Unknown path'));
+    });
+
+
+    sandbox.stub(axios, 'post').callsFake((path, payload) => {
+      const match = path.match(/^\/t\/(.*)\/invite$/);
+      if (match) {
+        const user = payload.user;
+        addedUsers[user] = addedUsers[user] || [];
+        addedUsers[user].push(parseInt(match[1], 10));
+        return Promise.resolve({ data: {} });
+      } else if (path.match(/admin\/plugins\/explorer\/queries\/.*/)) {
+        const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
+        topicData.rows[0][topicData.columns.indexOf('allowed_users')] = '40051331,system';
+        return Promise.resolve({ data: topicData });
       }
       return Promise.reject(new Error('Unknown path'));
     });
@@ -238,11 +218,11 @@ describe('PUT /v4/topics/syncUsers', () => {
           return done(err);
         }
         addedUsers.should.deepEqual({
-          111: [dbTopics[0].discourseTopicId, dbTopics[1].discourseTopicId],
+          111: [dbTopics[0].discourseTopicId],
           222: [dbTopics[0].discourseTopicId],
         });
         removedUsers.should.deepEqual({
-          40051331: [dbTopics[0].discourseTopicId, dbTopics[1].discourseTopicId],
+          40051331: [dbTopics[0].discourseTopicId],
         });
         return done();
       });

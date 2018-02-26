@@ -38,8 +38,20 @@ describe('DELETE /v4/topics/:topicId ', () => {
   });
 
   it('should return 200 response with valid jwt token and payload', (done) => {
-    const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/1.json?include_raw=1').resolves({ data: topicJson });
+    // sample response for discourse topic calls
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
+    // mark read
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+
+    // resolves discourse's posts endpoint discourse.getPosts
+    getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+    });
+
+    postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
+    .resolves({ data: topicData });
+
     const deleteStub = sandbox.stub(axios, 'delete').resolves({});
     request(server)
             .delete(apiPath)
@@ -52,7 +64,6 @@ describe('DELETE /v4/topics/:topicId ', () => {
                 return done(err);
               }
               res.body.result.success.should.eql(true);
-              sinon.assert.calledOnce(getStub);
               sinon.assert.calledOnce(deleteStub);
               return models.topics.findAll().then((topics) => {
                 topics.should.length(0);
@@ -62,8 +73,19 @@ describe('DELETE /v4/topics/:topicId ', () => {
   });
 
   it('should return 200 response if topic does not exist in db but in discourse', (done) => {
-    const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/2000.json?include_raw=1').resolves({ data: topicJson });
+    // sample response for discourse topic calls
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
+    // mark read
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+
+    // resolves discourse's posts endpoint discourse.getPosts
+    getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+    });
+
+    postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
+    .resolves({ data: topicData });
     const deleteStub = sandbox.stub(axios, 'delete').resolves({});
     request(server)
             .delete('/v4/topics/2000')
@@ -76,19 +98,28 @@ describe('DELETE /v4/topics/:topicId ', () => {
                 return done(err);
               }
               res.body.result.success.should.eql(true);
-              sinon.assert.calledOnce(getStub);
+              sinon.assert.notCalled(getStub);
               sinon.assert.calledOnce(deleteStub);
               return done();
             });
   });
 
   it('should return 200 response if topic exist in db but not in discourse', (done) => {
-    const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/1.json?include_raw=1').rejects({
-        response: {
-          status: 410,
-        },
-      });
+    // sample response for discourse topic calls
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
+    topicData.rows = [];
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
+    // mark read
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+
+    // resolves discourse's posts endpoint discourse.getPosts
+    getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+    });
+
+    postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
+    .resolves({ data: topicData });
+
     const deleteStub = sandbox.stub(axios, 'delete').resolves({});
     request(server)
             .delete(apiPath)
@@ -101,17 +132,27 @@ describe('DELETE /v4/topics/:topicId ', () => {
                 return done(err);
               }
               res.body.result.success.should.eql(true);
-              sinon.assert.calledOnce(getStub);
+              sinon.assert.notCalled(getStub);
               sinon.assert.notCalled(deleteStub);
               return done();
             });
   });
 
   it('should return 422 response if topic has comments', (done) => {
-    const topicHasComments = _.cloneDeep(topicJson);
-    topicHasComments.post_stream.posts = [topicHasComments.post_stream.posts[0], topicHasComments.post_stream.posts[0]];
-    const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/1.json?include_raw=1').resolves({ data: topicHasComments });
+    // sample response for discourse topic calls
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
+    topicData.rows.push(topicData.rows[0]);
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
+    // mark read
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+
+    // resolves discourse's posts endpoint discourse.getPosts
+    getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+    });
+
+    postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
+    .resolves({ data: topicData });
     const deleteStub = sandbox.stub(axios, 'delete').resolves({});
     request(server)
             .delete(apiPath)
@@ -125,7 +166,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
               }
               res.body.should.have.propertyByPath('result', 'content', 'message')
                         .eql('Topic has comments and can not be deleted');
-              sinon.assert.calledOnce(getStub);
+              sinon.assert.notCalled(getStub);
               sinon.assert.notCalled(deleteStub);
               return models.topics.findAll().then((topics) => {
                 topics.should.length(1);
@@ -135,8 +176,20 @@ describe('DELETE /v4/topics/:topicId ', () => {
   });
 
   it('should return 404 response if topic does not exist', (done) => {
-    const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/2000.json?include_raw=1').resolves({});
+    // sample response for discourse topic calls
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
+    topicData.rows = [];
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
+    // mark read
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+
+    // resolves discourse's posts endpoint discourse.getPosts
+    getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+    });
+
+    postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
+    .resolves({ data: topicData });
     const deleteStub = sandbox.stub(axios, 'delete').resolves({});
     request(server)
       .delete('/v4/topics/2000')
@@ -150,18 +203,28 @@ describe('DELETE /v4/topics/:topicId ', () => {
         }
         res.body.should.have.propertyByPath('result', 'content', 'message')
                   .eql('Topic does not exist');
-        sinon.assert.calledOnce(getStub);
+        sinon.assert.notCalled(getStub);
         sinon.assert.notCalled(deleteStub);
         return done();
       });
   });
 
   it('should return 500 response if error getting topic', (done) => {
-    const getStub = sandbox.stub(axios, 'get').withArgs('/t/1.json?include_raw=1').rejects({
+    // sample response for discourse topic calls
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
+    // mark read
+    sandbox.stub(axios, 'post').rejects({
       response: {
         status: 500,
       },
     });
+
+    // resolves discourse's posts endpoint discourse.getPosts
+    getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+    });
+
     const deleteStub = sandbox.stub(axios, 'delete').resolves({});
     request(server)
             .delete(apiPath)
@@ -173,7 +236,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
               if (err) {
                 return done(err);
               }
-              sinon.assert.calledOnce(getStub);
+              sinon.assert.notCalled(getStub);
               sinon.assert.notCalled(deleteStub);
               res.body.should.have.propertyByPath('result', 'content', 'message')
                         .eql('Error deleting topic');
@@ -182,8 +245,19 @@ describe('DELETE /v4/topics/:topicId ', () => {
   });
 
   it('should return 500 response if error deleting topic', (done) => {
-    const getStub = sandbox.stub(axios, 'get')
-      .withArgs('/t/1.json?include_raw=1').resolves({ data: topicJson });
+    // sample response for discourse topic calls
+    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
+    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
+    // mark read
+    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+
+    // resolves discourse's posts endpoint discourse.getPosts
+    getStub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
+      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
+    });
+
+    postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
+    .resolves({ data: topicData });
     sandbox.stub(axios, 'delete').rejects({
       response: {
         status: 500,
@@ -199,7 +273,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
               if (err) {
                 return done(err);
               }
-              sinon.assert.calledOnce(getStub);
+              sinon.assert.notCalled(getStub);
               res.body.should.have.propertyByPath('result', 'content', 'message')
                         .eql('Error deleting topic');
               return done();

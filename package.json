@@ -28,12 +28,13 @@
     "start": "node dist",
     "start:dev": "NODE_ENV=local PORT=8001 nodemon -w app --exec \"babel-node app --presets es2015\" | ./node_modules/.bin/bunyan",
     "xstart:dev": "NODE_ENV=local nodemon server.js | ./node_modules/.bin/bunyan",
-    "test": "npm run lint && LOG_LEVEL=error NODE_ENV=test ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --compilers js:babel-core/register $(find app -name '*.spec.js')",
+    "test": "npm run lint && LOG_LEVEL=debug NODE_ENV=test ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --compilers js:babel-core/register $(find app -name '*.spec.js')",
     "test:watch": "NODE_ENV=test ./node_modules/.bin/mocha -w --compilers js:babel-core/register $(find app -name '*.spec.js')"
   },
   "dependencies": {
     "amqplib": "^0.5.1",
     "axios": "^0.16.1",
+    "babel-eslint": "^8.2.1",
     "bluebird": "^3.4.1",
     "body-parser": "^1.15.2",
     "common-errors": "^1.0.0",
@@ -52,8 +53,9 @@
     "multer-autoreap": "^0.1.3",
     "pg": "^6.0.2",
     "pg-hstore": "^2.3.2",
+    "querystring": "^0.2.0",
     "sequelize": "^3.23.4",
-    "tc-core-library-js": "appirio-tech/tc-core-library-js.git#v2.1"
+    "tc-core-library-js": "appirio-tech/tc-core-library-js.git#v2.2"
   },
   "devDependencies": {
     "babel-cli": "^6.24.0",

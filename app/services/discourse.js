@@ -6,6 +6,7 @@ const _ = require('lodash');
 const util = require('../util');
 const fs = require('fs');
 const FormData = require('form-data');
+const querystring = require('querystring');
 
 const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername');
 
@@ -36,7 +37,8 @@ module.exports = (logger) => {
       logger.info('SUCCESS', _.pick(res, ['config.url', 'status']));
       return res;
     }, function (error) { // eslint-disable-line
-      logger.error('Discourse call failed: ', _.pick(error, ['config.url', 'response.status', 'response.data']));
+      logger.error('Discourse call failed: ', _.pick(error, ['config.url', 'response.status',
+        'response.data', 'response.data.errors', 'response.request']));
       return Promise.reject(error);
     });
 
@@ -103,18 +105,89 @@ module.exports = (logger) => {
 
   /**
    * Gets a topic in Discourse
-   * @param {String} topicId the id of the topic
+   * @param {String} topicIds the ids of the topic
    * @param {String} username the username to use to fetch the topic, for security purposes
    * @return {Promise} get topic promise
    */
-  function getTopic(topicId, username) {
-    logger.debug(`Retrieving topic# ${topicId} for user: ${username}`);
-    return getClient().get(`/t/${topicId}.json?include_raw=1`, {
-      params: {
-        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
-      },
-    })
-    .then(response => response.data);
+  function getTopics(topicIds, username) {
+    logger.debug(`Retrieving topics# ${topicIds} for user: ${username}`);
+    getClient();
+
+    const getTopicsPromise = () => {
+      const paramsString = JSON.stringify({ topic_list: topicIds.join(','), uid: username });
+      return client.post(`admin/plugins/explorer/queries/${client.topicsQueryId}/run`,
+        querystring.stringify({ params: paramsString, format: 'json' }), {
+          params: {
+            api_username: DISCOURSE_SYSTEM_USERNAME,
+          },
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;',
+          },
+        })
+      .then((response) => {
+        logger.debug('got response', response);
+        const columns = response.data.columns;
+        const rows = response.data.rows;
+        const topicsById = _.groupBy(rows, row => row[columns.indexOf('topic_id')]);
+        logger.debug(topicsById);
+        const topics = [];
+        _.forEach(_.keys(topicsById), (topicId) => {
+          const topic = {
+            id: topicsById[topicId][0][columns.indexOf('topic_id')],
+            user_id: topicsById[topicId][0][columns.indexOf('topic_user_id')],
+            created_at: topicsById[topicId][0][columns.indexOf('topic_created_at')],
+            updated_at: topicsById[topicId][0][columns.indexOf('topic_updated_at')],
+            last_posted_at: topicsById[topicId][0][columns.indexOf('topic_last_posted_at')],
+            title: topicsById[topicId][0][columns.indexOf('topic_title')],
+            allowed_users: topicsById[topicId][0][columns.indexOf('allowed_users')],
+            posts: [],
+          };
+          if (topic.allowed_users) {
+            topic.allowed_users = topic.allowed_users.split(',');
+          }
+          _.forEach(topicsById[topicId], (row) => {
+            const post = {
+              id: row[columns.indexOf('post_id')],
+              cooked: row[columns.indexOf('post_cooked')],
+              raw: row[columns.indexOf('post_raw')],
+              user_id: row[columns.indexOf('post_user_id')],
+              created_at: row[columns.indexOf('post_created_at')],
+              updated_at: row[columns.indexOf('post_updated_at')],
+              post_number: row[columns.indexOf('post_post_number')],
+              read: row[columns.indexOf('post_read')],
+            };
+            topic.posts.push(post);
+          });
+          topic.read = _.every(topic.posts, { read: true });
+          topics.push(topic);
+        });
+        return topics;
+      })
+      .catch((err) => {
+        logger.error('Error executing topics query');
+        logger.error(err);
+        return Promise.reject(err);
+      });
+    };
+
+    if (!client.topicsQueryId) {
+      return client.get('admin/plugins/explorer/queries.json', {
+        params: {
+          api_username: DISCOURSE_SYSTEM_USERNAME,
+        },
+      })
+      .then((response) => {
+        client.topicsQueryId = _.find(response.data.queries, { name: 'Connect_Topics_Query' }).id;
+      })
+      .catch((err) => {
+        logger.error('Error getting query id');
+        logger.error(err);
+        return Promise.reject(err);
+      })
+      .then(() => getTopicsPromise());
+    }
+
+    return getTopicsPromise();
   }
 
   /**
@@ -325,7 +398,7 @@ module.exports = (logger) => {
     changeTrustLevel,
     grantAccess,
     removeAccess,
-    getTopic,
+    getTopics,
     updateTopic,
     deleteTopic,
     createPost,

@@ -3,7 +3,7 @@ import config from 'config';
 import Discourse from '../../services/discourse';
 import Adapter from '../../services/adapter';
 import HelperService from '../../services/helper';
-import { retrieveTopic } from './util';
+import { retrieveTopics } from './util';
 
 const util = require('tc-core-library-js').util(config);
 
@@ -44,15 +44,16 @@ module.exports = db =>
           userId = config.get('discourseSystemUsername');
         }
 
-        return retrieveTopic(logger, dbTopic, userId, discourseClient)
-          .then(({ isReadOnlyForAdmins, topic }) => {
+        return retrieveTopics(logger, [dbTopic], userId, discourseClient)
+          .then((topics) => {
+            const topic = topics.length > 0 ? topics[0] : null;
             if (!topic) {
               const err = new errors.HttpStatusError(500, 'Unable to retrieve topic from discourse');
               return next(err);
             }
-            if (!isReadOnlyForAdmins && !topic.read &&
-              topic.post_stream && topic.post_stream.posts && topic.post_stream.posts.length > 0) {
-              const postIds = topic.post_stream.posts.map(post => post.post_number);
+            if (!helper.isAdmin(req) && !topic.read &&
+              topic.posts && topic.posts.length > 0) {
+              const postIds = topic.posts.map(post => post.post_number);
               return discourseClient
                 .markTopicPostsRead(req.authUser.userId.toString(), topic.id, postIds)
                 .then(() => {
