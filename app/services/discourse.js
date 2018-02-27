@@ -116,7 +116,7 @@ module.exports = (logger) => {
     const getTopicsPromise = () => {
       const paramsString = JSON.stringify({ topic_list: topicIds.join(','), uid: username });
       return client.post(`admin/plugins/explorer/queries/${client.topicsQueryId}/run`,
-        querystring.stringify({ params: paramsString, format: 'json' }), {
+        querystring.stringify({ params: paramsString, format: 'json', limit: 100000 }), {
           params: {
             api_username: DISCOURSE_SYSTEM_USERNAME,
           },
