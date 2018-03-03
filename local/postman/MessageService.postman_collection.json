@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Message Service",
-		"_postman_id": "871bd633-4c54-8969-2fc7-551d301a7722",
+		"_postman_id": "f883f45c-fabc-e688-2056-9df8359c92d4",
 		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
@@ -24,7 +24,8 @@
 					"mode": "raw",
 					"raw": "{\n    \"reference\": \"submission\",\n    \"referenceId\": \"455\",\n    \"tag\": \"PRIMARY\",\n    \"title\": \"Discussion for submission 455\",\n    \"body\": \"Discussion body for submission 455\"\n}"
 				},
-				"url": "{{URL}}/v4/topics"
+				"url": "{{URL}}/v4/topics",
+				"description": null
 			},
 			"response": []
 		},
@@ -46,7 +47,8 @@
 					"mode": "raw",
 					"raw": "{\n    \"reference\": \"submission\",\n    \"referenceId\": \"455\",\n    \"tag\": \"PRIMARY\",\n    \"title\": \"Discussion for submission 455 2\",\n    \"body\": \"Discussion body for submission 455\"\n}"
 				},
-				"url": "{{URL}}/v4/topics"
+				"url": "{{URL}}/v4/topics",
+				"description": null
 			},
 			"response": []
 		},
@@ -79,7 +81,8 @@
 							"value": "reference%3Dsubmission%26referenceId%3D455%26tag%3DPRIMARY"
 						}
 					]
-				}
+				},
+				"description": null
 			},
 			"response": []
 		},
@@ -112,7 +115,8 @@
 							"value": "reference%3Dsubmission%26referenceId%3D455%26tag%3DPRIMARY"
 						}
 					]
-				}
+				},
+				"description": null
 			},
 			"response": []
 		},
@@ -130,7 +134,8 @@
 					"mode": "raw",
 					"raw": ""
 				},
-				"url": "{{URL}}/v4/topics/1"
+				"url": "{{URL}}/v4/topics/1",
+				"description": null
 			},
 			"response": []
 		},
@@ -148,7 +153,8 @@
 					"mode": "raw",
 					"raw": ""
 				},
-				"url": "{{URL}}/v4/topics/1"
+				"url": "{{URL}}/v4/topics/1",
+				"description": null
 			},
 			"response": []
 		},
@@ -168,9 +174,10 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"title\": \"new title\",\n\t\"postId\": 22,\n    \"content\": \"new content\"\n}"
+					"raw": "{\n  \"title\": \"new title\",\n  \"postId\": 22,\n    \"content\": \"new content\"\n}"
 				},
-				"url": "{{URL}}/v4/topics/21/edit"
+				"url": "{{URL}}/v4/topics/21/edit",
+				"description": null
 			},
 			"response": []
 		},
@@ -190,9 +197,10 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"title\": \"new title\",\n\t\"postId\": 23,\n    \"content\": \"new content\"\n}"
+					"raw": "{\n  \"title\": \"new title\",\n  \"postId\": 23,\n    \"content\": \"new content\"\n}"
 				},
-				"url": "{{URL}}/v4/topics/22/edit"
+				"url": "{{URL}}/v4/topics/22/edit",
+				"description": null
 			},
 			"response": []
 		},
@@ -210,7 +218,8 @@
 					"mode": "raw",
 					"raw": ""
 				},
-				"url": "{{URL}}/v4/topics/21"
+				"url": "{{URL}}/v4/topics/21",
+				"description": null
 			},
 			"response": []
 		},
@@ -228,7 +237,8 @@
 					"mode": "raw",
 					"raw": ""
 				},
-				"url": "{{URL}}/v4/topics/23"
+				"url": "{{URL}}/v4/topics/23",
+				"description": null
 			},
 			"response": []
 		},
@@ -250,7 +260,8 @@
 					"mode": "raw",
 					"raw": "{\n    \"post\": \"submission @test_user1 @magrathean hello\"\n}"
 				},
-				"url": "{{URL}}/v4/topics/38/posts"
+				"url": "{{URL}}/v4/topics/38/posts",
+				"description": null
 			},
 			"response": []
 		},
@@ -290,7 +301,8 @@
 							"equals": true
 						}
 					]
-				}
+				},
+				"description": null
 			},
 			"response": []
 		},
@@ -312,7 +324,8 @@
 					"mode": "raw",
 					"raw": "{\n    \"post\": \"submission @test_user1 @magrathean hello\"\n}"
 				},
-				"url": "{{URL}}/v4/topics/12/posts/20"
+				"url": "{{URL}}/v4/topics/12/posts/20",
+				"description": null
 			},
 			"response": []
 		},
@@ -334,7 +347,8 @@
 					"mode": "raw",
 					"raw": "{\n    \"post\": \"submission @test_user1 @magrathean hello\"\n}"
 				},
-				"url": "{{URL}}/v4/topics/21/posts/26/edit"
+				"url": "{{URL}}/v4/topics/21/posts/26/edit",
+				"description": null
 			},
 			"response": []
 		},
@@ -352,12 +366,13 @@
 					"mode": "raw",
 					"raw": ""
 				},
-				"url": "{{URL}}/v4/topics/27/posts/36/"
+				"url": "{{URL}}/v4/topics/27/posts/36/",
+				"description": null
 			},
 			"response": []
 		},
 		{
-			"name": "Upload image (magrathean)",
+			"name": "Upload attachment (magrathean)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -376,11 +391,148 @@
 						{
 							"key": "file",
 							"type": "file",
-							"value": ""
+							"src": "0-weu-d1-4373bd180b68617cb3704b58e6add86c.jpg"
 						}
 					]
 				},
-				"url": "{{URL}}/v4/topics/image"
+				"url": {
+					"raw": "{{URL}}/v4/topics/1/posts/1/attachments?referenceId=1",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"v4",
+						"topics",
+						"1",
+						"posts",
+						"1",
+						"attachments"
+					],
+					"query": [
+						{
+							"key": "referenceId",
+							"value": "1",
+							"equals": true
+						}
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Delete attachment (magrathean)",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{magratheanToken}}"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "{{URL}}/v4/topics/1/posts/1/attachments/1?referenceId=1",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"v4",
+						"topics",
+						"1",
+						"posts",
+						"1",
+						"attachments",
+						"1"
+					],
+					"query": [
+						{
+							"key": "referenceId",
+							"value": "1",
+							"equals": true
+						}
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Delete attachment (magrathean) (hardDelete)",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{magratheanTokenAdmin}}"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "{{URL}}/v4/topics/1/posts/1/attachments/7?referenceId=1&hardDelete=true",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"v4",
+						"topics",
+						"1",
+						"posts",
+						"1",
+						"attachments",
+						"7"
+					],
+					"query": [
+						{
+							"key": "referenceId",
+							"value": "1",
+							"equals": true
+						},
+						{
+							"key": "hardDelete",
+							"value": "true",
+							"equals": true
+						}
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Get attachment (magrathean)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{magratheanToken}}"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "{{URL}}/v4/topics/1/posts/1/attachments/6?referenceId=1",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"v4",
+						"topics",
+						"1",
+						"posts",
+						"1",
+						"attachments",
+						"6"
+					],
+					"query": [
+						{
+							"key": "referenceId",
+							"value": "1",
+							"equals": true
+						}
+					]
+				},
+				"description": null
 			},
 			"response": []
 		},
@@ -400,9 +552,10 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"reference\": \"project\",\n    \"referenceId\": 1111\n}"
+					"raw": "{\n  \"reference\": \"project\",\n    \"referenceId\": 1111\n}"
 				},
-				"url": "{{URL}}/v4/topics/syncUsers"
+				"url": "{{URL}}/v4/topics/syncUsers",
+				"description": null
 			},
 			"response": []
 		},
@@ -425,7 +578,7 @@
 					"raw": "{\n    \"reference\": \"project\",\n    \"referenceId\": \"2\",\n    \"tag\": \"PRIMARY\",\n    \"title\": \"Discussion for project 2\",\n    \"body\": \"Discussion body for project 2\"\n}"
 				},
 				"url": "{{URL}}/v4/topics",
-				"description": ""
+				"description": null
 			},
 			"response": []
 		},
@@ -444,7 +597,7 @@
 					"raw": ""
 				},
 				"url": "{{URL}}/v4/topics/26",
-				"description": ""
+				"description": null
 			},
 			"response": []
 		},
@@ -467,7 +620,7 @@
 					"raw": "{\n    \"post\": \"submission @test_user1 @magrathean 222\"\n}"
 				},
 				"url": "{{URL}}/v4/topics/27/posts",
-				"description": ""
+				"description": null
 			},
 			"response": []
 		},
@@ -486,7 +639,7 @@
 					"raw": ""
 				},
 				"url": "{{URL}}/v4/topics/27/posts/36/",
-				"description": ""
+				"description": null
 			},
 			"response": []
 		},
@@ -509,7 +662,7 @@
 					"raw": "{\n    \"post\": \"submission @test_user1 @magrathean hello\"\n}"
 				},
 				"url": "{{URL}}/v4/topics/21/posts/26/edit",
-				"description": ""
+				"description": null
 			},
 			"response": []
 		}

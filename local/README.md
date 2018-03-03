@@ -47,7 +47,27 @@ Install nodejs and npm, instructions can be found here: https://nodejs.org/en/, 
 
 Install the sequelize command line interface by following the instructions found here: https://github.com/sequelize/cli
 
+## AWS (S3)
 
+You will need a AWS account and an existing S3 bucket. The `config/default.json` file contains the following sso related properties:
+
+- aws
+ - config - configuration related to credentials and region to use
+  - accessKeyId - the AWS access key
+  - region - the region to to use (i.e. us-east-1)
+  - secretAccessKey - the AWS secret access key
+ - S3 - configuration related to S3
+  - bucket - the bucket name
+
+Note that all these properties have their corresponding environment variables that can be setup:
+
+- aws
+ - config - configuration related to credentials and region to use
+  - accessKeyId - AWS_ACCESS_KEY_ID
+  - region - AWS_REGION
+  - secretAccessKey - AWS_SECRET_ACCESS_KEY
+ - S3 - configuration related to S3
+  - bucket - AWS_S3_BUCKET
 
 # Local Setup
 
@@ -169,6 +189,10 @@ export DEFAULT_DISCOURSE_PW=supersecretpw
 export DISCOURSE_URL=http://talk.topcoder-dev.com:3002
 export RABBITMQ_URL=amqp://local.topcoder-dev.com:5672
 export DB_MASTER_URL=postgres://coder:mysecretpassword@local.topcoder-dev.com:5432/messages
+export AWS_ACCESS_KEY_ID=<<AWS access key>>
+export AWS_REGION=<<AWS region>>
+export AWS_SECRET_ACCESS_KEY=<<AWS secret access key>>
+export AWS_S3_BUCKET=<<AWS S3 bucket>>
 ```
 
 NOTE: 

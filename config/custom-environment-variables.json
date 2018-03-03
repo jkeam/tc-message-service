@@ -1,4 +1,14 @@
 {
+  "aws": {
+    "config": {
+      "accessKeyId": "AWS_ACCESS_KEY_ID",
+      "region": "AWS_REGION",
+      "secretAccessKey": "AWS_SECRET_ACCESS_KEY"
+    },
+    "S3": {
+      "bucket": "AWS_S3_BUCKET"
+    }
+  },
   "defaultDiscoursePw": "DEFAULT_DISCOURSE_PW",
   "discourseApiKey": "DISCOURSE_API_KEY",
   "discourseSystemUsername": "DISCOURSE_SYSTEM_USERNAME",

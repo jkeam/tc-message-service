@@ -239,6 +239,10 @@ module.exports = (logger, db, _discourseClient = null) => {
     ], req.authUser.roles).length > 0;
   }
 
+  function s3KeyFromUrl(url) {
+    return (url && url.replace(/http[s]?:\/\//, '').split('/').slice(1).join('/')) || '';
+  }
+
   return {
     getTopcoderUser,
     lookupUserHandles,
@@ -249,5 +253,6 @@ module.exports = (logger, db, _discourseClient = null) => {
     getContentFromMatch,
     mentionUserIdToHandle,
     isAdmin,
+    s3KeyFromUrl,
   };
 };
