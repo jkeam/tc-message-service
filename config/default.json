@@ -6,7 +6,7 @@
       "secretAccessKey": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     },
     "S3": {
-      "bucket": "tc-message-service-gfzabarino"
+      "bucket": "tc-message-service-attachments"
     }
   },
   "defaultDiscoursePw": "supersecretpw",
