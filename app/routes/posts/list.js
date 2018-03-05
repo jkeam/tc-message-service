@@ -44,11 +44,6 @@ module.exports = db => (req, resp, next) => {
       console.log(filter);
       return db.posts_backup.findPosts(filter)
       .then(posts => {
-        db.post_user_stats_backup.findPostsWithoutUserAction(db, logger, posts, "22688955", 'READ')
-        .then((unreadPosts) => {
-          console.log(unreadPosts, 'unreadPosts');
-          db.posts_backup.increaseReadCount(db, logger, unreadPosts, userId);
-        });
         // marks each post a read for the request user, however, ideally they should be marked
         // as read only after user has actually seen them in UI because UI might not be showing all posts
         // at once
