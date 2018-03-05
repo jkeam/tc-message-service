@@ -31,25 +31,12 @@ const jwt = require('jsonwebtoken');
 module.exports = (logger, db) => {
   // health check
   router.get('/_health', (req, res, next) => { // eslint-disable-line
-    // check if we can connect to discourse
-    return axios.get(config.get('discourseURL'))
-      .then((resp) => {
-        if (resp.status === 200) {
-          res.status(200).send({ message: 'All-is-well' });
-        }
-      })
-      .catch((err) => {
-        const msg = `Uanble to ping discourse: ${config.get('discourseURL')}`;
-        logger.error(msg, err);
-        res.status(500).send({
-          message: msg,
-          error: JSON.stringify(err),
-        });
-      });
+    // TODO check if database connection is alive
+    res.status(200).send({ message: 'All-is-well' });
   });
 
   // register discourse sso endpoint (no auth is needed)
-  router.route('/sso').get(ssoHandler(logger));
+  // router.route('/sso').get(ssoHandler(logger));
 
   // all project service endpoints need authentication
   const jwtAuth = tcCoreLib.middleware.jwtAuthenticator;
@@ -77,6 +64,7 @@ module.exports = (logger, db) => {
         next();
       }
     } catch (err) {
+      console.log(err);
       res.status(403)
         .json(util.wrapErrorResponse(req.id, 403, 'Failed to authenticate token.'));
       res.send();
@@ -111,11 +99,11 @@ module.exports = (logger, db) => {
   router.route('/v4/topics/:topicId/posts/:postId/edit')
     .post(updatePostHandler(db));
 
-  router.route('/v4/topics/image')
-    .post(uploadImageHandler());
+  // router.route('/v4/topics/image')
+  //   .post(uploadImageHandler());
 
-  router.route('/v4/topics/syncUsers')
-    .put(syncUsersHandler(db));
+  // router.route('/v4/topics/syncUsers')
+  //   .put(syncUsersHandler(db));
 
   // register error handler
   router.use((err, req, res, next) => { // eslint-disable-line

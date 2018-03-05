@@ -9,8 +9,8 @@ module.exports = (app, db, logger) => {
 
     if (topic.reference.toLowerCase() === 'project') {
       createEvent(BUS_API_EVENT.TOPIC_CREATED, {
-        topicId: topic.discourseTopicId,
-        topicTitle: req.body.title,
+        topicId: topic.id,
+        topicTitle: topic.title,
         userId: req.authUser.userId,
         projectId: topic.referenceId,
         initiatorUserId: req.authUser.userId,
@@ -21,7 +21,7 @@ module.exports = (app, db, logger) => {
   app.on(EVENT.TOPIC_DELETED, ({ req, topic }) => {
     if (topic && topic.reference.toLowerCase() === 'project') {
       createEvent(BUS_API_EVENT.TOPIC_DELETED, {
-        topicId: req.params.topicId,
+        topicId: topic.id,
         userId: req.authUser.userId,
         projectId: topic.referenceId,
         initiatorUserId: req.authUser.userId,
@@ -29,49 +29,40 @@ module.exports = (app, db, logger) => {
     }
   });
 
-  app.on(EVENT.POST_CREATED, ({ req, post }) => {
-    db.topics.findOne({ where: { discourseTopicId: req.params.topicId } })
-    .then((topic) => {
-      if (topic && topic.reference.toLowerCase() === 'project') {
-        createEvent(BUS_API_EVENT.POST_CREATED, {
-          topicId: req.params.topicId,
-          postId: post.id,
-          postContent: post.body,
-          userId: req.authUser.userId,
-          projectId: topic.referenceId,
-          initiatorUserId: req.authUser.userId,
-        }, logger);
-      }
-    });
+  app.on(EVENT.POST_CREATED, ({ req, post, topic }) => {
+    if (topic && topic.reference.toLowerCase() === 'project') {
+      createEvent(BUS_API_EVENT.POST_CREATED, {
+        topicId: post.topicId,
+        postId: post.id,
+        postContent: post.raw,
+        userId: req.authUser.userId,
+        projectId: topic.referenceId,
+        initiatorUserId: req.authUser.userId,
+      }, logger);
+    }
   });
 
-  app.on(EVENT.POST_DELETED, ({ req }) => {
-    db.topics.findOne({ where: { discourseTopicId: req.params.topicId } })
-    .then((topic) => {
-      if (topic && topic.reference.toLowerCase() === 'project') {
-        createEvent(BUS_API_EVENT.POST_DELETED, {
-          topicId: req.params.topicId,
-          postId: req.params.postId,
-          userId: req.authUser.userId,
-          projectId: topic.referenceId,
-          initiatorUserId: req.authUser.userId,
-        }, logger);
-      }
-    });
+  app.on(EVENT.POST_DELETED, ({ req, topic }) => {
+    if (topic && topic.reference.toLowerCase() === 'project') {
+      createEvent(BUS_API_EVENT.POST_DELETED, {
+        topicId: topic.id,
+        postId: req.params.postId,
+        userId: req.authUser.userId,
+        projectId: topic.referenceId,
+        initiatorUserId: req.authUser.userId,
+      }, logger);
+    }
   });
 
-  app.on(EVENT.POST_UPDATED, ({ req, post }) => {
-    db.topics.findOne({ where: { discourseTopicId: req.params.topicId } })
-    .then((topic) => {
-      if (topic && topic.reference.toLowerCase() === 'project') {
-        createEvent(BUS_API_EVENT.POST_UPDATED, {
-          topicId: req.params.topicId,
-          postId: post.id,
-          userId: req.authUser.userId,
-          projectId: topic.referenceId,
-          initiatorUserId: req.authUser.userId,
-        }, logger);
-      }
-    });
+  app.on(EVENT.POST_UPDATED, ({ req, post, topic }) => {
+    if (topic && topic.reference.toLowerCase() === 'project') {
+      createEvent(BUS_API_EVENT.POST_UPDATED, {
+        topicId: topic.id,
+        postId: post.id,
+        userId: req.authUser.userId,
+        projectId: topic.referenceId,
+        initiatorUserId: req.authUser.userId,
+      }, logger);
+    }
   });
 };

@@ -1,46 +1,66 @@
 'user strict';
 
+
 /**
- * Represents a mapping between a Discourse topic and a
- * topcoder entity such as project, challenge, or submission
+ * Represents a topic and a topcoder entity such as project, challenge, or submission
  */
 /**
- * Represents a mapping between a Discourse topic and a
- * topcoder entity such as project, challenge, or submission
+ * Represents a topic and a topcoder entity such as project, challenge, or submission
  * @param  {Object} Sequelize sequelize object
  * @param  {Object} DataTypes sequelize data types
  * @return {void}
  */
 module.exports = (Sequelize, DataTypes) => {
-    // Topics represents the data that links topcoder entities with discourse topics
-  const Topic = Sequelize.define('topics', {
+  // Topics represents the data that links topcoder entities with topics
+  const Topic = Sequelize.define('topics_backup', {
         // The primary key
     id: {
       type: DataTypes.BIGINT,
       primaryKey: true,
       autoIncrement: true,
     },
-        // The name of the reference, such as challenge, project, or submission
+    // The name of the reference, such as challenge, project, or submission
     reference: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-        // The identfier of the reference
+    // The identfier of the reference
     referenceId: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-        // The id of the Discourse topic
+    // The id of the Discourse topic
+    // DEPRICATED, only exists for backward compatability
     discourseTopicId: {
       type: DataTypes.BIGINT,
-      allowNull: false,
-      unique: true,
+      allowNull: true,
     },
-        // A tag for filtering
+    // A tag for filtering
     tag: {
       type: DataTypes.STRING,
     },
-        // When was this record created
+    title: {
+      type: DataTypes.STRING,
+    },
+    highestPostNumber: {
+      type: DataTypes.INTEGER,
+    },
+    closed: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    hidden: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    archived: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    hiddenReason: {
+      type: DataTypes.STRING,
+    },
+    // When was this record created
     createdAt: {
       type: DataTypes.DATE,
     },
@@ -56,7 +76,49 @@ module.exports = (Sequelize, DataTypes) => {
     updatedBy: {
       type: DataTypes.STRING,
     },
+    // When was this record deleted
+    deletedAt: {
+      type: DataTypes.DATE,
+    },
+    // Who deleted this record
+    deletedBy: {
+      type: DataTypes.STRING,
+    },
+  }, {
+    freezeTableName : true,
   });
+
+  Topic.associate = (models) => {
+    Topic.hasMany(models.posts_backup, { as: 'posts', foreignKey: 'topicId' });
+  };
+
+  Topic.findTopics = (models, filters, numberOfPosts = 3, fetchedDeleted = false) => {
+    return Topic.findAll({
+      where: Object.assign({}, filters, { deletedAt : { [Sequelize.Op.eq]: null } }),
+      raw: false,
+      include: [{
+        model: models.posts_backup,
+        as: "posts",
+        order: [["postNumber", "desc"]],
+        where: { deletedAt : { [Sequelize.Op.eq]: null } },
+        limit: numberOfPosts
+      }] 
+    })
+  }
+
+  Topic.findTopic = (models, topicId, numberOfPosts = 3, fetchedDeleted = false) => {
+    return Topic.findOne({
+      where: { id: topicId, deletedAt : { [Sequelize.Op.eq]: null } },
+      raw: false,
+      include: [{
+        model: models.posts_backup,
+        as: "posts",
+        order: [["postNumber", "desc"]],
+        where: { deletedAt : { [Sequelize.Op.eq]: null } },
+        limit: numberOfPosts
+      }] 
+    })
+  }
 
   return Topic;
 };

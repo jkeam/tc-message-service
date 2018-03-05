@@ -1,7 +1,7 @@
 
+import HelperService from '../../services/helper';
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
-const Discourse = require('../../services/discourse');
 const errors = require('common-errors');
 const Joi = require('joi');
 const Promise = require('bluebird');
@@ -14,53 +14,39 @@ const { EVENT } = require('../../constants');
  */
 module.exports = db => (req, resp, next) => {
   const logger = req.log;
-  const discourseClient = Discourse(logger);
+  const helper = HelperService(logger, db);
 
   // Validate request parameters
   Joi.assert(req.params, {
     topicId: Joi.number().required(),
   });
   const topicId = req.params.topicId;
-  const username = req.authUser.userId.toString();
-  const promises = [
-    db.topics.findOne({ where: { discourseTopicId: topicId } }),
-    discourseClient.getTopics([topicId], username).then((topics) => {
-      logger.info('got topics: ', topics);
-      if (topics.length < 1) {
-        return null;
+  const userId = req.authUser.userId.toString();
+  return db.topics_backup.findById(topicId)
+  .then((topic) => {
+    if (!topic) {
+      const err = new errors.HttpStatusError(404, 'Topic does not exist');
+      return next(err);
+    }
+    return helper.callReferenceEndpoint(req.authToken, req.id, topic.reference, topic.referenceId)
+    .then((hasAccessResp) => {
+      const hasAccess = helper.userHasAccessToEntity(userId, hasAccessResp, topic.reference);
+      if (!hasAccess && !helper.isAdmin(req)) {
+        throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
-      return topics[0];
-    }),
-  ];
-  return Promise.all(promises)
-  .then((response) => {
-    const dbTopic = response[0];
-    const topic = response[1];
-    if (!dbTopic && !topic) {
-      throw new errors.HttpStatusError(404, 'Topic does not exist');
-    }
-    if (topic && topic.posts.length > 1) {
-      throw new errors.HttpStatusError(422, 'Topic has comments and can not be deleted');
-    }
-    const deletePromises = [];
-    if (topic) {
-      deletePromises.push(discourseClient.deleteTopic(username, topicId));
-    } else {
-      logger.warn('Topic does not exist in discourse, maybe already deleted');
-    }
-    if (dbTopic) {
-      deletePromises.push(dbTopic.destroy());
-    } else {
-      logger.warn('Topic does not exist in postgresql, maybe already deleted');
-    }
-
-    req.app.emit(EVENT.TOPIC_DELETED, { topic: dbTopic, req });
-
-    return Promise.all(deletePromises);
-  })
-  .then(() => {
-    logger.info('Topic deleted');
-    resp.status(200).send(util.wrapResponse(req.id));
+      return db.posts_backup.getPostsCount(topic.id)
+      .then((totalPosts) => {
+        if (totalPosts > 1) {
+          throw new errors.HttpStatusError(422, 'Topic has comments and can not be deleted');
+        }
+        topic.deletedAt = new Date();
+        topic.deletedBy = userId;
+        topic.save().then(() => {
+          req.app.emit(EVENT.TOPIC_DELETED, { topic, req });
+          resp.status(200).send(util.wrapResponse(req.id));
+        });
+      });
+    });
   })
   .catch((error) => {
     logger.error(error);

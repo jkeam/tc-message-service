@@ -8,6 +8,7 @@ const errors = require('common-errors');
 const util = require('../util');
 const Promise = require('bluebird');
 const { USER_ROLE } = require('../constants');
+const { REFERENCE_LOOKUPS } = require('../constants');
 
 /**
  * Returns helper service containing common functions used in route handlers
@@ -83,7 +84,7 @@ module.exports = (logger, db, _discourseClient = null) => {
    * @param {String} referenceId identifier of the reference record
    * @return {Promise} promise
    */
-  function userHasAccessToEntity(authToken, requestId, reference, referenceId) {
+  function callReferenceEndpoint(authToken, requestId, reference, referenceId) {
     return db.referenceLookups.findOne({ where: { reference } })
     .then((result) => {
       if (!result) {
@@ -101,7 +102,7 @@ module.exports = (logger, db, _discourseClient = null) => {
         },
         timeout: config.get('referenceLookupTimeout'),
       }).then((response) => {
-        logger.debug(response.data);
+        // logger.debug(response.data);
         if (response.data && response.data.result &&
           response.data.result.status === 200 && response.data.result.content) {
           return [true, response.data.result.content];
@@ -112,6 +113,19 @@ module.exports = (logger, db, _discourseClient = null) => {
         return [false, null, error];
       });
     });
+  }
+
+  function userHasAccessToEntity(userId, hasAccessResp, reference) {
+    logger.info('Checking if user has access to project');
+    let hasAccess = hasAccessResp[0];
+    if (reference.toLowerCase() === REFERENCE_LOOKUPS.PROJECT) {
+      const projectMembers = _.get(hasAccessResp[1], 'members', []);
+        // get users list
+      const isMember = _.filter(projectMembers, member => member.userId.toString() === userId).length > 0;
+      logger.debug(isMember, 'isMember');
+      return isMember;
+    }
+    return false;
   }
 
   /**
@@ -244,6 +258,7 @@ module.exports = (logger, db, _discourseClient = null) => {
     lookupUserHandles,
     lookupUserFromId,
     userHasAccessToEntity,
+    callReferenceEndpoint,
     getUserOrProvision,
     checkAccessAndProvision,
     getContentFromMatch,

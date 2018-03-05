@@ -1,41 +1,66 @@
 import HelperService from '../../services/helper';
 
+const _ = require('lodash');
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
-const Discourse = require('../../services/discourse');
 const errors = require('common-errors');
+const Sequelize = require('sequelize');
 const Adapter = require('../../services/adapter');
+const { REFERENCE_LOOKUPS } = require('../../constants');
 
+const Op = Sequelize.Op;
 /**
- * Get posts from Discourse
+ * Get posts for the given topic
  * @param {Object} db sequelize db with models loaded
  * @return {Object} response
  */
 module.exports = db => (req, resp, next) => {
   const logger = req.log;
-  const discourseClient = Discourse(logger);
   const helper = HelperService(logger, db);
   const adapter = new Adapter(logger, db);
 
-  if (!req.query.postIds) {
-    return resp.status(400).send('Post ids parameter is required');
-  }
+  const topicId = req.params.topicId;
+  // TODO validation for topic id
+  const postIds = req.query.postIds ? req.query.postIds.split(',') : null;
 
-  const postIds = req.query.postIds.split(',');
+  let userId = req.authUser.userId.toString();
+  return db.topics_backup.findById(topicId)
+  .then((topic) => {
+    return helper.callReferenceEndpoint(req.authToken, req.id, topic.reference, topic.referenceId)
+    .then((hasAccessResp) => {
+      const hasAccess = helper.userHasAccessToEntity(userId, hasAccessResp, topic.reference);
+      if (!hasAccess && !helper.isAdmin(req)) {
+        throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
+      }
+      // if user does not have access but if user is admin or manager
+      // - they can view topics without being a part of the team
+      const usingAdminAccess = !hasAccess && helper.isAdmin(req);
 
-  // Get the posts as the system user if the logged is user is an admin
-  let effectiveUserId = req.authUser.userId.toString();
-  if (helper.isAdmin(req)) {
-    effectiveUserId = config.get('discourseSystemUsername');
-  }
-
-  return discourseClient.getPosts(effectiveUserId, req.params.topicId, postIds)
-      .then((response) => {
-        logger.info('Fetched post from discourse', response.data);
-        return adapter.adaptPosts(response.data);
+      let filter = {};
+      filter.topicId = req.params.topicId;
+      if(postIds) {
+        filter['id'] = { [Op.in] : postIds };
+      }
+      console.log(filter);
+      return db.posts_backup.findPosts(filter)
+      .then(posts => {
+        db.post_user_stats_backup.findPostsWithoutUserAction(db, logger, posts, "22688955", 'READ')
+        .then((unreadPosts) => {
+          console.log(unreadPosts, 'unreadPosts');
+          db.posts_backup.increaseReadCount(db, logger, unreadPosts, userId);
+        });
+        // marks each post a read for the request user, however, ideally they should be marked
+        // as read only after user has actually seen them in UI because UI might not be showing all posts
+        // at once
+        db.post_user_stats_backup.updateUserStats(db, logger, posts, userId, 'READ');
+        // posts.map(post => db.posts_backup.increaseReadCount(db, logger, post, userId));
+        return resp.status(200).send(util.wrapResponse(req.id, posts))
       })
-      .then(post => resp.status(200).send(util.wrapResponse(req.id, post))).catch((error) => {
+      .catch((error) => {
         logger.error(error);
-        next(new errors.HttpStatusError(error.response.status, 'Error fetching post'));
+        next(new errors.HttpStatusError(error, 'Error fetching post'));
       });
+    });
+  });
+      
 };

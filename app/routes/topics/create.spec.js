@@ -178,7 +178,7 @@ describe('POST /v4/topics ', () => {
   it('should return 500 response if 500 for topic creations and errors to get and create discourse user', (done) => {
     // get stub for axios
     const stub = sandbox.stub(axios, 'get');
-    // resolves call to reference endpoint in helper.userHasAccessToEntity
+    // resolves call to reference endpoint in helper.callReferenceEndpoint
     stub.withArgs('http://reftest/1').resolves({
       data: { result: { status: 200, content: { members: [{ userId: adminUser.userId }] } } },
     });
@@ -227,7 +227,7 @@ describe('POST /v4/topics ', () => {
   it('should return 500 response if 422 for topic creations and errors to get and create discourse user', (done) => {
     // get stub for axios
     const stub = sandbox.stub(axios, 'get');
-    // resolves call to reference endpoint in helper.userHasAccessToEntity
+    // resolves call to reference endpoint in helper.callReferenceEndpoint
     stub.withArgs('http://reftest/1').resolves({
       data: { result: { status: 200, content: { members: [{ userId: adminUser.userId }] } } },
     });
@@ -276,7 +276,7 @@ describe('POST /v4/topics ', () => {
   it('should return 500 response if 403 for topic creations and errors to get and create discourse user', (done) => {
     // get stub for axios
     const stub = sandbox.stub(axios, 'get');
-    // resolves call to reference endpoint in helper.userHasAccessToEntity
+    // resolves call to reference endpoint in helper.callReferenceEndpoint
     stub.withArgs('http://reftest/1').resolves({
       data: { result: { status: 200, content: { members: [{ userId: adminUser.userId }] } } },
     });
@@ -328,7 +328,7 @@ describe('POST /v4/topics ', () => {
   //   topicData.rows[0][0] = 100;
   //   // get stub for axios
   //   const stub = sandbox.stub(axios, 'get');
-  //   // resolves call to reference endpoint in helper.userHasAccessToEntity
+  //   // resolves call to reference endpoint in helper.callReferenceEndpoint
   //   stub.withArgs('http://reftest/1').resolves({
   //     data: { result: { status: 200, content: [{ userId: adminUser.userId }] } },
   //   });

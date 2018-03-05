@@ -17,7 +17,7 @@ const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername');
 module.exports = db =>
   /**
    * Sync project users with discourse topic users.
-   *  - Verify if the user has access to the project (userHasAccessToEntity function), if the user doesn't have access return 403;
+   *  - Verify if the user has access to the project (callReferenceEndpoint function), if the user doesn't have access return 403;
    *  - Get project users;
    *  - Get topic users;
    *  - Compare project users and topic users to add or remove users to the topic as necessary.
@@ -48,7 +48,7 @@ module.exports = db =>
       for (let i = 1; ; ++i) {
         try {
           // Verify access
-          const hasAccessResp = yield helper.userHasAccessToEntity(req.authToken, req.id, reference, referenceId);
+          const hasAccessResp = yield helper.callReferenceEndpoint(req.authToken, req.id, reference, referenceId);
           const hasAccess = hasAccessResp[0];
           const hasAccessRespErr = hasAccessResp[2];
 

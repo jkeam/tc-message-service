@@ -65,44 +65,36 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
     return topics && topics.length > 0 ? topics[0] : topic;
   };
 
-  this.adaptTopics = function a(input) {
-    let { topics: discourseTopics } = input;
-    const pgTopics = input.dbTopics;
-    if (!(discourseTopics instanceof Array)) {
-      discourseTopics = [discourseTopics];
-    }
+  this.adaptTopics = function a(dbTopics) {
 
-    const topics = _.map(discourseTopics, (discourseTopic) => {
-      let userId = discourseTopic.user_id;
+    const topics = _.map(dbTopics, (dbTopic) => {
+      let userId = dbTopic.createdBy;
       userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId, 10) : userId;
 
-      const pgTopic = _.find(pgTopics, pt => pt.discourseTopicId === discourseTopic.id);
       const topic = {
-        id: discourseTopic.id,
-        dbId: pgTopic ? pgTopic.id : undefined,
-        reference: pgTopic ? pgTopic.reference : undefined,
-        referenceId: pgTopic ? pgTopic.referenceId : undefined,
-        date: discourseTopic.created_at,
-        updatedDate: discourseTopic.updated_at,
-        lastActivityAt: discourseTopic.last_posted_at,
-        title: discourseTopic.title,
-        read: discourseTopic.posts[0].read,
+        id: dbTopic.id,
+        reference: dbTopic.reference,
+        referenceId: dbTopic.referenceId,
+        date: dbTopic.createdAt,
+        updatedDate: dbTopic.updatedAt,
+        lastActivityAt: dbTopic.updatedAt,
+        title: dbTopic.title,
+        read: dbTopic.posts[0].read,
         userId,
-        tag: discourseTopic.tag,
-        totalPosts: discourseTopic.posts.length,
-        retrievedPosts: discourseTopic.posts.length,
-        postIds: _.map(discourseTopic.posts, p => p.id),
+        totalPosts: dbTopic.highestPostNumber,//dbTopic.posts.length,
+        // retrievedPosts: discourseTopic.posts.length,
+        // postIds: _.map(discourseTopic.posts, p => p.id),
         posts: [],
       };
-      _.each(discourseTopic.posts, (discoursePost) => {
+      _.each(dbTopic.posts, (dbPost) => {
         topic.posts.push({
-          id: discoursePost.id,
-          date: discoursePost.created_at,
-          updatedDate: discoursePost.updated_at,
-          userId: discoursePost.user_id,
-          read: discoursePost.read,
-          body: discoursePost.cooked,
-          rawContent: discoursePost.raw,
+          id: dbPost.id,
+          date: dbPost.createdAt,
+          updatedDate: dbPost.updatedAt,
+          userId: dbPost.createdBy,
+          read: dbPost.read,
+          body: dbPost.raw,
+          rawContent: dbPost.raw,
           type: 'post',
         });
       });

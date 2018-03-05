@@ -151,7 +151,7 @@ describe('GET /v4/topics ', () => {
       data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
     });
 
-    // resolves call (with 403) to reference endpoint in helper.userHasAccessToEntity
+    // resolves call (with 403) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 403 } },
     });
@@ -195,7 +195,7 @@ describe('GET /v4/topics ', () => {
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
     .resolves({ data: topicData });
 
-    // resolves call (with 403) to reference endpoint in helper.userHasAccessToEntity
+    // resolves call (with 403) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').rejects({
       message: 'ERROR_IN_ACCESSING_REF_ENDPOINT',
     });
@@ -239,7 +239,7 @@ describe('GET /v4/topics ', () => {
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
     .resolves({ data: topicData });
 
-    // resolves call (with 200) to reference endpoint in helper.userHasAccessToEntity
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     // but members list does not the calling user's id
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
@@ -283,7 +283,7 @@ describe('GET /v4/topics ', () => {
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
     .resolves({ data: topicData });
 
-    // rejects to reference endpoint in helper.userHasAccessToEntity
+    // rejects to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 403 } },
     });
@@ -329,7 +329,7 @@ describe('GET /v4/topics ', () => {
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
     .resolves({ data: topicData });
 
-    // rejects to reference endpoint in helper.userHasAccessToEntity
+    // rejects to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').rejects({
       message: 'ERROR_IN_ACCESSING_REF_ENDPOINT',
     });
@@ -374,7 +374,7 @@ describe('GET /v4/topics ', () => {
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
     .resolves({ data: topicData });
 
-    // resolves call (with 200) to reference endpoint in helper.userHasAccessToEntity
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     // but members list does not the calling user's id
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
@@ -422,7 +422,7 @@ describe('GET /v4/topics ', () => {
     postStub.withArgs(sinon.match('admin/plugins/explorer/queries/.*'))
     .resolves({ data: topicData });
 
-    // resolves call (with 200) to reference endpoint in helper.userHasAccessToEntity
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
