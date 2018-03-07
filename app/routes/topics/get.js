@@ -27,15 +27,16 @@ module.exports = db =>
     const helper = HelperService(logger, db);
     const adapter = new Adapter(logger, db);
     const topicId = req.params.topicId;
+    let userId = req.authUser.userId.toString();
 
     // Get topic from the Postgres database
-    return db.topics_backup.findTopic(db, topicId, 4)
+    return db.topics_backup.findTopic(db, adapter, { topicId, numberOfPosts: -1, reqUserId: userId })
       .then((dbTopic) => {
+        // console.log(dbTopic, 'dbTopic');
         if (!dbTopic) {
           const err = new errors.HttpStatusError(404, 'Topic does not exist');
           return next(err);
         }
-        let userId = req.authUser.userId.toString();
         
         return helper.callReferenceEndpoint(req.authToken, req.id, dbTopic.reference, dbTopic.referenceId)
         .then((hasAccessResp) => {
@@ -46,7 +47,7 @@ module.exports = db =>
 
           logger.info('returning topic');
           // console.log(dbTopic.getPosts(), 'posts');
-          // return adapter.adaptTopic({ topic, dbTopic });
+          // return adapter.adaptTopic({ dbTopic });
           return dbTopic;
         })
         .then(result => resp.status(200).send(util.wrapResponse(req.id, result)))

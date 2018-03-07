@@ -22,10 +22,18 @@ module.exports = db => (req, resp, next) => {
   const topicId = req.params.topicId;
   // TODO validation for topic id
   const postIds = req.query.postIds ? req.query.postIds.split(',') : null;
+  
+  if (!postIds) {
+    return next(new errors.HttpStatusError(400, 'postIds required'));
+  }
 
   let userId = req.authUser.userId.toString();
   return db.topics_backup.findById(topicId)
   .then((topic) => {
+    if (!topic) {
+      const err = new errors.HttpStatusError(404, 'Topic does not exist');
+      return next(err);
+    }
     return helper.callReferenceEndpoint(req.authToken, req.id, topic.reference, topic.referenceId)
     .then((hasAccessResp) => {
       const hasAccess = helper.userHasAccessToEntity(userId, hasAccessResp, topic.reference);
@@ -41,15 +49,16 @@ module.exports = db => (req, resp, next) => {
       if(postIds) {
         filter['id'] = { [Op.in] : postIds };
       }
-      console.log(filter);
-      return db.posts_backup.findPosts(filter)
+      return db.posts_backup.findPosts(adapter, filter)
       .then(posts => {
-        // marks each post a read for the request user, however, ideally they should be marked
-        // as read only after user has actually seen them in UI because UI might not be showing all posts
-        // at once
-        db.post_user_stats_backup.updateUserStats(db, logger, posts, userId, 'READ');
+        if (posts && posts.length > 0) {
+          // marks each post a read for the request user, however, ideally they should be marked
+          // as read only after user has actually seen them in UI because UI might not be showing all posts
+          // at once
+          db.post_user_stats_backup.updateUserStats(db, logger, posts, userId, 'READ');
+        }
         // posts.map(post => db.posts_backup.increaseReadCount(db, logger, post, userId));
-        return resp.status(200).send(util.wrapResponse(req.id, posts))
+        return resp.status(200).send(util.wrapResponse(req.id, (posts ? posts : [])));
       })
       .catch((error) => {
         logger.error(error);

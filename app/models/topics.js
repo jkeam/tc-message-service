@@ -92,31 +92,61 @@ module.exports = (Sequelize, DataTypes) => {
     Topic.hasMany(models.posts_backup, { as: 'posts', foreignKey: 'topicId' });
   };
 
-  Topic.findTopics = (models, filters, numberOfPosts = 3, fetchedDeleted = false) => {
+  Topic.findTopics = (models, adapter, { filters, numberOfPosts = 4, fetchedDeleted = false, raw = false, reqUserId}) => {
     return Topic.findAll({
       where: Object.assign({}, filters, { deletedAt : { [Sequelize.Op.eq]: null } }),
-      raw: false,
+      raw,
       include: [{
         model: models.posts_backup,
         as: "posts",
         order: [["postNumber", "desc"]],
         where: { deletedAt : { [Sequelize.Op.eq]: null } },
-        limit: numberOfPosts
+        limit: numberOfPosts !== -1 ? numberOfPosts : null
       }] 
-    })
+    }).
+    then((topics) => {
+      const topicIds = topics.map(t => t.id);
+      return models.posts_backup.getPostsCount(topicIds)
+      .then((topicsPostsCount) => {
+        // console.log(topicsPostsCount, 'topicsPostsCount');
+        return adapter.adaptTopics({
+          dbTopics : topics,
+          topicsPostsCount: topicsPostsCount.map(tpc => tpc.dataValues),
+          reqUserId
+        })
+      })
+    });
   }
 
-  Topic.findTopic = (models, topicId, numberOfPosts = 3, fetchedDeleted = false) => {
+  Topic.findTopic = (models, adapter, { topicId, numberOfPosts = 4, fetchedDeleted = false, raw = false, reqUserId}) => {
     return Topic.findOne({
       where: { id: topicId, deletedAt : { [Sequelize.Op.eq]: null } },
-      raw: false,
+      raw,
       include: [{
         model: models.posts_backup,
         as: "posts",
         order: [["postNumber", "desc"]],
         where: { deletedAt : { [Sequelize.Op.eq]: null } },
-        limit: numberOfPosts
+        limit: numberOfPosts !== -1 ? numberOfPosts : null,
+        include: [{
+          model: models.post_user_stats_backup,
+          as: "userStats"
+        }]
       }] 
+    })
+    .then((topic) => {
+      if (!topic) return;
+      // console.log(topic, 'topic');
+      return models.posts_backup.getTopicPostsCount(topicId)
+      .then((totalPosts) => {
+        // console.log('totalPosts', totalPosts);
+        // topic.totalPosts = totalPosts;
+        return adapter.adaptTopic({
+          dbTopic: topic,
+          topicsPostsCount : [{ topicId: topic.id, totalPosts}],
+          reqUserId
+        });
+      })
     })
   }
 

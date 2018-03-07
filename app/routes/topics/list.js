@@ -62,11 +62,12 @@ module.exports = db =>
       // - they can view topics without being a part of the team
       const usingAdminAccess = !hasAccess && helper.isAdmin(req);
       // Get topics from the Postgres database
-      return db.topics_backup.findTopics(db, filter, 4)
+      return db.topics_backup.findTopics(db, adapter, { filters : filter, numberOfPosts : -1, reqUserId: userId })
       .then((dbTopics) => {
-        if (dbTopics.length === 0) {
+        if (!dbTopics || dbTopics.length === 0) {
           // returning empty list
-          return resp.status(200).send(util.wrapResponse(req.id, []));
+          // return resp.status(200).send(util.wrapResponse(req.id, []));
+          return [];
         }
 
         if (!usingAdminAccess) {
@@ -81,7 +82,7 @@ module.exports = db =>
             logger.error('error marking topic posts read', error);
           });
         }
-        logger.debug('adapting topics', dbTopics);
+        // logger.debug('adapting topics', dbTopics);
         const adaptedTopics = dbTopics;
         // const adaptedTopics = adapter.adaptTopics({ topics : dbTopics });
         return adaptedTopics;

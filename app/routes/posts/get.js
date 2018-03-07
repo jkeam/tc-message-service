@@ -32,7 +32,7 @@ module.exports = db => (req, resp, next) => {
       if (!hasAccess && !helper.isAdmin(req)) {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
-      return db.posts_backup.findPost(topicId, postId)
+      return db.posts_backup.findPost(adapter, topicId, postId)
       .then((post) => {
         if (!post) {
           throw new errors.HttpStatusError(404, 'Post does not exist');

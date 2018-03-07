@@ -34,7 +34,7 @@ module.exports = db => (req, resp, next) => {
       if (!hasAccess && !helper.isAdmin(req)) {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
-      return db.posts_backup.getPostsCount(topic.id)
+      return db.posts_backup.getTopicPostsCount(topic.id)
       .then((totalPosts) => {
         if (totalPosts > 1) {
           throw new errors.HttpStatusError(422, 'Topic has comments and can not be deleted');

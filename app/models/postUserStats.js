@@ -24,7 +24,7 @@ module.exports = (Sequelize, DataTypes) => {
       primaryKey: true,
     },
     userIds: {
-      type: DataTypes.Array(DataTypes.STRING),
+      type: DataTypes.ARRAY(DataTypes.STRING),
       //type: DataTypes.JSONB, // [{id: 22688955, lastPerformed: 1519819061, channel: 'API/Slack/Email', method: 'list/push/click'}]
     },
     // topic id
@@ -32,9 +32,9 @@ module.exports = (Sequelize, DataTypes) => {
       type: DataTypes.BIGINT,
       allowNull: false,
     },
-    postNumber: {
-      type: DataTypes.INTEGER,
-    },
+    // postNumber: {
+    //   type: DataTypes.INTEGER,
+    // },
   }, {
     freezeTableName : true,
     timestamps: false,

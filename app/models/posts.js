@@ -75,21 +75,41 @@ module.exports = (Sequelize, DataTypes) => {
     freezeTableName : true
   });
 
-  Post.getPostsCount = (topicId, countDeleted = false) => {
+  Post.associate = (models) => {
+    Post.hasMany(models.post_user_stats_backup, { as: 'userStats', foreignKey: 'postId' });
+  };
+
+  Post.getTopicPostsCount = (topicId, countDeleted = false) => {
     return Post.count({
       where : { topicId: topicId, deletedAt : { [Sequelize.Op.eq]: null } }
     });
   }
 
-  Post.findPosts = (filters, fetchDeleted = false) => {
+  Post.getPostsCount = (topicIds, countDeleted = false) => {
     return Post.findAll({
-      where: Object.assign({}, filters, { deletedAt : { [Sequelize.Op.eq]: null } })
+      where : { topicId: { [Sequelize.Op.in]: topicIds }, deletedAt : { [Sequelize.Op.eq]: null } },
+      attributes: [ 'topicId', [Sequelize.fn('COUNT', Sequelize.col('id')), 'totalPosts'] ],
+      group: ['topicId']
     });
   }
 
-  Post.findPost = (topicId, postId, fetchDeleted = false) => {
+  Post.findPosts = (adapter, filters, fetchDeleted = false) => {
+    return Post.findAll({
+      where: Object.assign({}, filters, { deletedAt : { [Sequelize.Op.eq]: null } })
+    })
+    .then((posts) => {
+      if (!posts || posts.length === 0) return;
+      return adapter.adaptPosts(posts);
+    });
+  }
+
+  Post.findPost = (adapter, topicId, postId, fetchDeleted = false) => {
     return Post.findOne({
       where: { id: postId, topicId: topicId, deletedAt : { [Sequelize.Op.eq]: null } }
+    }).
+    then((post) => {
+      if (!post) return;
+      return adapter.adaptPost(post);
     });
   }
 

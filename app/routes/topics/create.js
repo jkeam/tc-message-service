@@ -81,7 +81,7 @@ module.exports = db =>
           return post.save().then((savedPost) => {
             logger.info('post saved in Postgres');
             req.app.emit(EVENT.TOPIC_CREATED, { topic: savedTopic, req });
-            return resp.status(200).send(util.wrapResponse(req.id, savedTopic));
+            return resp.status(200).send(util.wrapResponse(req.id, adapter.adaptTopic(savedTopic)));
           })
         });
       }).catch((error) => {
