@@ -1,12 +1,11 @@
 import HelperService from '../../services/helper';
 
-const _ = require('lodash');
+// const _ = require('lodash');
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
 const errors = require('common-errors');
 const Sequelize = require('sequelize');
 const Adapter = require('../../services/adapter');
-const { REFERENCE_LOOKUPS } = require('../../constants');
 
 const Op = Sequelize.Op;
 /**
@@ -22,12 +21,12 @@ module.exports = db => (req, resp, next) => {
   const topicId = req.params.topicId;
   // TODO validation for topic id
   const postIds = req.query.postIds ? req.query.postIds.split(',') : null;
-  
+
   if (!postIds) {
     return next(new errors.HttpStatusError(400, 'postIds required'));
   }
 
-  let userId = req.authUser.userId.toString();
+  const userId = req.authUser.userId.toString();
   return db.topics_backup.findById(topicId)
   .then((topic) => {
     if (!topic) {
@@ -40,17 +39,14 @@ module.exports = db => (req, resp, next) => {
       if (!hasAccess && !helper.isAdmin(req)) {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
-      // if user does not have access but if user is admin or manager
-      // - they can view topics without being a part of the team
-      const usingAdminAccess = !hasAccess && helper.isAdmin(req);
 
-      let filter = {};
+      const filter = {};
       filter.topicId = req.params.topicId;
-      if(postIds) {
-        filter['id'] = { [Op.in] : postIds };
+      if (postIds) {
+        filter.id = { [Op.in]: postIds };
       }
       return db.posts_backup.findPosts(adapter, filter)
-      .then(posts => {
+      .then((posts) => {
         if (posts && posts.length > 0) {
           // marks each post a read for the request user, however, ideally they should be marked
           // as read only after user has actually seen them in UI because UI might not be showing all posts
@@ -58,7 +54,7 @@ module.exports = db => (req, resp, next) => {
           db.post_user_stats_backup.updateUserStats(db, logger, posts, userId, 'READ');
         }
         // posts.map(post => db.posts_backup.increaseReadCount(db, logger, post, userId));
-        return resp.status(200).send(util.wrapResponse(req.id, (posts ? posts : [])));
+        return resp.status(200).send(util.wrapResponse(req.id, (posts || [])));
       })
       .catch((error) => {
         logger.error(error);
@@ -66,5 +62,4 @@ module.exports = db => (req, resp, next) => {
       });
     });
   });
-      
 };

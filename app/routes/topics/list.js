@@ -7,7 +7,6 @@ const Promise = require('bluebird');
 const errors = require('common-errors');
 const Joi = require('joi');
 const Adapter = require('../../services/adapter');
-const { REFERENCE_LOOKUPS } = require('../../constants');
 
 
 /**
@@ -51,37 +50,31 @@ module.exports = db =>
       return next(new errors.HttpStatusError(400, 'Please provide reference and referenceId filter parameters'));
     }
 
-    let userId = req.authUser.userId.toString();
+    const userId = req.authUser.userId.toString();
     return helper.callReferenceEndpoint(req.authToken, req.id, filter.reference, filter.referenceId)
     .then((hasAccessResp) => {
       const hasAccess = helper.userHasAccessToEntity(userId, hasAccessResp, filter.reference);
       if (!hasAccess && !helper.isAdmin(req)) {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
-      // if user does not have access but if user is admin or manager, use discourse system user to make API calls
-      // - they can view topics without being a part of the team
-      const usingAdminAccess = !hasAccess && helper.isAdmin(req);
       // Get topics from the Postgres database
-      return db.topics_backup.findTopics(db, adapter, { filters : filter, numberOfPosts : -1, reqUserId: userId })
+      return db.topics_backup.findTopics(db, adapter, { filters: filter, numberOfPosts: -1, reqUserId: userId })
       .then((dbTopics) => {
         if (!dbTopics || dbTopics.length === 0) {
           // returning empty list
-          // return resp.status(200).send(util.wrapResponse(req.id, []));
           return [];
         }
 
-        if (!usingAdminAccess) {
-          // Mark all unread topics as read.
-          Promise.all(dbTopics.filter(topic => !topic.read).map((topic) => {
-            if (topic.posts && topic.posts.length > 0) {
-              const postIds = topic.posts.map(post => post.post_number);
-              // TODO mark posts as read in async call
-            }
-            return Promise.resolve();
-          })).catch((error) => {
-            logger.error('error marking topic posts read', error);
-          });
-        }
+        // Mark all unread topics as read.
+        Promise.all(dbTopics.filter(topic => !topic.read).map((topic) => {
+          if (topic.posts && topic.posts.length > 0) {
+            // marks first post as read for the request user
+            db.post_user_stats_backup.updateUserStats(db, logger, [topic.posts[0]], userId, 'READ');
+          }
+          return Promise.resolve();
+        })).catch((error) => {
+          logger.error('error marking topic posts read', error);
+        });
         // logger.debug('adapting topics', dbTopics);
         const adaptedTopics = dbTopics;
         // const adaptedTopics = adapter.adaptTopics({ topics : dbTopics });

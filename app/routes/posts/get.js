@@ -19,7 +19,7 @@ module.exports = db => (req, resp, next) => {
   const postId = req.params.postId;
 
   // Get the posts as the system user if the logged is user is an admin
-  let userId = req.authUser.userId.toString();
+  const userId = req.authUser.userId.toString();
   return db.topics_backup.findOne({ where: { id: topicId }, raw: true })
   .then((topic) => {
     if (!topic) {
@@ -51,7 +51,7 @@ module.exports = db => (req, resp, next) => {
         if (error.statusCode) {
           return next(error);
         }
-        return next(new errors.HttpStatusError(_.get(error, "response.status", 500), 'Error fetching post'));
+        return next(new errors.HttpStatusError(_.get(error, 'response.status', 500), 'Error fetching post'));
       });
     });
   });

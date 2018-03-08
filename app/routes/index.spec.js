@@ -4,7 +4,7 @@ const request = require('supertest');
 
 const axios = require('axios');
 const sinon = require('sinon');
-const config = require('config');
+// const config = require('config');
 
 describe('index', () => {
   const server = require('../app'); // eslint-disable-line

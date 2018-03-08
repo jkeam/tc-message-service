@@ -1,5 +1,6 @@
 
 import HelperService from '../../services/helper';
+
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
 const errors = require('common-errors');
@@ -24,13 +25,13 @@ module.exports = db => (req, resp, next) => {
     content: Joi.string().required(),
   });
   const topicId = req.params.topicId;
-  const postId  = req.body.postId;
-  const title   = req.body.title;
+  const postId = req.body.postId;
+  const title = req.body.title;
   const content = req.body.content;
-  let userId    = req.authUser.userId.toString();
+  const userId = req.authUser.userId.toString();
 
   return db.topics_backup.findById(topicId)
-  .then((topic) => {
+  .then((topic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["topic"] }] */
     if (!topic) {
       const err = new errors.HttpStatusError(404, 'Topic does not exist');
       return next(err);
@@ -41,16 +42,17 @@ module.exports = db => (req, resp, next) => {
       if (!hasAccess && !helper.isAdmin(req)) {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
+      /* eslint-disable */
       topic.title = title;
       topic.updatedBy = userId;
-      // topic.updatedAt = new Date();
+      /* eslint-enable */
       const promises = [
         topic.save().then((updatedTopic) => {
           logger.info('Topic saved', updatedTopic);
-          return updatedTopic;
+          return adapter.adaptTopic({ dbTopic: updatedTopic });
         }),
         db.posts_backup.findById(postId)
-        .then(post => {
+        .then((post) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["post"] }] */
           post.raw = content;
           post.updatedBy = userId;
           // post.updatedAt = new Date();
@@ -58,7 +60,7 @@ module.exports = db => (req, resp, next) => {
         })
         .then((updatedPost) => {
           logger.info('Topic Post saved', updatedPost);
-          return updatedPost;
+          return adapter.adaptPost(updatedPost);
         }),
       ];
       return Promise.all(promises)

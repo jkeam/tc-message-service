@@ -59,13 +59,13 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
     return convertPost(input);
   };
 
-  this.adaptTopic = function a({ dbTopic, topicsPostsCount, reqUserId }) {
-    // const  = input;
+  this.adaptTopic = function a({ dbTopic, totalPosts, reqUserId }) {
+    const topicsPostsCount = [{ topicId: dbTopic.id, totalPosts }];
     const topics = this.adaptTopics({ dbTopics: [dbTopic], topicsPostsCount, reqUserId });
-    return topics && topics.length > 0 ? topics[0] : topic;
+    return topics && topics.length > 0 ? topics[0] : dbTopic;
   };
 
-  this.adaptTopics = function a({dbTopics, topicsPostsCount, reqUserId}) {
+  this.adaptTopics = function a({ dbTopics, topicsPostsCount, reqUserId }) {
     // console.log(topicsPostsCount, 'topicsPostsCount');
     const topics = _.map(dbTopics, (dbTopic) => {
       let userId = dbTopic.createdBy;
@@ -95,7 +95,7 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
           date: dbPost.createdAt,
           updatedDate: dbPost.updatedAt,
           userId: dbPost.createdBy,
-          read: readStats ? readStats.userIds.indexOf(reqUserId) != -1 : false,
+          read: readStats ? readStats.userIds.indexOf(reqUserId) !== -1 : false,
           body: dbPost.raw,
           rawContent: dbPost.raw,
           type: 'post',

@@ -3,18 +3,17 @@
 const _ = require('lodash');
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
-const Promise = require('bluebird');
 const HelperService = require('../../services/helper');
 const errors = require('common-errors');
 const Joi = require('joi');
 const Adapter = require('../../services/adapter');
-const { REFERENCE_LOOKUPS, EVENT } = require('../../constants');
+const { EVENT } = require('../../constants');
 
-  /**
-   * Handles creation of topics
-   * @param {Object} db sequelize db with all models loaded
-   * @return {Object} response object
-   */
+/**
+ * Handles creation of topics
+ * @param {Object} db sequelize db with all models loaded
+ * @return {Object} response object
+ */
 module.exports = db =>
 
   /**
@@ -26,12 +25,12 @@ module.exports = db =>
    *  - Return the newly created topic.
    * params: standard express parameters
    */
-   (req, resp, next) => {
-     const logger = req.log;
-     const helper = HelperService(logger, db);
-     const adapter = new Adapter(logger, db);
+  (req, resp, next) => {
+    const logger = req.log;
+    const helper = HelperService(logger, db);
+    const adapter = new Adapter(logger, db);
 
-     const params = req.body;
+    const params = req.body;
 
     // Validate request parameters
     Joi.assert(params, {
@@ -42,7 +41,7 @@ module.exports = db =>
       body: Joi.string().required(),
     });
 
-    let userId = req.authUser.userId.toString();
+    const userId = req.authUser.userId.toString();
     return helper.callReferenceEndpoint(req.authToken, req.id, params.reference, params.referenceId)
       .then((hasAccessResp) => {
         const hasAccess = helper.userHasAccessToEntity(userId, hasAccessResp, params.reference);
@@ -64,8 +63,8 @@ module.exports = db =>
           updatedBy: userId,
         });
 
-        return pgTopic.save().then((savedTopic) => {
-          logger.info('topic saved in Postgres: ' + savedTopic);
+        return pgTopic.save().then((savedTopic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["savedTopic"] }] */
+          logger.debug('topic saved in Postgres: ', savedTopic);
           const post = db.posts_backup.build({
             topicId: savedTopic.id,
             raw: params.body,
@@ -77,12 +76,13 @@ module.exports = db =>
             createdBy: userId,
             updatedAt: new Date(),
             updatedBy: userId,
-          })
+          });
           return post.save().then((savedPost) => {
             logger.info('post saved in Postgres');
+            savedTopic.posts = [savedPost];
             req.app.emit(EVENT.TOPIC_CREATED, { topic: savedTopic, req });
-            return resp.status(200).send(util.wrapResponse(req.id, adapter.adaptTopic(savedTopic)));
-          })
+            return resp.status(200).send(util.wrapResponse(req.id, adapter.adaptTopic({ dbTopic: savedTopic })));
+          });
         });
       }).catch((error) => {
         logger.error('Failed to create topic', error);
@@ -96,4 +96,4 @@ module.exports = db =>
           `Failed to create topic: ${error.message}`);
       })
       .catch(error => next(error));
-   };
+  };

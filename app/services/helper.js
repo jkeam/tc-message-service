@@ -117,8 +117,8 @@ module.exports = (logger, db, _discourseClient = null) => {
 
   function userHasAccessToEntity(userId, hasAccessResp, reference) {
     logger.info('Checking if user has access to project');
-    let hasAccess = hasAccessResp[0];
-    if (reference.toLowerCase() === REFERENCE_LOOKUPS.PROJECT) {
+    const hasAccess = hasAccessResp[0];
+    if (hasAccess && reference.toLowerCase() === REFERENCE_LOOKUPS.PROJECT) {
       const projectMembers = _.get(hasAccessResp[1], 'members', []);
         // get users list
       const isMember = _.filter(projectMembers, member => member.userId.toString() === userId).length > 0;

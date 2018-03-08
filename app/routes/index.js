@@ -2,17 +2,14 @@
 const router = require('express').Router();
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
-const axios = require('axios');
-const ssoHandler = require('./sso/sso.js');
 const tcCoreLib = require('tc-core-library-js');
 const getTopicHandler = require('./topics/get');
 const topicListHandler = require('./topics/list');
 const topicCreateHandler = require('./topics/create');
 const topicUpdateHandler = require('./topics/update');
 const topicDeleteHandler = require('./topics/delete');
-const syncUsersHandler = require('./topics/syncUsers');
 
-const uploadImageHandler = require('./image/upload');
+// const uploadImageHandler = require('./image/upload');
 const createPostHandler = require('./posts/create');
 const listPostsHandler = require('./posts/list');
 const getPostHandler = require('./posts/get');
@@ -101,9 +98,6 @@ module.exports = (logger, db) => {
 
   // router.route('/v4/topics/image')
   //   .post(uploadImageHandler());
-
-  // router.route('/v4/topics/syncUsers')
-  //   .put(syncUsersHandler(db));
 
   // register error handler
   router.use((err, req, res, next) => { // eslint-disable-line

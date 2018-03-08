@@ -8,9 +8,10 @@ const HelperService = require('../../services/helper');
 
 /**
  * Delete a post in Discourse
+ * @param {Object} db sequelize db with models loaded
  * @return {Object} response
  */
-module.exports = (db) => (req, resp, next) => {
+module.exports = db => (req, resp, next) => {
   const logger = req.log;
   const helper = HelperService(logger, db);
 
@@ -21,7 +22,7 @@ module.exports = (db) => (req, resp, next) => {
   });
   const topicId = req.params.topicId;
   const postId = req.params.postId;
-  let userId = req.authUser.userId.toString();
+  const userId = req.authUser.userId.toString();
   return db.topics_backup.findById(topicId)
   .then((topic) => {
     if (!topic) {
@@ -35,8 +36,8 @@ module.exports = (db) => (req, resp, next) => {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
       return db.posts_backup.update({
-        deletedAt : new Date(),
-        deletedBy : userId
+        deletedAt: new Date(),
+        deletedBy: userId,
       }, { where: { id: postId } })
       .then(() => {
         logger.info('Post deleted');

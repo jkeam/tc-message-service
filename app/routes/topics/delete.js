@@ -1,10 +1,10 @@
 
 import HelperService from '../../services/helper';
+
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
 const errors = require('common-errors');
 const Joi = require('joi');
-const Promise = require('bluebird');
 const { EVENT } = require('../../constants');
 
 /**
@@ -23,7 +23,7 @@ module.exports = db => (req, resp, next) => {
   const topicId = req.params.topicId;
   const userId = req.authUser.userId.toString();
   return db.topics_backup.findById(topicId)
-  .then((topic) => {
+  .then((topic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["topic"] }] */
     if (!topic) {
       const err = new errors.HttpStatusError(404, 'Topic does not exist');
       return next(err);

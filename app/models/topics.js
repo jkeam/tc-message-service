@@ -47,15 +47,15 @@ module.exports = (Sequelize, DataTypes) => {
     },
     closed: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      defaultValue: false,
     },
     hidden: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      defaultValue: false,
     },
     archived: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      defaultValue: false,
     },
     hiddenReason: {
       type: DataTypes.STRING,
@@ -64,15 +64,15 @@ module.exports = (Sequelize, DataTypes) => {
     createdAt: {
       type: DataTypes.DATE,
     },
-        // Who created this record
+    // Who created this record
     createdBy: {
       type: DataTypes.STRING,
     },
-        // When was this record last updated
+    // When was this record last updated
     updatedAt: {
       type: DataTypes.DATE,
     },
-        // Who last updated this record
+    // Who last updated this record
     updatedBy: {
       type: DataTypes.STRING,
     },
@@ -85,70 +85,79 @@ module.exports = (Sequelize, DataTypes) => {
       type: DataTypes.STRING,
     },
   }, {
-    freezeTableName : true,
+    freezeTableName: true,
   });
 
   Topic.associate = (models) => {
     Topic.hasMany(models.posts_backup, { as: 'posts', foreignKey: 'topicId' });
   };
 
-  Topic.findTopics = (models, adapter, { filters, numberOfPosts = 4, fetchedDeleted = false, raw = false, reqUserId}) => {
+  Topic.findTopics = (models, adapter, {
+    filters,
+    numberOfPosts = 4,
+    fetchDeleted = false,
+    raw = false,
+    reqUserId,
+  }) => {
+    const where = { filters };
+    const postsWhere = {};
+    if (!fetchDeleted) {
+      where.deletedAt = { [Sequelize.Op.eq]: null };
+      postsWhere.deletedAt = { [Sequelize.Op.eq]: null };
+    }
     return Topic.findAll({
-      where: Object.assign({}, filters, { deletedAt : { [Sequelize.Op.eq]: null } }),
+      where,
       raw,
       include: [{
         model: models.posts_backup,
-        as: "posts",
-        order: [["postNumber", "desc"]],
-        where: { deletedAt : { [Sequelize.Op.eq]: null } },
-        limit: numberOfPosts !== -1 ? numberOfPosts : null
-      }] 
-    }).
-    then((topics) => {
+        as: 'posts',
+        order: [['postNumber', 'desc']],
+        where: postsWhere,
+        limit: numberOfPosts !== -1 ? numberOfPosts : null,
+      }],
+    }).then((topics) => {
       const topicIds = topics.map(t => t.id);
       return models.posts_backup.getPostsCount(topicIds)
-      .then((topicsPostsCount) => {
-        // console.log(topicsPostsCount, 'topicsPostsCount');
-        return adapter.adaptTopics({
-          dbTopics : topics,
-          topicsPostsCount: topicsPostsCount.map(tpc => tpc.dataValues),
-          reqUserId
-        })
-      })
+      .then(topicsPostsCount => adapter.adaptTopics({
+        dbTopics: topics,
+        topicsPostsCount: topicsPostsCount.map(tpc => tpc.dataValues),
+        reqUserId,
+      }));
     });
-  }
+  };
 
-  Topic.findTopic = (models, adapter, { topicId, numberOfPosts = 4, fetchedDeleted = false, raw = false, reqUserId}) => {
+  Topic.findTopic = (models, adapter, { topicId, numberOfPosts = 4, fetchDeleted = false, raw = false, reqUserId }) => {
+    const where = { id: topicId };
+    const postsWhere = {};
+    if (!fetchDeleted) {
+      where.deletedAt = { [Sequelize.Op.eq]: null };
+      postsWhere.deletedAt = { [Sequelize.Op.eq]: null };
+    }
     return Topic.findOne({
-      where: { id: topicId, deletedAt : { [Sequelize.Op.eq]: null } },
+      where,
       raw,
       include: [{
         model: models.posts_backup,
-        as: "posts",
-        order: [["postNumber", "desc"]],
-        where: { deletedAt : { [Sequelize.Op.eq]: null } },
+        as: 'posts',
+        order: [['postNumber', 'desc']],
+        where: postsWhere,
         limit: numberOfPosts !== -1 ? numberOfPosts : null,
         include: [{
           model: models.post_user_stats_backup,
-          as: "userStats"
-        }]
-      }] 
-    })
-    .then((topic) => {
-      if (!topic) return;
+          as: 'userStats',
+        }],
+      }],
+    }).then((topic) => {
+      if (!topic) return null;
       // console.log(topic, 'topic');
       return models.posts_backup.getTopicPostsCount(topicId)
-      .then((totalPosts) => {
-        // console.log('totalPosts', totalPosts);
-        // topic.totalPosts = totalPosts;
-        return adapter.adaptTopic({
-          dbTopic: topic,
-          topicsPostsCount : [{ topicId: topic.id, totalPosts}],
-          reqUserId
-        });
-      })
-    })
-  }
+      .then(totalPosts => adapter.adaptTopic({
+        dbTopic: topic,
+        totalPosts,
+        reqUserId,
+      }));
+    });
+  };
 
   return Topic;
 };

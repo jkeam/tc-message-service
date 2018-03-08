@@ -21,10 +21,11 @@ module.exports = db => (req, resp, next) => {
   Joi.assert(req.body, {
     post: Joi.string().required(),
   });
+  const postBody = req.body.post;
   const topicId = req.params.topicId;
-  let userId = req.authUser.userId.toString();
+  const userId = req.authUser.userId.toString();
   return db.topics_backup.findById(topicId)
-  .then((topic) => {
+  .then((topic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["topic"] }] */
     if (!topic) {
       const err = new errors.HttpStatusError(404, 'Topic does not exist');
       return next(err);
@@ -35,11 +36,10 @@ module.exports = db => (req, resp, next) => {
       if (!hasAccess && !helper.isAdmin(req)) {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
-      const postBody = req.body.post;
       const post = db.posts_backup.build({
         topicId,
-        raw: req.body.post,
-        postNumber: topic.highestPostNumber  + 1,
+        raw: postBody,
+        postNumber: topic.highestPostNumber + 1,
         viaEmail: false,
         hidden: false,
         reads: 0,
@@ -47,23 +47,23 @@ module.exports = db => (req, resp, next) => {
         createdBy: userId,
         updatedAt: new Date(),
         updatedBy: userId,
-      })
+      });
       return post.save().then((savedPost) => {
         logger.info('post saved in Postgres');
-        topic.highestPostNumber++;
+        topic.highestPostNumber += 1;
         topic.save().then(() => logger.debug('topic updated async for post: ', savedPost.id));
         // creates an entry in post_user_stats table for tracking user actions against this post
         // right now it only creates entry for 'READ' action, in future we may create more entries
         // when we support more actions e.g. 'LIKE', 'BOOKMARK', 'FAVORITE' etc
         db.post_user_stats_backup.createStats(db, logger, {
-          post : savedPost,
+          post: savedPost,
           userId,
-          action: 'READ'
-        }).then(() => logger.debug("post_user_stats entry created for post: ", savedPost.id));
+          action: 'READ',
+        }).then(() => logger.debug('post_user_stats entry created for post: ', savedPost.id));
         req.app.emit(EVENT.POST_CREATED, { post: savedPost, topic, req });
-        return resp.status(200).send(util.wrapResponse(req.id, savedPost));
-      })
-    })
+        return resp.status(200).send(util.wrapResponse(req.id, adapter.adaptPost(savedPost)));
+      });
+    });
   })
   .catch((error) => {
     logger.error(error);

@@ -42,7 +42,7 @@ module.exports = (Sequelize, DataTypes) => {
     },
     hidden: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      defaultValue: false,
     },
     hiddenReason: {
       type: DataTypes.STRING,
@@ -72,7 +72,7 @@ module.exports = (Sequelize, DataTypes) => {
       type: DataTypes.STRING,
     },
   }, {
-    freezeTableName : true
+    freezeTableName: true,
   });
 
   Post.associate = (models) => {
@@ -80,57 +80,72 @@ module.exports = (Sequelize, DataTypes) => {
   };
 
   Post.getTopicPostsCount = (topicId, countDeleted = false) => {
+    const where = { topicId };
+    if (!countDeleted) {
+      where.deletedAt = { [Sequelize.Op.eq]: null };
+    }
     return Post.count({
-      where : { topicId: topicId, deletedAt : { [Sequelize.Op.eq]: null } }
+      where,
     });
-  }
+  };
 
   Post.getPostsCount = (topicIds, countDeleted = false) => {
+    const where = { topicId: { [Sequelize.Op.in]: topicIds } };
+    if (!countDeleted) {
+      where.deletedAt = { [Sequelize.Op.eq]: null };
+    }
     return Post.findAll({
-      where : { topicId: { [Sequelize.Op.in]: topicIds }, deletedAt : { [Sequelize.Op.eq]: null } },
-      attributes: [ 'topicId', [Sequelize.fn('COUNT', Sequelize.col('id')), 'totalPosts'] ],
-      group: ['topicId']
+      where,
+      attributes: ['topicId', [Sequelize.fn('COUNT', Sequelize.col('id')), 'totalPosts']],
+      group: ['topicId'],
     });
-  }
+  };
 
   Post.findPosts = (adapter, filters, fetchDeleted = false) => {
+    const where = { filters };
+    if (!fetchDeleted) {
+      where.deletedAt = { [Sequelize.Op.eq]: null };
+    }
     return Post.findAll({
-      where: Object.assign({}, filters, { deletedAt : { [Sequelize.Op.eq]: null } })
-    })
-    .then((posts) => {
-      if (!posts || posts.length === 0) return;
+      where,
+    }).then((posts) => {
+      if (!posts || posts.length === 0) return null;
       return adapter.adaptPosts(posts);
     });
-  }
+  };
 
   Post.findPost = (adapter, topicId, postId, fetchDeleted = false) => {
+    const where = { id: postId, topicId };
+    if (!fetchDeleted) {
+      where.deletedAt = { [Sequelize.Op.eq]: null };
+    }
     return Post.findOne({
-      where: { id: postId, topicId: topicId, deletedAt : { [Sequelize.Op.eq]: null } }
-    }).
-    then((post) => {
-      if (!post) return;
+      where,
+    }).then((post) => {
+      if (!post) return null;
       return adapter.adaptPost(post);
     });
-  }
+  };
 
   /**
    * Increases the read count of the give post(s) for the given user.
    *
-   * @param models {Object} Sequelize database models
-   * @param logger {Object} logger object used for logging
-   * @param posts  {Array} array posts for which read count is to be increased
-   * @param userId {String} id of the user who read these posts
+   * @param {Object} models Sequelize database models
+   * @param {Object} logger logger object used for logging
+   * @param{Array} posts array posts for which read count is to be increased
    *
    * @return {Promise} promise for update operation
    */
-  Post.increaseReadCount = (models, logger, posts, userId) => {
-    if (!posts || posts.length == 0) return Promise.resolve();
-    posts.map(p => p.reads++);
+  Post.increaseReadCount = (models, logger, posts) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["posts"] }] */
+    if (!posts || posts.length === 0) return Promise.resolve();
+    for (let i = 0; i < posts.length; i++) {
+      posts[i].read += 1;
+    }
     const postIds = posts.map(p => p.id).join(',');
-    return Sequelize.query('UPDATE posts_backup set reads=reads+1 where id IN (' + postIds + ')')
+    return Sequelize.query(`UPDATE posts_backup set reads=reads+1 where id IN (${postIds})`)
     .then((resp) => {
       logger.debug(`Updated ${resp[1].rowCount} posts to increase the read count`);
     });
-  }
+  };
   return Post;
 };

@@ -1,5 +1,6 @@
 
 import HelperService from '../../services/helper';
+
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
 const errors = require('common-errors');
@@ -23,9 +24,9 @@ module.exports = db => (req, resp, next) => {
   });
 
   const topicId = req.params.topicId;
-  const postId  = req.params.postId;
+  const postId = req.params.postId;
   const content = req.body.post;
-  let userId    = req.authUser.userId.toString();
+  const userId = req.authUser.userId.toString();
 
   return db.topics_backup.findById(topicId)
   .then((topic) => {
@@ -39,9 +40,9 @@ module.exports = db => (req, resp, next) => {
       if (!hasAccess && !helper.isAdmin(req)) {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
-      
+
       return db.posts_backup.findById(postId)
-      .then(post => {
+      .then((post) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["post"] }] */
         post.raw = content;
         post.updatedBy = userId;
         // post.updatedAt = new Date();
@@ -49,7 +50,7 @@ module.exports = db => (req, resp, next) => {
       })
       .then((post) => {
         req.app.emit(EVENT.POST_UPDATED, { post, req, topic });
-        resp.status(200).send(util.wrapResponse(req.id, post));
+        resp.status(200).send(util.wrapResponse(req.id, adapter.adaptPost(post)));
       })
       .catch((error) => {
         logger.error(error);
