@@ -17,7 +17,7 @@ require('should-sinon');
 describe('GET /v4/topics/:topicId/posts', () => {
   const apiPath = '/v4/topics/1/posts?postIds=1,2';
   const noMatchingPostsPath = '/v4/topics/1/posts?postIds=3,4';
-  // const nonExistingPostsPath = '/v4/topics/1/posts?postIds=1,2,3';
+  const nonExistingPostsPath = '/v4/topics/1/posts?postIds=1,2,3';
   const nonExistingTopicApiPath = '/v4/topics/1000/posts?postIds=1,2';
 
   const memberUser = {
@@ -62,13 +62,61 @@ describe('GET /v4/topics/:topicId/posts', () => {
   });
 
   it('should return 404 response if no matching topic', (done) => {
-    sandbox.stub(axios, 'get').rejects({ response: { status: 404 } });
     request(server)
       .get(nonExistingTopicApiPath)
       .set({
         Authorization: `Bearer ${jwts.admin}`,
       })
       .expect(404, done);
+  });
+
+  it('should return 403 response when user does not have access to the project', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves();
+
+    // rejects to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 403 } },
+    });
+
+    request(server)
+      .get(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .expect(403)
+      .end((err) => {
+        if (err) {
+          return done(err);
+        }
+        // once for reference endpoint call
+        sinon.assert.calledOnce(getStub);
+        return done();
+      });
+  });
+
+  it('should return 403 response when user does not have access to the project', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves();
+
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    // but members does not have calling user's id
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: 123 }] } } },
+    });
+
+    request(server)
+      .get(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .expect(403)
+      .end((err) => {
+        if (err) {
+          return done(err);
+        }
+        // once for reference endpoint call
+        sinon.assert.calledOnce(getStub);
+        return done();
+      });
   });
 
   it('should return 200 response if no matching posts', (done) => {
@@ -94,7 +142,33 @@ describe('GET /v4/topics/:topicId/posts', () => {
       });
   });
 
-  it('should return 200 response when posts are retrieved', (done) => {
+  it('should return 200 response if postIds has non existing post ids along with valid ones', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves();
+
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
+    });
+
+    request(server)
+      .get(nonExistingPostsPath)// nonExistingPostsPath has one extra id which does not exists
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        // once for reference endpoint call
+        sinon.assert.calledOnce(getStub);
+        // it should still return the two valid posts
+        res.body.result.content.should.be.of.length(2);
+        return done();
+      });
+  });
+
+  it('should return 200 response when postIds are valid', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
@@ -119,6 +193,55 @@ describe('GET /v4/topics/:topicId/posts', () => {
       });
   });
 
+  it('should return 200 response when postIds are valid (manager access)', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves();
+
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
+    });
+
+    request(server)
+      .get(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.manager}`,
+      })
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        // once for reference endpoint call
+        sinon.assert.calledOnce(getStub);
+        res.body.result.content.should.be.of.length(2);
+        return done();
+      });
+  });
+
+  it('should return 200 response when postIds are valid (admin access)', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves();
+
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
+    });
+
+    request(server)
+      .get(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.admin}`,
+      })
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        // once for reference endpoint call
+        sinon.assert.calledOnce(getStub);
+        res.body.result.content.should.be.of.length(2);
+        return done();
+      });
+  });
 
   it('should return 500 response if error to get posts', (done) => {
     const getStub = sandbox.stub(axios, 'get');
@@ -127,7 +250,7 @@ describe('GET /v4/topics/:topicId/posts', () => {
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
     // stub for updateUserStats method of PostUserStats modal
-    const updateStatsStub = sandbox.stub(db.posts_backup, 'findPosts').rejects();
+    const findPostsStub = sandbox.stub(db.posts_backup, 'findPosts').rejects();
     request(server)
       .get(apiPath)
       .set({
@@ -138,8 +261,8 @@ describe('GET /v4/topics/:topicId/posts', () => {
         if (err) {
           return done(err);
         }
-        // should call UPDATE on post user stats table
-        updateStatsStub.should.have.be.calledOnce;
+        // should call findPosts on posts model
+        findPostsStub.should.have.be.calledOnce;
         return done();
       });
   });

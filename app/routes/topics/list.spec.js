@@ -106,20 +106,20 @@ describe('GET /v4/topics ', () => {
 
   it('should return 400 response without referenceId filter', (done) => {
     request(server)
-            .get(apiPath)
-            .set({
-              Authorization: `Bearer ${jwts.admin}`,
-            })
-            .query({
-              filter: 'reference=1',
-            })
-            .expect(400)
-            .end((err) => {
-              if (err) {
-                return done(err);
-              }
-              return done();
-            });
+      .get(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.admin}`,
+      })
+      .query({
+        filter: 'reference=1',
+      })
+      .expect(400)
+      .end((err) => {
+        if (err) {
+          return done(err);
+        }
+        return done();
+      });
   });
 
   it('should return 200 response with an empty list', (done) => {
@@ -139,19 +139,51 @@ describe('GET /v4/topics ', () => {
       });
   });
 
-  it('should return 200 if user is not part of project team and is not an admin or manager', (done) => {
+  it('should return 403 if user is not part of project team and is not an admin or manager', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves();
+
+    // resolves call (with 403) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 403 } },
+    });
     request(server)
       .get(apiPath)
       .set({
-        Authorization: `Bearer ${jwts.admin}`,
+        Authorization: `Bearer ${jwts.member}`,
       })
-      .query(testQuery2)
-      .expect(200)
-      .end((err, res) => {
+      .query(testQuery)
+      .expect(403)
+      .end((err) => {
         if (err) {
           return done(err);
         }
-        res.body.result.content.should.be.of.length(0);
+        // once for reference endpoint call
+        sinon.assert.calledOnce(getStub);
+        return done();
+      });
+  });
+
+  it('should return 403 if user is not part of project team and is not an admin or manager', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves();
+
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    // but members list does not include the calling user's id
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: 123 }] } } },
+    });
+    request(server)
+      .get(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .query(testQuery)
+      .expect(403)
+      .end((err) => {
+        if (err) {
+          return done(err);
+        }
+        // once for reference endpoint call
+        sinon.assert.calledOnce(getStub);
         return done();
       });
   });

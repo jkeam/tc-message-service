@@ -112,6 +112,9 @@ module.exports = (logger, db, _discourseClient = null) => {
         logger.debug(error);
         return [false, null, error];
       });
+    }).catch((error) => {
+      logger.debug(error);
+      return [false, null, error];
     });
   }
 
