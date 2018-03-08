@@ -20,7 +20,15 @@ function getDecodedToken(token) {
 
 function clearDBPromise() {
   return models.sequelize.sync()
-    .then(() => models.topics.truncate({
+    .then(() => models.topics_backup.truncate({
+      cascade: true,
+      logging: false,
+    }))
+    .then(() => models.posts_backup.truncate({
+      cascade: true,
+      logging: false,
+    }))
+    .then(() => models.post_user_stats_backup.truncate({
       cascade: true,
       logging: false,
     }))
@@ -39,12 +47,15 @@ function prepareDB(done) {
   clearDBPromise()
     .then(() => {
       const promises = [
-        models.topics.create({
+        models.sequelize.query('ALTER SEQUENCE topics_backup_id_seq RESTART WITH 1;'),
+        models.sequelize.query('ALTER SEQUENCE posts_backup_id_seq RESTART WITH 1;'),
+        models.topics_backup.create({
           // id: 1,
           reference: 'project',
           referenceId: 'referenceId',
           discourseTopicId: 1,
           tag: 'tag',
+          title: 'Mock topic title',
         }),
         models.referenceLookups.create({
           id: 1,
@@ -52,7 +63,23 @@ function prepareDB(done) {
           endpoint: 'http://reftest/{id}', // eslint-disable-line
         }),
       ];
-      return Promise.all(promises);
+      return Promise.all(promises).then((responses) => {
+        if (responses && responses.length > 1) {
+          const topicId = responses[2].id;
+          // console.log(responses[2], 'topicId');
+          return Promise.all([
+            models.posts_backup.create({
+              raw: 'Mock topic body',
+              topicId,
+            }),
+            models.posts_backup.create({
+              raw: 'Mock topic post - logically first post',
+              topicId,
+            }),
+          ]);
+        }
+        return responses;
+      });
     })
     .then(() => done());
 }

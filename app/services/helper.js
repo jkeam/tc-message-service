@@ -102,7 +102,7 @@ module.exports = (logger, db, _discourseClient = null) => {
         },
         timeout: config.get('referenceLookupTimeout'),
       }).then((response) => {
-        // logger.debug(response.data);
+        logger.debug(response.data);
         if (response.data && response.data.result &&
           response.data.result.status === 200 && response.data.result.content) {
           return [true, response.data.result.content];

@@ -61,7 +61,7 @@ module.exports = (logger, db) => {
         next();
       }
     } catch (err) {
-      console.log(err);
+      logger.error(err);
       res.status(403)
         .json(util.wrapErrorResponse(req.id, 403, 'Failed to authenticate token.'));
       res.send();

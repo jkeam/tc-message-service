@@ -102,7 +102,7 @@ module.exports = (Sequelize, DataTypes) => {
   };
 
   Post.findPosts = (adapter, filters, fetchDeleted = false) => {
-    const where = { filters };
+    const where = filters;
     if (!fetchDeleted) {
       where.deletedAt = { [Sequelize.Op.eq]: null };
     }

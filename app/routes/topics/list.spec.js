@@ -8,9 +8,26 @@ const request = require('supertest');
 const server = require('../../app');
 const axios = require('axios');
 const sinon = require('sinon');
-const _ = require('lodash');
+// const _ = require('lodash');
+const Promise = require('bluebird');
 
-const topicJson = require('../../tests/topic.json');
+const db = require('../../models');
+// const topicJson = require('../../tests/topic.json');
+
+function assertTopicAndPost(topicId, assertCallback, done) {
+  // test topic
+  return Promise.all([
+    db.topics_backup.findById(topicId),
+    db.posts_backup.findOne({ topicId }),
+  ])
+  .then((response) => {
+    const topic = response[0];
+    const topicPost = response[1];
+    assertCallback(topic, topicPost);
+    return done();
+  })
+  .catch(() => done());
+}
 
 describe('GET /v4/topics ', () => {
   const apiPath = '/v4/topics';
@@ -140,11 +157,9 @@ describe('GET /v4/topics ', () => {
   });
 
   it('should return topics even if user is not part of project team but is a manager', (done) => {
-    // sample response for discourse topic calls
-    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
-    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
-    // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+    const getStub = sandbox.stub(axios, 'get').resolves();
+    // stub for updateUserStats method of PostUserStats modal
+    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
 
     // resolves call (with 403) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
@@ -163,22 +178,23 @@ describe('GET /v4/topics ', () => {
         res.body.result.content.should.be.of.length(1);
         // once for reference endpoint call
         sinon.assert.calledOnce(getStub);
-        // should not call post endpoint
-        postStub.should.have.not.been.called;
-        res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883Z');
-        return done();
+        // should call UPDATE on post user stats table
+        updateStatsStub.should.have.be.calledOnce;
+        // asserts the response with test data(created during test boostrap)
+        return assertTopicAndPost(1, (topic, topicPost) => {
+          res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topic.id);
+          res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
+          // console.log(topicPost.updatedAt, 'updatedAt');
+          res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+          .eql(topicPost.updatedAt);
+        }, done);
       });
   });
 
   it('should return topics even if user is not part of project team but is a manager (ref lookup error)', (done) => {
-    // sample response for topic calls
-    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
-    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
-    // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+    const getStub = sandbox.stub(axios, 'get').resolves();
+    // stub for updateUserStats method of PostUserStats modal
+    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
 
     // resolves call (with 403) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').rejects({
@@ -198,22 +214,23 @@ describe('GET /v4/topics ', () => {
         res.body.result.content.should.be.of.length(1);
         // once for reference endpoint call
         sinon.assert.calledOnce(getStub);
-        // should not call post endpoint
-        postStub.should.have.not.been.called;
-        res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883Z');
-        return done();
+        // should call UPDATE on post user stats table
+        updateStatsStub.should.have.be.calledOnce;
+        // asserts the response with test data(created during test boostrap)
+        return assertTopicAndPost(1, (topic, topicPost) => {
+          res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topic.id);
+          res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
+          // console.log(topicPost.updatedAt, 'updatedAt');
+          res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+          .eql(topicPost.updatedAt);
+        }, done);
       });
   });
 
   it('should return topics even if user is not part of project team but is a manager (not in members list)', (done) => {
-    // sample response for topic calls
-    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
-    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
-    // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+    const getStub = sandbox.stub(axios, 'get').resolves();
+    // stub for updateUserStats method of PostUserStats modal
+    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     // but members list does not include the calling user's id
@@ -233,28 +250,28 @@ describe('GET /v4/topics ', () => {
         res.body.result.content.should.be.of.length(1);
         // once for reference endpoint call  and once for getting the topics from discourse
         sinon.assert.calledOnce(getStub);
-        // should not call post endpoint
-        postStub.should.have.not.been.called;
-        res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883Z');
-        return done();
+        // should call UPDATE on post user stats table
+        updateStatsStub.should.have.be.calledOnce;
+        // asserts the response with test data(created during test boostrap)
+        return assertTopicAndPost(1, (topic, topicPost) => {
+          res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topic.id);
+          res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
+          // console.log(topicPost.updatedAt, 'updatedAt');
+          res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+          .eql(topicPost.updatedAt);
+        }, done);
       });
   });
 
   it('should return topics even if user is not part of project team but is a admin', (done) => {
-    // sample response for discourse topic calls
-    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
-    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
-    // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+    const getStub = sandbox.stub(axios, 'get').resolves();
+    // stub for updateUserStats method of PostUserStats modal
+    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
 
     // rejects to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 403 } },
     });
-
 
     request(server)
       .get(apiPath)
@@ -270,22 +287,23 @@ describe('GET /v4/topics ', () => {
         res.body.result.content.should.be.of.length(1);
         // once for reference endpoint call  and once for getting the topics from discourse
         sinon.assert.calledOnce(getStub);
-        // should not call post endpoint
-        postStub.should.have.not.been.called;
-        res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883Z');
-        return done();
+        // should call UPDATE on post user stats table
+        updateStatsStub.should.have.be.calledOnce;
+        // asserts the response with test data(created during test boostrap)
+        return assertTopicAndPost(1, (topic, topicPost) => {
+          res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topic.id);
+          res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
+          // console.log(topicPost.updatedAt, 'updatedAt');
+          res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+          .eql(topicPost.updatedAt);
+        }, done);
       });
   });
 
   it('should return topics even if user is not part of project team but is a admin (Ref lookup error)', (done) => {
-    // sample response for discourse topic calls
-    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
-    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
-    // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+    const getStub = sandbox.stub(axios, 'get').resolves();
+    // stub for updateUserStats method of PostUserStats modal
+    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
 
     // rejects to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').rejects({
@@ -304,31 +322,31 @@ describe('GET /v4/topics ', () => {
           return done(err);
         }
         res.body.result.content.should.be.of.length(1);
-        // once for reference endpoint call  and once for getting the topics from discourse
+        // once for reference endpoint call
         sinon.assert.calledOnce(getStub);
-        // should not call post endpoint
-        postStub.should.have.not.been.called;
-        res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883Z');
-        return done();
+        // should call UPDATE on post user stats table
+        updateStatsStub.should.have.be.calledOnce;
+        // asserts the response with test data(created during test boostrap)
+        return assertTopicAndPost(1, (topic, topicPost) => {
+          res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topic.id);
+          res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
+          // console.log(topicPost.updatedAt, 'updatedAt');
+          res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+          .eql(topicPost.updatedAt);
+        }, done);
       });
   });
 
-  it('should return topics even if user is not part of project team but is a admin (non in members list)', (done) => {
-    // sample response for discourse topic calls
-    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
-    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
-    // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+  it('should return topics even if user is not part of project team but is a admin (not in members list)', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves();
+    // stub for updateUserStats method of PostUserStats modal
+    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     // but members list does not the calling user's id
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-
 
     request(server)
       .get(apiPath)
@@ -342,31 +360,31 @@ describe('GET /v4/topics ', () => {
           return done(err);
         }
         res.body.result.content.should.be.of.length(1);
-        // once for reference endpoint call  and once for getting the topics from discourse
+        // once for reference endpoint call
         sinon.assert.calledOnce(getStub);
-        // should not call post endpoint
-        postStub.should.have.not.been.called;
-        res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883Z');
-        return done();
+        // should call UPDATE on post user stats table
+        updateStatsStub.should.have.be.calledOnce;
+        // asserts the response with test data(created during test boostrap)
+        return assertTopicAndPost(1, (topic, topicPost) => {
+          res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topic.id);
+          res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
+          // console.log(topicPost.updatedAt, 'updatedAt');
+          res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+          .eql(topicPost.updatedAt);
+        }, done);
       });
   });
 
   // FIXME valid use case
   it('should return 200 response with matching topicLookup', (done) => {
-    // sample response for topic calls
-    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 1 });
-    const getStub = sandbox.stub(axios, 'get').resolves({ data: topicData });
-    // mark read
-    const postStub = sandbox.stub(axios, 'post').resolves({ data: topicData });
+    const getStub = sandbox.stub(axios, 'get').resolves();
+    // stub for updateUserStats method of PostUserStats modal
+    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-
 
     request(server)
       .get(apiPath)
@@ -377,15 +395,18 @@ describe('GET /v4/topics ', () => {
         if (err) {
           return done(err);
         }
-        // once for reference endpoint call  and once for getting the topics from discourse
+        // once for reference endpoint call
         sinon.assert.calledOnce(getStub);
-        // should call post endpoint in discourse.markTopicPostsRead as it not using admin access
-        sinon.assert.calledTwice(postStub);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topicData.id);
-        res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
-        res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
-        .eql('2018-02-12 01:35:20.169883Z');
-        return done();
+        // should call UPDATE on post user stats table
+        updateStatsStub.should.have.be.calledOnce;
+        // asserts the response with test data(created during test boostrap)
+        return assertTopicAndPost(1, (topic, topicPost) => {
+          res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topic.id);
+          res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
+          // console.log(topicPost.updatedAt, 'updatedAt');
+          res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+          .eql(topicPost.updatedAt);
+        }, done);
       });
   });
 });

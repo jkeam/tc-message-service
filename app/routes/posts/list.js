@@ -41,9 +41,9 @@ module.exports = db => (req, resp, next) => {
       }
 
       const filter = {};
-      filter.topicId = req.params.topicId;
+      filter.topicId = Number(req.params.topicId);
       if (postIds) {
-        filter.id = { [Op.in]: postIds };
+        filter.id = { [Op.in]: postIds.map(pid => Number(pid)) };
       }
       return db.posts_backup.findPosts(adapter, filter)
       .then((posts) => {

@@ -99,7 +99,7 @@ module.exports = (Sequelize, DataTypes) => {
     raw = false,
     reqUserId,
   }) => {
-    const where = { filters };
+    const where = filters;
     const postsWhere = {};
     if (!fetchDeleted) {
       where.deletedAt = { [Sequelize.Op.eq]: null };
