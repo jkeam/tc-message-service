@@ -1,4 +1,6 @@
 
+import _ from 'lodash';
+
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
 const errors = require('common-errors');
@@ -36,20 +38,9 @@ module.exports = db => (req, resp, next) => {
       if (!hasAccess && !helper.isAdmin(req)) {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
-      const post = db.posts_backup.build({
-        topicId,
-        raw: postBody,
-        postNumber: topic.highestPostNumber + 1,
-        viaEmail: false,
-        hidden: false,
-        reads: 0,
-        createdAt: new Date(),
-        createdBy: userId,
-        updatedAt: new Date(),
-        updatedBy: userId,
-      });
-      return post.save().then((savedPost) => {
-        logger.info('post saved in Postgres');
+
+      return db.posts_backup.createPost(db, postBody, topic, userId).then((savedPost) => {
+        logger.info('post created');
         topic.highestPostNumber += 1;
         topic.save().then(() => logger.debug('topic updated async for post: ', savedPost.id));
         // creates an entry in post_user_stats table for tracking user actions against this post
@@ -60,6 +51,7 @@ module.exports = db => (req, resp, next) => {
           userId,
           action: 'READ',
         }).then(() => logger.debug('post_user_stats entry created for post: ', savedPost.id));
+        // emit post creation event
         req.app.emit(EVENT.POST_CREATED, { post: savedPost, topic, req });
         return resp.status(200).send(util.wrapResponse(req.id, adapter.adaptPost(savedPost)));
       });
@@ -67,6 +59,9 @@ module.exports = db => (req, resp, next) => {
   })
   .catch((error) => {
     logger.error(error);
-    next(new errors.HttpStatusError(error.response.status, 'Error creating post'));
+    if (error.statusCode) {
+      return next(error);
+    }
+    return next(new errors.HttpStatusError(_.get(error, 'response.status', 500), 'Error creating post'));
   });
 };

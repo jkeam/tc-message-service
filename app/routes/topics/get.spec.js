@@ -32,7 +32,7 @@ function assertTopicAndPost(topicId, assertCallback, done) {
 describe('GET /v4/topics/:topicId', () => {
   const apiPathPrefix = '/v4/topics/';
   const apiPath = `${apiPathPrefix}1`;
-  const nonExistingTopicPath = '${apiPathPrefix}1000';
+  const nonExistingTopicPath = `${apiPathPrefix}1000`;
 
   const memberUser = {
     handle: getDecodedToken(jwts.member).handle,

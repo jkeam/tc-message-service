@@ -79,6 +79,24 @@ module.exports = (Sequelize, DataTypes) => {
     Post.hasMany(models.post_user_stats_backup, { as: 'userStats', foreignKey: 'postId' });
   };
 
+  Post.createPost = (models, postBody, topic, reqUserId) => {
+    console.log('building post object model');
+    const post = models.posts_backup.build({
+      topicId: topic.id,
+      raw: postBody,
+      postNumber: topic.highestPostNumber + 1,
+      viaEmail: false,
+      hidden: false,
+      reads: 0,
+      createdAt: new Date(),
+      createdBy: reqUserId,
+      updatedAt: new Date(),
+      updatedBy: reqUserId,
+    });
+    console.log('calling save on model');
+    return post.save();
+  };
+
   Post.getTopicPostsCount = (topicId, countDeleted = false) => {
     const where = { topicId };
     if (!countDeleted) {

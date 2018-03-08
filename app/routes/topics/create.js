@@ -45,25 +45,18 @@ module.exports = db =>
     return helper.callReferenceEndpoint(req.authToken, req.id, params.reference, params.referenceId)
       .then((hasAccessResp) => {
         const hasAccess = helper.userHasAccessToEntity(userId, hasAccessResp, params.reference);
-        if (!hasAccess && !helper.isAdmin(req)) {
+        // if (!hasAccess && !helper.isAdmin(req)) {
+        if (!hasAccess) { // even admins are not allowed to create a topic in a project where they are not member
           throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
         }
-        const pgTopic = db.topics_backup.build({
+        const pgTopic = {
           reference: params.reference,
           referenceId: params.referenceId,
           title: params.title,
           tag: params.tag,
-          hidden: false,
-          closed: false,
-          archived: false,
-          highestPostNumber: 1,
-          createdAt: new Date(),
-          createdBy: userId,
-          updatedAt: new Date(),
-          updatedBy: userId,
-        });
+        };
 
-        return pgTopic.save().then((savedTopic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["savedTopic"] }] */
+        return db.topics_backup.createTopic(db, pgTopic, userId).then((savedTopic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["savedTopic"] }] */
           logger.debug('topic saved in Postgres: ', savedTopic);
           const post = db.posts_backup.build({
             topicId: savedTopic.id,
@@ -86,14 +79,10 @@ module.exports = db =>
         });
       }).catch((error) => {
         logger.error('Failed to create topic', error);
-        if (error.status || (error.response && error.response.status)) {
-          const message = _.get(error, 'response.data.errors[0]') || error.message;
-          throw new errors.HttpStatusError(
-            error.status || error.response.status,
-            `Failed to create topic: ${message}`);
+        if (error.statusCode) {
+          return next(error);
         }
-        throw new errors.HttpStatusError(500,
-          `Failed to create topic: ${error.message}`);
+        return next(new errors.HttpStatusError(_.get(error, 'response.status', 500), 'Error creating topic'));
       })
       .catch(error => next(error));
   };

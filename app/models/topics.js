@@ -92,6 +92,24 @@ module.exports = (Sequelize, DataTypes) => {
     Topic.hasMany(models.posts_backup, { as: 'posts', foreignKey: 'topicId' });
   };
 
+  Topic.createTopic = (models, topic, reqUserId) => {
+    const dbTopic = models.topics_backup.build({
+      reference: topic.reference,
+      referenceId: topic.referenceId,
+      title: topic.title,
+      tag: topic.tag,
+      hidden: false,
+      closed: false,
+      archived: false,
+      highestPostNumber: 1,
+      createdAt: new Date(),
+      createdBy: reqUserId,
+      updatedAt: new Date(),
+      updatedBy: reqUserId,
+    });
+    return dbTopic.save();
+  };
+
   Topic.findTopics = (models, adapter, {
     filters,
     numberOfPosts = 4,
