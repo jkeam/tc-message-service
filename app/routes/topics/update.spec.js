@@ -15,6 +15,7 @@ describe('POST /v4/topics/:topicId/edit ', () => {
   const topicId = 1;
   const postId = 1;
   const apiPath = `/v4/topics/${topicId}/edit`;
+  const nonExistingTopicPath = '/v4/topics/1000/edit';
   let expectedTopic = null;
   let expectedTopicPosts = null;
   const testBody = {
@@ -59,6 +60,53 @@ describe('POST /v4/topics/:topicId/edit ', () => {
       })
       .send(testBody)
       .expect(403, done);
+  });
+
+  it('should return 403 response when user does not have access', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [] } } },
+    });
+    request(server)
+      .post(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .send(testBody)
+      .expect(403)
+      .end((err) => {
+        if (err) {
+          return done(err);
+        }
+        // should make GET to reference lookup endpoint on posts model
+        getStub.should.have.be.calledOnce;
+        return done();
+      });
+  });
+
+  it('should return 404 response with non existing topic', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
+    });
+    request(server)
+      .post(nonExistingTopicPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .send(testBody)
+      .expect(404)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        // should call findById on posts model
+        res.body.should.have.propertyByPath('result', 'content', 'message')
+                  .eql('Topic does not exist');
+        return done();
+      });
   });
 
   it('should return 200 response with valid jwt token and payload', (done) => {

@@ -407,11 +407,44 @@ describe('GET /v4/topics ', () => {
       });
   });
 
-  // FIXME valid use case
   it('should return 200 response with matching topicLookup', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
     // stub for updateUserStats method of PostUserStats modal
     const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
+
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
+    });
+
+    request(server)
+      .get(apiPath)
+      .set({ Authorization: `Bearer ${jwts.member}` })
+      .query(testQuery)
+      .expect(200)
+      .end((err, res) => { // eslint-disable-line
+        if (err) {
+          return done(err);
+        }
+        // once for reference endpoint call
+        sinon.assert.calledOnce(getStub);
+        // should call UPDATE on post user stats table
+        updateStatsStub.should.have.be.calledOnce;
+        // asserts the response with test data(created during test boostrap)
+        return assertTopicAndPost(1, (topic, topicPost) => {
+          res.body.should.have.propertyByPath('result', 'content', '0', 'id').eql(topic.id);
+          res.body.should.have.propertyByPath('result', 'content', '0', 'reference').eql('project');
+          // console.log(topicPost.updatedAt, 'updatedAt');
+          res.body.should.have.propertyByPath('result', 'content', '0', 'lastActivityAt')
+          .eql(topicPost.updatedAt);
+        }, done);
+      });
+  });
+
+  it('should return 200 response even if error in updateUserStats', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves();
+    // stub for updateUserStats method of PostUserStats modal
+    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').rejects();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({

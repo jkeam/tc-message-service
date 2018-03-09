@@ -83,6 +83,26 @@ describe('GET /v4/topics/:topicId', () => {
       });
   });
 
+  it('should return 403 response if user does not have access', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [] } } },
+    });
+    request(server)
+      .get(nonExistingTopicPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .expect(404)
+      .end((err) => {
+        if (err) {
+          return done(err);
+        }
+        return done();
+      });
+  });
+
   it('should return 200 response when called by project member and should mark topic read', (done) => {
     const getStub = sandbox.stub(axios, 'get');
     // stub for updateUserStats method of PostUserStats modal

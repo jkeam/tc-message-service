@@ -43,12 +43,12 @@ module.exports = db => (req, resp, next) => {
         logger.info('Post deleted');
         req.app.emit(EVENT.POST_DELETED, { req, topic });
         resp.status(200).send(util.wrapResponse(req.id));
-      })
-      .catch((error) => {
-        logger.error(error);
-        next(new errors.HttpStatusError(
-          error.response && error.response.status ? error.response.status : 500, 'Error deleting post'));
       });
     });
+  })
+  .catch((error) => {
+    logger.error(error);
+    next(new errors.HttpStatusError(
+      error.response && error.response.status ? error.response.status : 500, 'Error deleting post'));
   });
 };
