@@ -39,12 +39,12 @@ function clearDBPromise() {
 }
 
 function clearDB(done) {
-  clearDBPromise()
+  return clearDBPromise()
     .then(() => done());
 }
 
 function prepareDB(done) {
-  clearDBPromise()
+  return clearDBPromise()
     .then(() => {
       const promises = [
         models.sequelize.query('ALTER SEQUENCE topics_backup_id_seq RESTART WITH 1;'),
@@ -56,6 +56,7 @@ function prepareDB(done) {
           discourseTopicId: 1,
           tag: 'tag',
           title: 'Mock topic title',
+          createdBy: '123456789',
         }),
         models.referenceLookups.create({
           id: 1,
@@ -65,23 +66,32 @@ function prepareDB(done) {
       ];
       return Promise.all(promises).then((responses) => {
         if (responses && responses.length > 1) {
-          const topicId = responses[2].id;
+          const topic = responses[2];
+          const topicId = topic.id;
           // console.log(responses[2], 'topicId');
           return Promise.all([
             models.posts_backup.create({
               raw: 'Mock topic body',
               topicId,
+              createdBy: '123456789',
             }),
             models.posts_backup.create({
               raw: 'Mock topic post - logically first post',
               topicId,
+              createdBy: '123456789',
             }),
-          ]);
+          ])
+          .then(posts => ({ topic, posts }));
         }
         return responses;
       });
     })
-    .then(() => done());
+    .then((responses) => {
+      if (done && typeof done === 'function') {
+        done();
+      }
+      return responses;
+    });
 }
 
 module.exports = {

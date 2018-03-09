@@ -33,7 +33,7 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
   };
 
   function convertPost(input) {
-    let userId = input.username;
+    let userId = input.createdBy;
     userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId, 10) : userId;
     return helper.mentionUserIdToHandle(input.raw)
       .then(postBody => ({

@@ -45,18 +45,17 @@ module.exports = db => (req, resp, next) => {
       .then((post) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["post"] }] */
         post.raw = content;
         post.updatedBy = userId;
-        // post.updatedAt = new Date();
-        return post.save();
+        return post.save().then(savedPost => adapter.adaptPost(savedPost));
       })
       .then((post) => {
         req.app.emit(EVENT.POST_UPDATED, { post, req, topic });
-        resp.status(200).send(util.wrapResponse(req.id, adapter.adaptPost(post)));
-      })
-      .catch((error) => {
-        logger.error(error);
-        next(new errors.HttpStatusError(
-          error.response && error.response.status ? error.response.status : 500, 'Error updating topic'));
+        resp.status(200).send(util.wrapResponse(req.id, post));
       });
     });
+  })
+  .catch((error) => {
+    logger.error(error);
+    next(new errors.HttpStatusError(
+      error.response && error.response.status ? error.response.status : 500, 'Error updating post'));
   });
 };

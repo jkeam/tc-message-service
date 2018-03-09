@@ -1,119 +1,163 @@
 /* eslint-disable no-unused-expressions, newline-per-chained-call */
 
-import { jwts } from '../../tests';
+import { clearDB, prepareDB, jwts, getDecodedToken } from '../../tests';
 
 const request = require('supertest');
 const server = require('../../app');
 const axios = require('axios');
 const sinon = require('sinon');
-const topicJson = require('../../tests/topic.json');
-const postJson = require('../../tests/post.json');
+
 require('should-sinon');
+const should = require('should');
+const db = require('../../models');
 
 describe('POST /v4/topics/:topicId/edit ', () => {
-  const apiPath = '/v4/topics/1/edit';
+  const topicId = 1;
+  const postId = 1;
+  const apiPath = `/v4/topics/${topicId}/edit`;
+  let expectedTopic = null;
+  let expectedTopicPosts = null;
   const testBody = {
-    postId: 1,
-    title: 'title',
-    content: 'content',
+    postId,
+    title: 'title-updated',
+    content: 'content-updated',
+  };
+
+  const memberUser = {
+    handle: getDecodedToken(jwts.member).handle,
+    userId: getDecodedToken(jwts.member).userId,
+    firstName: 'fname',
+    lastName: 'lName',
+    email: 'some@abc.com',
   };
   let sandbox;
-  beforeEach(() => {
+  beforeEach((done) => {
     sandbox = sinon.sandbox.create();
+    prepareDB()
+    .then(({ topic, posts }) => {
+      expectedTopic = topic;
+      expectedTopicPosts = posts;
+      done();
+    });
   });
-  afterEach(() => {
+  afterEach((done) => {
     sandbox.restore();
+    clearDB(done);
   });
   it('should return 403 response without a jwt token', (done) => {
     request(server)
-            .post(apiPath)
-            .send(testBody)
-            .expect(403, done);
+      .post(apiPath)
+      .send(testBody)
+      .expect(403, done);
   });
 
   it('should return 403 response with invalid jwt token', (done) => {
     request(server)
-            .post(apiPath)
-            .set({
-              Authorization: 'Bearer wrong',
-            })
-            .send(testBody)
-            .expect(403, done);
+      .post(apiPath)
+      .set({
+        Authorization: 'Bearer wrong',
+      })
+      .send(testBody)
+      .expect(403, done);
   });
 
   it('should return 200 response with valid jwt token and payload', (done) => {
-    sandbox.stub(axios, 'put').callsFake((path) => {
-      if (/\/t\/.*\.json/.test(path)) {
-        return Promise.resolve({ data: { basic_topic: topicJson } });
-      } else if (/\/posts\/.*\.json/.test(path)) {
-        return Promise.resolve({ data: { post: postJson } });
-      }
-      return Promise.reject(new Error('Unknown path'));
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
+    const now = new Date();
+    // const userId = Number(memberUser.userId);
     request(server)
-            .post(apiPath)
-            .set({
-              Authorization: `Bearer ${jwts.admin}`,
-            })
-            .send(testBody)
-            .expect(200)
-            .end((err, res) => {
-              if (err) {
-                return done(err);
-              }
-              res.body.result.content.should.not.be.null;
-              res.body.result.content.topic.should.not.be.null;
-              res.body.result.content.post.should.not.be.null;
-              return done();
-            });
+      .post(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .send(testBody)
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        const expectedCreatedBy = Number(expectedTopic.createdBy);
+        res.body.result.content.should.not.be.null;
+        res.body.result.content.topic.should.not.be.null;
+        res.body.result.content.post.should.not.be.null;
+        console.log(res.body.result.content);
+        // id of the updated topic should be same as of id passed in API path
+        res.body.should.have.propertyByPath('result', 'content', 'topic', 'id').eql(topicId);
+        res.body.should.have.propertyByPath('result', 'content', 'topic', 'title').eql(testBody.title);
+        // createdBy should not change
+        res.body.should.have.propertyByPath('result', 'content', 'topic', 'userId').eql(expectedCreatedBy);
+        // udpatedBy should be null originally for the test data
+        should.not.exist(expectedTopic.updatedBy);
+        // updatedDate should be null originally for the test data
+        should.not.exist(expectedTopic.updatedDate);
+        res.body.should.have.propertyByPath('result', 'content', 'topic', 'updatedDate');
+        new Date(res.body.result.content.topic.updatedDate).should.be.above(now);
+        res.body.should.have.propertyByPath('result', 'content', 'post', 'id').eql(postId);
+        res.body.should.have.propertyByPath('result', 'content', 'post', 'rawContent').eql(testBody.content);
+        // udpatedBy should be null originally for the test data
+        should.not.exist(expectedTopicPosts[0].updatedBy);
+        // updatedDate should be null originally for the test data
+        should.not.exist(expectedTopicPosts[0].updatedDate);
+        res.body.should.have.propertyByPath('result', 'content', 'post', 'userId').eql(expectedCreatedBy);
+        res.body.should.have.propertyByPath('result', 'content', 'post', 'updatedDate');
+        new Date(res.body.result.content.post.updatedDate).should.be.above(now);
+        return done();
+      });
   });
 
   it('should return 500 response if error updating post', (done) => {
-    sandbox.stub(axios, 'put').callsFake((path) => {
-      if (/\/t\/.*\.json/.test(path)) {
-        return Promise.resolve({ data: { basic_topic: topicJson } });
-      } else if (/\/posts\/.*\.json/.test(path)) {
-        return Promise.reject(new Error('Error saving post'));
-      }
-      return Promise.reject(new Error('Unknown path'));
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
+    const findByIdStub = sandbox.stub(db.topics_backup, 'findById').rejects();
     request(server)
-            .post(apiPath)
-            .set({
-              Authorization: `Bearer ${jwts.admin}`,
-            })
-            .send(testBody)
-            .expect(500)
-            .end((err, res) => {
-              if (err) {
-                return done(err);
-              }
-              res.body.should.have.propertyByPath('result', 'content', 'message')
-                        .eql('Error updating topic');
-              return done();
-            });
+      .post(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .send(testBody)
+      .expect(500)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        // should call findById on topics model
+        findByIdStub.should.have.be.calledOnce;
+        res.body.should.have.propertyByPath('result', 'content', 'message')
+                  .eql('Error updating topic');
+        return done();
+      });
   });
 
-  it('should return 500 response with error response', (done) => {
-    sandbox.stub(axios, 'put').rejects({
-      response: {
-        status: 500,
-      },
+  it('should return 500 response with error finding post', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
+    const findByIdStub = sandbox.stub(db.posts_backup, 'findById').rejects();
     request(server)
-            .post(apiPath)
-            .set({
-              Authorization: `Bearer ${jwts.admin}`,
-            })
-            .send(testBody)
-            .expect(500)
-            .end((err, res) => {
-              if (err) {
-                return done(err);
-              }
-              res.body.should.have.propertyByPath('result', 'content', 'message')
-                        .eql('Error updating topic');
-              return done();
-            });
+      .post(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .send(testBody)
+      .expect(500)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        // should call findById on posts model
+        findByIdStub.should.have.be.calledOnce;
+        res.body.should.have.propertyByPath('result', 'content', 'message')
+                  .eql('Error updating topic');
+        return done();
+      });
   });
 });

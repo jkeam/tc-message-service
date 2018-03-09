@@ -48,14 +48,14 @@ module.exports = db => (req, resp, next) => {
       /* eslint-enable */
       const promises = [
         topic.save().then((updatedTopic) => {
-          logger.info('Topic saved', updatedTopic);
-          return adapter.adaptTopic({ dbTopic: updatedTopic });
+          logger.debug('Topic saved', updatedTopic);
+          return updatedTopic;
         }),
         db.posts_backup.findById(postId)
         .then((post) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["post"] }] */
+          logger.debug(`Body post for ${topicId} found`);
           post.raw = content;
           post.updatedBy = userId;
-          // post.updatedAt = new Date();
           return post.save();
         })
         .then((updatedPost) => {
@@ -64,12 +64,19 @@ module.exports = db => (req, resp, next) => {
         }),
       ];
       return Promise.all(promises)
-      .then(response => resp.status(200).send(util.wrapResponse(req.id, { topic: response[0], post: response[1] })))
-      .catch((error) => {
-        logger.error(error);
-        next(new errors.HttpStatusError(
-          error.response && error.response.status ? error.response.status : 500, 'Error updating topic'));
+      .then((response) => {
+        const t = response[0];
+        const p = response[1];
+        t.posts = [p];
+        const adaptedTopic = adapter.adaptTopic({ dbTopic: t });
+        // TODO should get rid of post as seprate field in response
+        resp.status(200).send(util.wrapResponse(req.id, { topic: adaptedTopic, post: p }));
       });
     });
+  })
+  .catch((error) => {
+    logger.error(error);
+    next(new errors.HttpStatusError(
+      error.response && error.response.status ? error.response.status : 500, 'Error updating topic'));
   });
 };
