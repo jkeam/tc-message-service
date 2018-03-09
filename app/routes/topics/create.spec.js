@@ -22,13 +22,13 @@ describe('POST /v4/topics ', () => {
     title: 'title',
     body: 'body',
   };
-  // const testBody2 = {
-  //   reference: 'notexist',
-  //   referenceId: 'notexist',
-  //   tag: 'tag',
-  //   title: 'not exist',
-  //   body: 'not exist',
-  // };
+  const testBody2 = {
+    reference: 'notexist',
+    referenceId: 'notexist',
+    tag: 'tag',
+    title: 'not exist',
+    body: 'not exist',
+  };
   const memberUser = {
     handle: getDecodedToken(jwts.member).handle,
     userId: getDecodedToken(jwts.member).userId,
@@ -142,7 +142,7 @@ describe('POST /v4/topics ', () => {
       });
   });
 
-  it('should return 200 response if error to get referenceLookup endpoint (admin)', (done) => {
+  it('should return 403 response if error to get referenceLookup endpoint (admin)', (done) => {
     sandbox.stub(axios, 'get').rejects({});
     request(server)
       .post(apiPath)
@@ -159,36 +159,78 @@ describe('POST /v4/topics ', () => {
       });
   });
 
-  // it('should return 200 response with no matching referenceLookup', (done) => {
-  //   const data = {
-  //     topic_id: 100,
-  //   };
-  //   const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 100 });
-  //   topicData.rows[0][0] = 100;
-  //   const stub = sandbox.stub(axios, 'get');
-  //   stub.withArgs(sinon.match(/\/admin\/plugins\/explorer\/queries.json/)).resolves({
-  //     data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
-  //   });
-  //   sandbox.stub(axios, 'post').resolves({
-  //     status: 200,
-  //     data: Object.assign({}, topicData, { topic_id: 100 }),
-  //   });
+  it('should return 403 response with no matching referenceLookup', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
+    });
+    request(server)
+      .post(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.admin}`,
+      })
+      .send(testBody2)
+      .expect(403)
+      .end((err) => {
+        if (err) {
+          return done(err);
+        }
+        return done();
+      });
+  });
 
-  //   request(server)
-  //     .post(apiPath)
-  //     .set({
-  //       Authorization: `Bearer ${jwts.admin}`,
-  //     })
-  //     .send(testBody2)
-  //     .expect(200)
-  //     .end((err, res) => {
-  //       if (err) {
-  //         return done(err);
-  //       }
-  //       res.body.should.have.propertyByPath('result', 'content', 'id').eql(data.topic_id);
-  //       return done();
-  //     });
-  // });
+  it('should return 200 response with valid input', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
+    });
+    const now = new Date();
+    const userId = Number(memberUser.userId);
+    request(server)
+      .post(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .send(testBody)
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        // id field would be null for new topics for now because it is populated from discourse topic id
+        // which no longer exists for new topics
+        res.body.should.have.propertyByPath('result', 'content', 'id').null;
+        // dbId is actually the primary key of the topic
+        res.body.should.have.propertyByPath('result', 'content', 'dbId').eql(2);
+        res.body.should.have.propertyByPath('result', 'content', 'reference').eql(testBody.reference);
+        res.body.should.have.propertyByPath('result', 'content', 'referenceId').eql(testBody.referenceId);
+        res.body.should.have.propertyByPath('result', 'content', 'tag').eql(testBody.tag);
+        res.body.should.have.propertyByPath('result', 'content', 'title').eql(testBody.title);
+        res.body.should.have.propertyByPath('result', 'content', 'postIds').length(1);
+        // 3 should be the id of the new post, as we already have 2 posts as mock data
+        res.body.should.have.propertyByPath('result', 'content', 'postIds', '0').eql(3);
+        res.body.should.have.propertyByPath('result', 'content', 'date');
+        new Date(res.body.result.content.date).should.be.above(now);
+        res.body.should.have.propertyByPath('result', 'content', 'updatedDate');
+        new Date(res.body.result.content.updatedDate).should.be.above(now);
+        res.body.should.have.propertyByPath('result', 'content', 'userId').eql(userId);
+        res.body.should.have.propertyByPath('result', 'content', 'posts').length(1);
+        res.body.should.have.propertyByPath('result', 'content', 'posts', '0', 'rawContent').eql(testBody.body);
+        res.body.should.have.propertyByPath('result', 'content', 'posts', '0', 'userId').eql(userId);
+        res.body.should.have.propertyByPath('result', 'content', 'posts', '0', 'date');
+        new Date(res.body.result.content.posts[0].date).should.be.above(now);
+        res.body.should.have.propertyByPath('result', 'content', 'posts', '0', 'updatedDate');
+        new Date(res.body.result.content.posts[0].updatedDate).should.be.above(now);
+        // created topic should have valid lastActivityAt date
+        res.body.should.have.propertyByPath('result', 'content', 'lastActivityAt');
+        // lastActivityAt should be equal to the updatedDate of the last post, which 0th post for new topic
+        new Date(res.body.result.content.lastActivityAt).should.be.eql(
+          new Date(res.body.result.content.posts[0].updatedDate));
+        return done();
+      });
+  });
 
   it('should return 500 response if error to createPrivatePost with reject', (done) => {
     const getStub = sandbox.stub(axios, 'get');

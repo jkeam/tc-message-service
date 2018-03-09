@@ -90,11 +90,15 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
       _.each(dbTopic.posts, (dbPost) => {
         const userStats = dbPost.userStats;
         const readStats = userStats ? _.find(userStats, s => s.action === 'READ') : null;
+        let postUserId = dbPost.createdBy;
+        if (['system', DISCOURSE_SYSTEM_USERNAME].indexOf(postUserId) === -1) {
+          postUserId = Number(postUserId);
+        }
         topic.posts.push({
           id: dbPost.id,
           date: dbPost.createdAt,
           updatedDate: dbPost.updatedAt,
-          userId: dbPost.createdBy,
+          userId: postUserId,
           read: readStats ? readStats.userIds.indexOf(reqUserId) !== -1 : false,
           body: dbPost.raw,
           rawContent: dbPost.raw,
