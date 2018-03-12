@@ -208,4 +208,30 @@ describe('POST /v4/topics/:topicId/edit ', () => {
         return done();
       });
   });
+
+  it('should return 500 response with runtime error finding post', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
+    });
+    const findByIdStub = sandbox.stub(db.posts_backup, 'findById').throws();
+    request(server)
+      .post(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .send(testBody)
+      .expect(500)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        // should call findById on posts model
+        findByIdStub.should.have.be.calledOnce;
+        res.body.should.have.propertyByPath('result', 'content', 'message')
+                  .eql('Error updating topic');
+        return done();
+      });
+  });
 });

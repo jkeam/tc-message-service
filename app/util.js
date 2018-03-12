@@ -51,10 +51,6 @@ _.assign(util, {
       return token;
     });
   },
-  isDiscourseAdmin: (_userId) => {
-    const userId = _userId.toString();
-    return config.get('systemUserIds').indexOf(userId) > -1;
-  },
 });
 
 module.exports = util;

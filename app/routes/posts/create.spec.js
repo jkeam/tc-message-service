@@ -7,6 +7,7 @@ const request = require('supertest');
 const server = require('../../app');
 const axios = require('axios');
 const sinon = require('sinon');
+const config = require('config');
 // const postJson = require('../../tests/post.json');
 require('should-sinon');
 
@@ -14,6 +15,9 @@ describe('POST /v4/topics/:topicId/posts ', () => {
   const apiPath = '/v4/topics/1/posts';
   const testBody = {
     post: 'test post',
+  };
+  const testBodyWithHandle = {
+    post: 'test post >@40152922<',
   };
   const memberUser = {
     handle: getDecodedToken(jwts.member).handle,
@@ -54,13 +58,25 @@ describe('POST /v4/topics/:topicId/posts ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
+    // resolves with user data for user mention lookup
+    getStub.withArgs(`${config.get('memberServiceUrl')}/_search`).resolves({
+      data: { result: { status: 200, content: [{ handle: 'testuser' }] } },
+    });
+    // resolves with user data for user mention lookup
+    getStub.withArgs(`${config.memberServiceUrl}/testuser`).resolves({
+      data: { result: { status: 200, content: { handle: 'testuser' } } },
+    });
+    const postStub = sandbox.stub(axios, 'post');
+    postStub.withArgs(`${config.get('identityServiceEndpoint')}authorizations/`).resolves({
+      data: { result: { status: 200, content: { token: 'mock' } } },
+    });
 
     request(server)
       .post(apiPath)
       .set({
         Authorization: `Bearer ${jwts.member}`,
       })
-      .send(testBody)
+      .send(testBodyWithHandle)
       .expect(200)
       .end((err, res) => {
         if (err) {

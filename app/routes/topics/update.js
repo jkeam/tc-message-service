@@ -76,8 +76,6 @@ module.exports = db => (req, resp, next) => {
   })
   .catch((error) => {
     logger.error(error);
-
-    next(error instanceof errors.HttpStatusError ? error : new errors.HttpStatusError(
-      error.response && error.response.status ? error.response.status : 500, 'Error updating topic'));
+    next(error instanceof errors.HttpStatusError ? error : new errors.HttpStatusError(500, 'Error updating topic'));
   });
 };

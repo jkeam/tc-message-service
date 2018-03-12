@@ -62,7 +62,7 @@ module.exports = (Sequelize, DataTypes) => {
   PostUserStats.updateUserStats = (models, logger, posts, userId, action) => {
     const postIds = posts.map(p => p.id).join(',');
     return Sequelize.query(`UPDATE post_user_stats_backup SET "userIds"=array_append("userIds", ${userId})
-      WHERE "postId" IN (${postIds}) AND action=${action} AND NOT("userIds" @> ARRAY[${userId}]::varchar[])`)
+      WHERE "postId" IN (${postIds}) AND action='${action}' AND NOT("userIds" @> ARRAY[${userId}]::varchar[])`)
     .then((resp) => {
       logger.debug(`Updated ${resp[1].rowCount} post_user_stats for the user: `);
     });

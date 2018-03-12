@@ -1,6 +1,4 @@
 
-
-const _ = require('lodash');
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
 const HelperService = require('../../services/helper');
@@ -79,10 +77,6 @@ module.exports = db =>
         });
       }).catch((error) => {
         logger.error('Failed to create topic', error);
-        if (error.statusCode) {
-          return next(error);
-        }
-        return next(new errors.HttpStatusError(_.get(error, 'response.status', 500), 'Error creating topic'));
-      })
-      .catch(error => next(error));
+        next(error instanceof errors.HttpStatusError ? error : new errors.HttpStatusError(500, 'Error creating topic'));
+      });
   };

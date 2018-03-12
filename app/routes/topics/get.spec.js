@@ -90,11 +90,11 @@ describe('GET /v4/topics/:topicId', () => {
       data: { result: { status: 200, content: { members: [] } } },
     });
     request(server)
-      .get(nonExistingTopicPath)
+      .get(apiPath)
       .set({
         Authorization: `Bearer ${jwts.member}`,
       })
-      .expect(404)
+      .expect(403)
       .end((err) => {
         if (err) {
           return done(err);

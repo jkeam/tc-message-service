@@ -157,7 +157,7 @@ module.exports = (Sequelize, DataTypes) => {
   Post.increaseReadCount = (models, logger, posts) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["posts"] }] */
     if (!posts || posts.length === 0) return Promise.resolve();
     for (let i = 0; i < posts.length; i++) {
-      posts[i].read += 1;
+      posts[i].reads += 1;
     }
     const postIds = posts.map(p => p.id).join(',');
     return Sequelize.query(`UPDATE posts_backup set reads=reads+1 where id IN (${postIds})`)

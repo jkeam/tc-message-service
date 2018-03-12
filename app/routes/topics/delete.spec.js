@@ -53,6 +53,20 @@ describe('DELETE /v4/topics/:topicId ', () => {
       .expect(403, done);
   });
 
+  it('should return 403 response when user is not member of the project', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [] } } },
+    });
+    request(server)
+      .delete(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .expect(403, done);
+  });
+
   it('should return 200 response with valid jwt token and payload', (done) => {
     const getStub = sandbox.stub(axios, 'get');
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint

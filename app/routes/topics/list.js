@@ -72,9 +72,7 @@ module.exports = db =>
             db.post_user_stats_backup.updateUserStats(db, logger, [topic.posts[0]], userId, 'READ');
           }
           return Promise.resolve();
-        })).catch((error) => {
-          logger.error('error marking topic posts read', error);
-        });
+        }));
         // logger.debug('adapting topics', dbTopics);
         const adaptedTopics = dbTopics;
         // const adaptedTopics = adapter.adaptTopics({ topics : dbTopics });
@@ -83,6 +81,6 @@ module.exports = db =>
       .then(result => resp.status(200).send(util.wrapResponse(req.id, result)));
     })
     .catch((error) => {
-      next(error);
+      next(error instanceof errors.HttpStatusError ? error : new errors.HttpStatusError(500, 'Error fetching topics'));
     });
   };

@@ -474,4 +474,33 @@ describe('GET /v4/topics ', () => {
         }, done);
       });
   });
+
+  it('should return 500 response even if there is a runtime error', (done) => {
+    const getStub = sandbox.stub(axios, 'get').resolves();
+    // stub for updateUserStats method of PostUserStats modal
+    const findTopicsStub = sandbox.stub(db.topics_backup, 'findTopics').throws();
+
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
+    });
+
+    request(server)
+      .get(apiPath)
+      .set({ Authorization: `Bearer ${jwts.member}` })
+      .query(testQuery)
+      .expect(500)
+      .end((err, res) => { // eslint-disable-line
+        if (err) {
+          return done(err);
+        }
+        // once for reference endpoint call
+        sinon.assert.calledOnce(getStub);
+        // should call findTopics on topics model
+        findTopicsStub.should.have.be.calledOnce;
+        res.body.should.have.propertyByPath('result', 'content', 'message')
+          .eql('Error fetching topics');
+        done();
+      });
+  });
 });

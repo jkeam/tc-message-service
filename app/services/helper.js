@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const config = require('config');
-const Discourse = require('./discourse');
 const axios = require('axios');
 const errors = require('common-errors');
 const util = require('../util');
@@ -14,12 +13,9 @@ const { REFERENCE_LOOKUPS } = require('../constants');
  * Returns helper service containing common functions used in route handlers
  * @param {Object} logger the logger
  * @param {Object} db sequelize db with all models loaded
- * @param {Object} _discourseClient optional
  * @return {function} function
  */
-module.exports = (logger, db, _discourseClient = null) => {
-  const discourseClient = _discourseClient || new Discourse(logger);
-
+module.exports = (logger, db) => {
   /**
    * Lookup user handles from userIds
    * @param  {Array} userIds user Identifiers
@@ -132,57 +128,6 @@ module.exports = (logger, db, _discourseClient = null) => {
   }
 
   /**
-   * Get user from discourse provision a user in Discourse if one doesn't exist
-   * @param {String} userId userId of the user to fetch
-   * @return {Promise} promise
-   */
-  function getUserOrProvision(userId) {
-    logger.debug('Verifying if user exsits in Discourse:', userId);
-    return discourseClient.getUser(userId).then((user) => {
-      logger.info('Successfully got the user from Discourse', userId);
-      return user;
-    }).catch(() => {
-      logger.info('Discourse user doesn\'t exist, creating one', userId);
-      // User doesn't exist, create
-      // Fetch user info from member service
-      return this.lookupUserFromId(userId)
-        .catch((error) => {
-          logger.error('Error retrieving topcoder user', error);
-          throw new errors.HttpStatusError(500, 'Failed to get topcoder user info');
-        }).then((user) => {
-          logger.info('Successfully got topcoder user', JSON.stringify(user));
-          // Create discourse user
-          return discourseClient.createUser(
-            `${encodeURIComponent(user.firstName)} ${encodeURIComponent(user.lastName)}`,
-            user.userId.toString(),
-            user.handle,
-            user.email,
-            config.defaultDiscoursePw);
-        }).then((result) => {
-          if (result.data.success) {
-            logger.info('Discourse user created');
-          } else {
-            logger.error('Unable to create discourse user', result.data);
-            throw new errors.HttpStatusError(500, 'Unable to create discourse user');
-          }
-          return discourseClient.changeTrustLevel(result.data.user_id, config.get('defaultUserTrustLevel'));
-        })
-        .then((result) => {
-          if (result.status === 200) {
-            logger.info('Discourse user trust level changed');
-            return result.data;
-          }
-          logger.error('Unable to change discourse user trust level', result);
-          throw new errors.HttpStatusError(500, 'Unable to change discourse user trust level');
-        })
-        .catch((error) => {
-          logger.error('Failed to create discourse user', error);
-          throw error;
-        });
-    });
-  }
-
-  /**
    * Checks if a user has access to an entity, and if they do, provision a user in Discourse if one doesn't exist
    * @param {String} authToken user's auth token to use to call the Topcoder api to get user info for provisioning
    * @param {String} requestId request identifier
@@ -262,7 +207,6 @@ module.exports = (logger, db, _discourseClient = null) => {
     lookupUserFromId,
     userHasAccessToEntity,
     callReferenceEndpoint,
-    getUserOrProvision,
     checkAccessAndProvision,
     getContentFromMatch,
     mentionUserIdToHandle,
