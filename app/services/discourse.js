@@ -104,6 +104,31 @@ module.exports = (logger) => {
   }
 
   /**
+   * Create a new topic
+   * @param {String}  title           the title of the topic
+   * @param {String}  post            the body of the topic, html markup is allowed
+   * @param {String}  owner           user who created the topic
+   * @param {Number}  categoryId      (optional) category of the topic
+   * @return {Promise} promise
+   */
+  function createTopic(title, post, owner, categoryId) {
+    const data = {
+      title,
+      raw: post,
+    };
+
+    if (categoryId) {
+      data.category = categoryId;
+    }
+
+    return getClient().post('/posts', data, {
+      params: {
+        api_username: owner && !util.isDiscourseAdmin(owner) ? owner : DISCOURSE_SYSTEM_USERNAME,
+      },
+    });
+  }
+
+  /**
    * Gets a topic in Discourse
    * @param {String} topicIds the ids of the topic
    * @param {String} username the username to use to fetch the topic, for security purposes
@@ -114,16 +139,8 @@ module.exports = (logger) => {
     getClient();
 
     const getTopicsPromise = () => {
-      const paramsString = JSON.stringify({ topic_list: topicIds.join(','), uid: username });
-      return client.post(`admin/plugins/explorer/queries/${client.topicsQueryId}/run`,
-        querystring.stringify({ params: paramsString, format: 'json', limit: 100000 }), {
-          params: {
-            api_username: DISCOURSE_SYSTEM_USERNAME,
-          },
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded;',
-          },
-        })
+      const params = { topic_list: topicIds.join(','), uid: username };
+      return this.runQuery(client.topicsQueryId, params)
       .then((response) => {
         logger.debug('got response', response);
         const columns = response.data.columns;
@@ -171,37 +188,94 @@ module.exports = (logger) => {
     };
 
     if (!client.topicsQueryId) {
-      return client.get('admin/plugins/explorer/queries.json', {
-        params: {
-          api_username: DISCOURSE_SYSTEM_USERNAME,
-        },
-      })
-      .then((response) => {
-        client.topicsQueryId = _.find(response.data.queries, { name: 'Connect_Topics_Query' }).id;
-      })
-      .catch((err) => {
-        logger.error('Error getting query id');
-        logger.error(err);
-        return Promise.reject(err);
-      })
-      .then(() => getTopicsPromise());
+      return this.getQueryId('Connect_Topics_Query')
+        .then((queryId) => {
+          client.topicsQueryId = queryId;
+
+          return getTopicsPromise();
+        });
     }
 
     return getTopicsPromise();
   }
 
   /**
+   * Get query id by query name from Data Explorer plugin of Discourse.
+   * @param {String} queryName query name
+   * @return {Promise} promise
+   */
+  function getQueryId(queryName) {
+    return getClient().get('admin/plugins/explorer/queries.json', {
+      params: {
+        api_username: DISCOURSE_SYSTEM_USERNAME,
+      },
+    })
+      .then((response) => {
+        const query = _.find(response.data.queries, { name: queryName });
+
+        if (!query) {
+          throw new Error(`Cannot find query '${queryName}' in Data Explorer plugin of Discourse.`);
+        }
+
+        return query.id;
+      })
+      .catch((err) => {
+        logger.error('Error getting query id');
+        logger.error(err);
+        return Promise.reject(err);
+      });
+  }
+
+  function runQuery(queryId, params, limit) {
+    return getClient().post(`admin/plugins/explorer/queries/${queryId}/run`,
+      querystring.stringify({ params: JSON.stringify(params), format: 'json', limit: limit || 100000 }), {
+        params: {
+          api_username: DISCOURSE_SYSTEM_USERNAME,
+        },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;',
+        },
+      });
+  }
+
+  /**
    * Updates a topic in Discourse
    * @param {String} username the username to use to fetch the topic, for security purposes
    * @param {String} topicId the id of the topic
-   * @param {String} title the title of the topic
+   * @param {String} title (optional) the title of the topic
+   * @param {Number} categoryId (optional) the id of topic category
    * @return {Promise} update topic promise
    */
-  function updateTopic(username, topicId, title) {
+  function updateTopic(username, topicId, title, categoryId) {
     logger.debug(`Update topic# ${topicId} for user: ${username}`);
-    return getClient().put(`/t/${topicId}.json`, { topic_id: topicId, title }, {
+    const data = { topic_id: topicId };
+
+    if (title) {
+      data.title = title;
+    }
+
+    if (categoryId) {
+      data.category_id = categoryId;
+    }
+
+    return getClient().put(`/t/${topicId}.json`, data, {
       params: {
-        api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
+        api_username: username && !util.isDiscourseAdmin(username) ? username : DISCOURSE_SYSTEM_USERNAME,
+      },
+    });
+  }
+
+  /**
+   * Convert topic from private messages to public
+   * @param {String} topicId the id of the topic
+   * @return {Promise} promise
+   */
+  function convertTopicToPublic(topicId) {
+    logger.debug(`Converting topic ${topicId} to public...`);
+
+    return getClient().put(`/t/${topicId}/convert-topic/public`, {
+      params: {
+        api_username: DISCOURSE_SYSTEM_USERNAME,
       },
     });
   }
@@ -237,10 +311,10 @@ module.exports = (logger) => {
 
   /**
    * Creates a post (reply) to a topic
-   * @param {String} username user creating the post
-   * @param {Object} post body of the post, html markup is permitted
-   * @param {Number} discourseTopicId the topic id to which the response is being posted
-   * @param {Number} responseTo reply to post id
+   * @param {String}  username user creating the post
+   * @param {Object}  post body of the post, html markup is permitted
+   * @param {Number}  discourseTopicId the topic id to which the response is being posted
+   * @param {Number}  responseTo reply to post id
    * @return {Promise} promise
    */
   function createPost(username, post, discourseTopicId, responseTo) {
@@ -248,6 +322,7 @@ module.exports = (logger) => {
     if (responseTo) {
       data += `&reply_to_post_number=${responseTo}`;
     }
+
     return getClient().post('/posts', data, {
       params: {
         api_username: util.isDiscourseAdmin(username) ? DISCOURSE_SYSTEM_USERNAME : username,
@@ -392,12 +467,104 @@ module.exports = (logger) => {
     });
   }
 
+  /**
+   * Creates a group
+   * @param {String}   groupName group name
+   * @return {Promise}           response with property data.basic_group
+   */
+  function createGroup(groupName) {
+    const data = {
+      group: {
+        name: groupName,
+      },
+    };
+
+    return getClient().post('/admin/groups', data, {
+      params: {
+        api_username: DISCOURSE_SYSTEM_USERNAME,
+      },
+    });
+  }
+
+  /**
+   * Add users to the group
+   * @param {String}   groupId   group id
+   * @param {Array}    usernames usernames to add
+   * @return {Promise}           response with property data.success
+   */
+  function addUsersToGroup(groupId, usernames) {
+    const data = {
+      usernames: usernames.join(','),
+    };
+
+    return getClient().put(`/groups/${groupId}/members.json`, data, {
+      params: {
+        api_username: DISCOURSE_SYSTEM_USERNAME,
+      },
+    });
+  }
+
+  /**
+   * Remove user from the group
+   * @param {String}   groupId   group id
+   * @param {String}   userId    user id to remove
+   * @return {Promise}           response with property data.success
+   */
+  function removeUserFromGroup(groupId, userId) {
+    return getClient().delete(`/groups/${groupId}/members.json`, {
+      params: {
+        user_id: userId,
+        api_username: DISCOURSE_SYSTEM_USERNAME,
+      },
+    });
+  }
+
+  /**
+   * Get users in the group
+   * @param {String}   groupName group name
+   * @param {Array}    usernames usernames to add
+   * @return {Promise}           response with property data.success
+   */
+  function getUsersInGroup(groupName) {
+    return getClient().get(`/groups/${groupName}/members.json`, {
+      params: {
+        api_username: DISCOURSE_SYSTEM_USERNAME,
+      },
+    });
+  }
+
+  /**
+   * Creates a category
+   * @param {String}   categoryName category name
+   * @param {String}   groupName    group name which will have access to the category
+   * @return {Promise}              response with property data.category
+   */
+  function createCategory(categoryName, groupName) {
+    const data = {
+      name: categoryName,
+      color: 'FFFFFF',
+      text_color: '000000',
+    };
+
+    if (groupName) {
+      data.permissions = {};
+      data.permissions[groupName] = 1;
+    }
+
+    return getClient().post('/categories.json', data, {
+      params: {
+        api_username: DISCOURSE_SYSTEM_USERNAME,
+      },
+    });
+  }
+
   return {
     createUser,
     getUser,
     changeTrustLevel,
     grantAccess,
     removeAccess,
+    createTopic,
     getTopics,
     updateTopic,
     deleteTopic,
@@ -409,5 +576,13 @@ module.exports = (logger) => {
     getPost,
     getPosts,
     markTopicPostsRead,
+    createGroup,
+    createCategory,
+    addUsersToGroup,
+    getUsersInGroup,
+    removeUserFromGroup,
+    getQueryId,
+    runQuery,
+    convertTopicToPublic,
   };
 };

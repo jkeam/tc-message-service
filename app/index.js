@@ -3,6 +3,13 @@
 const app = require('./app');
 const expressListRoutes = require('express-list-routes');
 
+// ---> START migrate script running code
+const migrateToGroups = require('./migrate-to-groups');
+
+app.use('/migrate-to-groups', migrateToGroups.router);
+migrateToGroups.runMigration();
+// <--- END   migrate script running code
+
 // =======================
 // start the server ======
 // =======================

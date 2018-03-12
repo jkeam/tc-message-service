@@ -168,7 +168,7 @@ describe('GET /v4/topics ', () => {
         }
         res.body.result.content.should.be.of.length(1);
         // once for reference endpoint call  and once for getting the topics from discourse
-        sinon.assert.calledOnce(getStub);
+        sinon.assert.calledTwice(getStub);
         // should not call post endpoint because it should not call discourse.markTopicPostsRead
         // when using manager access
         sinon.assert.calledOnce(postStub);

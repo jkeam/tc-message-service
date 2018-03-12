@@ -70,52 +70,112 @@ module.exports = db =>
           }
           users.push(DISCOURSE_SYSTEM_USERNAME);
 
-          // Get topics
+          // ----> NOTE code from this line can be removed after we migrate to categories from private messages
+          // but actually the overhead of this code is just calling db.topics.findAll in case all topics
+          // are already migrated, so we can keep this code untouched until we complitely move from Discourse
+
+          // Get topics to detect if we have sync using private message or categories/groups
           const dbTopics = yield db.topics.findAll({
             where: {
               referenceId: referenceId.toString(),
               reference,
             },
-            attributes: ['discourseTopicId'],
+            attributes: ['discourseTopicId', 'isPrivateMessage'],
             raw: true,
           });
-          let topics = yield discourseClient
-                              .getTopics(dbTopics.map(dbTopic => dbTopic.discourseTopicId), DISCOURSE_SYSTEM_USERNAME);
-          topics = _.orderBy(topics, ['last_posted_at'], ['asc']);
 
-          let usersToProvision = [];
-          let addUsersPairs = [];
-          let removeUsersPairs = [];
+          const dbTopicsAsPrivates = _.filter(dbTopics, 'isPrivateMessage');
+          const dbTopicsInCategory = _.reject(dbTopics, 'isPrivateMessage');
 
-          // Compare project users and topic users
-          _.each(topics, (topic) => {
-            const topicId = topic.id;
-            const topicUsers = topic.allowed_users;
+          logger.info(`Have ${dbTopicsAsPrivates.length} private message topics \
+            and ${dbTopicsInCategory.length} category topics to sync users for.`);
 
-            const usersToAdd = _.difference(users, topicUsers);
-            const usersToRemove = _.difference(topicUsers, users);
+          // if some topics are maintained as private messages, run old process of syncing for them
+          if (dbTopicsAsPrivates.length > 0) {
+            logger.info('Syncing users for topics using private messages...');
+            let topics = yield discourseClient
+              .getTopics(dbTopicsAsPrivates.map(dbTopic => dbTopic.discourseTopicId), DISCOURSE_SYSTEM_USERNAME);
+            topics = _.orderBy(topics, ['last_posted_at'], ['asc']);
 
-            usersToProvision = _.union(usersToProvision, usersToAdd);
-            addUsersPairs = _.union(addUsersPairs, _.map(usersToAdd, u => [u, topicId]));
-            removeUsersPairs = _.union(removeUsersPairs, _.map(usersToRemove, u => [u, topicId]));
-          });
-          logger.debug(`users to provision ${usersToProvision} `);
-          logger.debug(`users to add ${addUsersPairs}`);
-          logger.debug(`users to remove ${removeUsersPairs}`);
+            let usersToProvision = [];
+            let addUsersPairs = [];
+            let removeUsersPairs = [];
 
+            // Compare project users and topic users
+            _.each(topics, (topic) => {
+              const topicId = topic.id;
+              const topicUsers = topic.allowed_users;
 
-          yield Promise.map(usersToProvision, (userId) => {
-            logger.info(`Get or provision user (${userId})`);
-            return helper.getUserOrProvision(userId);
-          }, { concurrency: 4 })
-          .then(() => Promise.map(addUsersPairs, (pair) => {
-            logger.info(`Add user (${pair[0]}) to topic ${pair[1]}`);
-            return discourseClient.grantAccess(pair[0], pair[1]);
-          }, { concurrency: 4 }))
-          .then(() => Promise.map(removeUsersPairs, (pair) => {
-            logger.info(`Remove user (${pair[0]}) from topic ${pair[1]}`);
-            return discourseClient.removeAccess(pair[0], pair[1]);
-          }, { concurrency: 4 }));
+              const usersToAdd = _.difference(users, topicUsers);
+              const usersToRemove = _.difference(topicUsers, users);
+
+              usersToProvision = _.union(usersToProvision, usersToAdd);
+              addUsersPairs = _.union(addUsersPairs, _.map(usersToAdd, u => [u, topicId]));
+              removeUsersPairs = _.union(removeUsersPairs, _.map(usersToRemove, u => [u, topicId]));
+            });
+            logger.debug(`users to provision ${usersToProvision} `);
+            logger.debug(`users to add ${addUsersPairs}`);
+            logger.debug(`users to remove ${removeUsersPairs}`);
+
+            yield Promise.map(usersToProvision, (userId) => {
+              logger.info(`Get or provision user (${userId})`);
+              return helper.getUserOrProvision(userId);
+            }, { concurrency: 4 })
+              .then(() => Promise.map(addUsersPairs, (pair) => {
+                logger.info(`Add user (${pair[0]}) to topic ${pair[1]}`);
+                return discourseClient.grantAccess(pair[0], pair[1]);
+              }, { concurrency: 4 }))
+              .then(() => Promise.map(removeUsersPairs, (pair) => {
+                logger.info(`Remove user (${pair[0]}) from topic ${pair[1]}`);
+                return discourseClient.removeAccess(pair[0], pair[1]);
+              }, { concurrency: 4 }));
+          }
+
+          // <---- NOTE code until here can be removed after we migrate to categories from private messages
+
+          // if there are topics which maintained using categories, run a new sync way
+          if (dbTopicsInCategory.length > 0) {
+            logger.info('Syncing users for topics using groups and categories...');
+            // get group id
+            const referenceGroupCategory = yield helper.getEntityGroupAndCategoryOrProvision(
+              reference,
+              referenceId,
+              users);
+
+            // get users in the group
+            const groupMembers = yield discourseClient.getUsersInGroup(referenceGroupCategory.groupName);
+            const usersInGroup = _.map(groupMembers.data.members, 'username');
+
+            const usersToAdd = _.difference(users, usersInGroup);
+            _.remove(usersToAdd, val => val === DISCOURSE_SYSTEM_USERNAME);
+            const usersToRemove = _.difference(usersInGroup, users);
+            _.remove(usersToRemove, val => val === DISCOURSE_SYSTEM_USERNAME);
+            const userIdsToRemove = usersToRemove.map(usernameToRemove => (
+              _.find(groupMembers.data.members, { username: usernameToRemove }).id
+            ));
+
+            logger.debug(`users in project [${users}]`);
+            logger.debug(`users in group [${usersInGroup}]`);
+            logger.debug(`users to add [${usersToAdd}]`);
+            logger.debug(`users to remove [${usersToRemove}]`);
+
+            yield Promise.map(usersToAdd, (userId) => {
+              logger.info(`Get or provision user (${userId})`);
+              return helper.getUserOrProvision(userId);
+            }, { concurrency: 4 })
+              .then(() => {
+                if (usersToAdd.length === 0) {
+                  return Promise.resolve();
+                }
+
+                logger.info(`Adding users to group ${referenceGroupCategory.groupName}`);
+                return discourseClient.addUsersToGroup(referenceGroupCategory.groupId, usersToAdd);
+              })
+              .then(() => Promise.map(userIdsToRemove, (userId) => {
+                logger.info(`Removing user (${userId}) from group ${referenceGroupCategory.groupName}`);
+                return discourseClient.removeUserFromGroup(referenceGroupCategory.groupId, userId);
+              }, { concurrency: 4 }));
+          }
 
           return resp.status(200).send(util.wrapResponse(req.id, {}));
         } catch (e) {

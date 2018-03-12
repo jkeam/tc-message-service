@@ -61,77 +61,25 @@ module.exports = db =>
         logger.info('User has access to entity, creating topic in Discourse');
         // add system user
         users.push(DISCOURSE_SYSTEM_USERNAME);
-        logger.debug('Users that should be added to topic: ', users);
-        return discourseClient
-          .createPrivatePost(params.title, params.body, users.join(','), req.authUser.userId.toString())
-          .then(response => response)
-          .catch((error) => {
-            // logger.debug('Error creating private post', error);
-            // logger.debug(error.response && error.response.status);
-            // logger.debug(error.response && error.response.data);
-            logger.error('Failed to create topic in Discourse', error);
+        logger.debug('Users that suppose to be in the topic: ', users);
 
-            // If 403 or 422, it is possible that the user simply hasn't been created in Discourse yet
-            if (error.response &&
-              (error.response.status === 500 || error.response.status === 403 || error.response.status === 422)) {
-              logger.info('Failed to create topic in Discourse, checking user exists in Discourse and provisioning');
-              const getUserPromises = _.map(users, (user) => {
-                if (user !== DISCOURSE_SYSTEM_USERNAME) {
-                  return helper.getUserOrProvision(user);
+        return helper.getEntityGroupAndCategoryOrProvision(params.reference, params.referenceId, users)
+          .then((referenceGroupCategory) => {
+            logger.info('Creating topic...');
+
+            return discourseClient
+              .createTopic(params.title, params.body, req.authUser.userId.toString(), referenceGroupCategory.categoryId)
+              .catch((error) => {
+                logger.error('Failed to create topic', error);
+                if (error.status || (error.response && error.response.status)) {
+                  const message = _.get(error, 'response.data.errors[0]') || error.message;
+                  throw new errors.HttpStatusError(
+                    error.status || error.response.status,
+                    `Failed to create topic in Discourse: ${message}`);
                 }
-                return new Promise.resolve(); // eslint-disable-line
+                throw new errors.HttpStatusError(500,
+                  `Failed to create topic in Discourse: ${error.message}`);
               });
-              return Promise.all(getUserPromises).then(() => {
-                logger.info('User(s) exists in Discourse, trying to create topic again');
-                return Promise.coroutine(function* a() {
-                  // createPrivatePost may fail again if called too soon. Trying over and over again until success or timeout
-                  const endTimeMs = new Date().getTime() + config.get('createTopicTimeout');
-                  const delayMs = config.get('createTopicRetryDelay');
-                  for (let i = 1; ; ++i) {
-                    try {
-                      logger.debug(`attempt number ${i}`);
-                      // We need update post body for subsequent tries, otherwise system user posts fail - DISCOURSE !
-                      params.body += ' ';
-                      return yield discourseClient
-                        .createPrivatePost(params.title, params.body, users.join(','), req.authUser.userId.toString());
-                    } catch (e) {
-                      if (e.response && (e.response.status === 403 || e.response.status === 422)) {
-                        logger.debug(`Failed to create create private post. (attempt #${i}, e: ${e})`);
-                        logger.debug(e.response && e.response.status);
-                        logger.debug(e.response && e.response.data);
-                        const timeLeftMs = endTimeMs - new Date().getTime();
-                        if (timeLeftMs > 0) {
-                          logger.info(`Create topic failed. Trying again after delay (${(timeLeftMs / 1000)} seconds\
-                           left until timeout).`);
-                          yield Promise.delay(delayMs);
-                          continue; // eslint-disable-line
-                        } else {
-                          throw new errors.HttpStatusError(500,
-                            'Timed out while trying to create a topic in Discourse');
-                        }
-                      }
-                      throw e;
-                    }
-                  }
-                })();
-              }).catch((err) => {
-                logger.debug('Error in provisioning user in discourse', err);
-                logger.debug(err.response && err.response.status);
-                logger.debug(err.response && err.response.data);
-                throw err;
-              });
-            }
-            throw error;
-          }).catch((error) => {
-            logger.error('Failed to create topic', error);
-            if (error.status || (error.response && error.response.status)) {
-              const message = _.get(error, 'response.data.errors[0]') || error.message;
-              throw new errors.HttpStatusError(
-                error.status || error.response.status,
-                `Failed to create topic in Discourse: ${message}`);
-            }
-            throw new errors.HttpStatusError(500,
-              `Failed to create topic in Discourse: ${error.message}`);
           });
       }).then((response) => {
         logger.debug(response.data);
@@ -145,6 +93,7 @@ module.exports = db =>
           createdBy: req.authUser.userId.toString(),
           updatedAt: new Date(),
           updatedBy: req.authUser.userId.toString(),
+          isPrivateMessage: false, // mark that this topic is handled not using private messages, but categories
         });
 
         return pgTopic.save().then(() => {

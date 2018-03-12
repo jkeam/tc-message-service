@@ -79,10 +79,9 @@ cd discourse
 git checkout master
 
 # edit discourse/bin/docker/boot_dev and change port 3000:3000 to 3002:3002
-./bin/docker/boot_dev
+./bin/docker/boot_dev --init # init flag triggers bundle install, db migrations and creating admin user
 
-# Install bundle and sso plugin
-./bin/docker/bundle install
+# Install plugins
 ./bin/docker/rake plugin:install["https://github.com/FutureProofGames/discourse_sso_redirect.git"]
 ./bin/docker/rake plugin:install["https://github.com/discourse/discourse-data-explorer.git"]
 
@@ -129,24 +128,24 @@ curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/enable_emoji?api_key=<a
 
 ```
 
-go to http://local.topcoder-dev:3002/admin/plugins/explorer, log in with admin credentials and create a new query called `Connect_Topics_Query` with the following contents
+Open http://local.topcoder-dev:3002 and login with admin credentials. After go to http://local.topcoder-dev:3002/admin/plugins/explorer and create a new query called `Connect_Topics_Query` with the following contents
 ```
 -- [params]
 -- int_list :topic_list
 -- string :uid
 
-SELECT 
+SELECT
     t.id as topic_id,
     tu.username as topic_user_id,
     t.created_at as topic_created_at,
     t.updated_at as topic_updated_at,
     t.last_posted_at as topic_last_posted_at,
     t.title as topic_title,
-    (SELECT string_agg(au.username,',') from 
+    (SELECT string_agg(au.username,',') from
         topic_allowed_users as tau
         left join users au on au.id=tau.user_id
         where tau.topic_id=t.id) as allowed_users,
-    
+
     p.id as post_id,
 	p.cooked as post_cooked,
 	p.raw as post_raw,
@@ -155,7 +154,7 @@ SELECT
 	p.updated_at as post_updated_at,
 	p.post_number as post_post_number,
 	pt.post_number is not null as post_read
-    
+
 
 from posts p
 left join users pu on pu.id=p.user_id
@@ -164,8 +163,8 @@ left join users tu on tu.id=t.user_id
 left join users ptu on ptu.username = :uid
 left join post_timings pt on pt.topic_id=t.id and pt.post_number=p.post_number and pt.user_id=ptu.id
 
-where 
-t.deleted_at is null and 
+where
+t.deleted_at is null and
 p.deleted_at is null and
 p.post_type=1
 and t.id in (:topic_list)
@@ -191,7 +190,7 @@ export RABBITMQ_URL=amqp://local.topcoder-dev.com:5672
 export DB_MASTER_URL=postgres://coder:mysecretpassword@local.topcoder-dev.com:5432/messages
 ```
 
-NOTE: 
+NOTE:
 
 - The Discourse system user's API key is obtained in the last step from Discourse setup
 - DEFAULT_DISCOURSE_PW defines the default password for users which will be created in Discourse automatically
@@ -232,7 +231,14 @@ npm run start:dev
 ```
 This will start service on 8001 port.
 
+**NOTE**
 
+If you want some other app like [connect-app](https://github.com/appirio-tech/connect-app) to use locally deployed `tc-message-service` you have to set environment variable `TC_MESSAGE_SERVICE_AUTH_LOOSE=true` when running `tc-message-service`:
+```shell
+TC_MESSAGE_SERVICE_AUTH_LOOSE=true npm run start:dev
+```
+
+This will disable validation of jwt token obtained by another app (like connect-app) from `topcoder-dev.com`/`topcoder.com`. It's because we don't know a `secret` of obtained jwt token, so we cannot validate it locally.
 
 # Verify the service
 
@@ -290,6 +296,12 @@ npm test
 ```
 
 Then you can check coverage report in coverage folder.
+
+**NOTE**
+
+If you've previously defined environment variables in section **Setting up Environment Variables** they will override config for test environment.
+Make sure you unset them before running tests or set them to appropriate for tests values.
+For example, if you've previously set `DB_MASTER_URL` tests will use this DB and **clear** all data in this DB.
 
 ## Postman
 

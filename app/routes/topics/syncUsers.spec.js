@@ -28,7 +28,7 @@ describe('PUT /v4/topics/syncUsers', () => {
     },
   };
   const dbTopics = [
-    { discourseTopicId: 1 },
+    { discourseTopicId: 1, isPrivateMessage: true },
   ];
 
   let sandbox;
