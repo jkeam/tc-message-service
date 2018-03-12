@@ -10,7 +10,6 @@ import expressRequestId from 'express-request-id';
 import cors from 'cors';
 import busApi from './events/busApi';
 
-const autoReap = require('multer-autoreap');
 const coreLib = require('tc-core-library-js');
 const Routes = require('./routes');
 const db = require('./models');
@@ -57,7 +56,6 @@ app.use(addRequestId);
 app.use(coreLib.middleware.logger(null, logger));
 app.use(bodyParser.json());
 app.use(cookieParser());
-app.use(autoReap);
 app.use(routes);
 
 // =======================

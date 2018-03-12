@@ -1,4 +1,14 @@
 {
+  "aws": {
+    "config": {
+      "accessKeyId": "xxxxxxxxxxxxxxxx",
+      "region": "us-east-1",
+      "secretAccessKey": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "S3": {
+      "bucket": "tc-message-service-attachments"
+    }
+  },
   "defaultDiscoursePw": "supersecretpw",
   "discourseSystemUsername": "system",
   "memberServiceUrl": "http://local.topcoder-dev.com:3001/members",

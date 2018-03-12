@@ -3,13 +3,17 @@ const router = require('express').Router();
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
 const tcCoreLib = require('tc-core-library-js');
+
+const createAttachmentHandler = require('./attachments/create');
+const getAttachmentHandler = require('./attachments/get');
+const deleteAttachmentHandler = require('./attachments/delete');
+
 const getTopicHandler = require('./topics/get');
 const topicListHandler = require('./topics/list');
 const topicCreateHandler = require('./topics/create');
 const topicUpdateHandler = require('./topics/update');
 const topicDeleteHandler = require('./topics/delete');
 
-// const uploadImageHandler = require('./image/upload');
 const createPostHandler = require('./posts/create');
 const listPostsHandler = require('./posts/list');
 const getPostHandler = require('./posts/get');
@@ -93,11 +97,15 @@ module.exports = (logger, db) => {
     .delete(deletePostHandler(db))
     .get(getPostHandler(db));
 
+  router.route('/v4/topics/:topicId/posts/:postId/attachments/:attachmentId')
+    .get(getAttachmentHandler(db))
+    .delete(deleteAttachmentHandler(db));
+
+  router.route('/v4/topics/:topicId/posts/:postId/attachments')
+    .post(createAttachmentHandler(db));
+
   router.route('/v4/topics/:topicId/posts/:postId/edit')
     .post(updatePostHandler(db));
-
-  // router.route('/v4/topics/image')
-  //   .post(uploadImageHandler());
 
   // register error handler
   router.use((err, req, res, next) => { // eslint-disable-line
