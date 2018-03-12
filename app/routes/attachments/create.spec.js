@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions, newline-per-chained-call */
 
-import { clearDB, jwts, prepareDB } from '../../tests';
+import { clearDB, jwts, prepareDB, getDecodedToken } from '../../tests';
 
 const axios = require('axios');
 const request = require('supertest');
@@ -14,6 +14,13 @@ require('should-sinon');
 
 describe('POST /v4/topics/:topicId/posts/:postId/attachments', () => {
   const apiPath = '/v4/topics/1/posts/1/attachments?referenceId=1';
+  const memberUser = {
+    handle: getDecodedToken(jwts.member).handle,
+    userId: getDecodedToken(jwts.member).userId,
+    firstName: 'fname',
+    lastName: 'lName',
+    email: 'some@abc.com',
+  };
   let sandbox;
 
   const stubWithNoAccessToProject = () => {
@@ -24,7 +31,7 @@ describe('POST /v4/topics/:topicId/posts/:postId/attachments', () => {
 
   const stubWithAccessToProject = () => {
     sandbox.stub(axios, 'get').withArgs('http://reftest/1').resolves({
-      data: { result: { status: 200, content: {} } },
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
   };
 
@@ -110,7 +117,7 @@ describe('POST /v4/topics/:topicId/posts/:postId/attachments', () => {
     request(server)
       .post(apiPath)
       .set({
-        Authorization: `Bearer ${jwts.admin}`,
+        Authorization: `Bearer ${jwts.member}`,
       })
       .attach('file', 'app/tests/test.png')
       .expect(403)

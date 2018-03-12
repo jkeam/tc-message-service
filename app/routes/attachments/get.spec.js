@@ -13,6 +13,13 @@ require('should-sinon');
 
 describe('GET /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', () => {
   const apiPath = '/v4/topics/1/posts/1/attachments/1?referenceId=1';
+  const memberUser = {
+    handle: getDecodedToken(jwts.member).handle,
+    userId: getDecodedToken(jwts.member).userId,
+    firstName: 'fname',
+    lastName: 'lName',
+    email: 'some@abc.com',
+  };
   let sandbox;
 
   const stubWithNoAccessToProject = () => {
@@ -23,7 +30,7 @@ describe('GET /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', () =
 
   const stubWithAccessToProject = () => {
     sandbox.stub(axios, 'get').withArgs('http://reftest/1').resolves({
-      data: { result: { status: 200, content: {} } },
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
   };
 

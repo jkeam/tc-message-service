@@ -61,12 +61,14 @@ module.exports = db =>
     const query = Joi.attempt(req.query, {
       referenceId: Joi.number().required(),
     });
+    const userId = req.authUser.userId.toString();
 
-    return helper.userHasAccessToEntity(req.authToken, req.id, REFERENCE_LOOKUPS.PROJECT, query.referenceId)
+    return helper.callReferenceEndpoint(req.authToken, req.id, REFERENCE_LOOKUPS.PROJECT, query.referenceId)
       .then((hasAccessResp) => {
-        logger.info('Checking if user has access to identity');
-        const hasAccess = hasAccessResp[0];
-        if (!hasAccess) { throw new errors.HttpStatusError(403, 'User doesn\'t have access to the project'); }
+        const hasAccess = helper.userHasAccessToEntity(userId, hasAccessResp, REFERENCE_LOOKUPS.PROJECT);
+        if (!hasAccess && !helper.isAdmin(req)) {
+          throw new errors.HttpStatusError(403, 'User doesn\'t have access to the project');
+        }
         return upload(req, resp);
       })
       .then(() => {

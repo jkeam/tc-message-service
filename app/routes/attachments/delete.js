@@ -34,17 +34,19 @@ module.exports = db =>
       hardDelete: Joi.boolean(),
       referenceId: Joi.string().required(),
     }).unknown());
+    const userId = req.authUser.userId.toString();
+    const isAdmin = helper.isAdmin(req);
 
-    return helper.userHasAccessToEntity(req.authToken, req.id, REFERENCE_LOOKUPS.PROJECT, query.referenceId)
+    return helper.callReferenceEndpoint(req.authToken, req.id, REFERENCE_LOOKUPS.PROJECT, query.referenceId)
       .then((hasAccessResp) => {
-        logger.info('Checking if user has access to identity');
-        const hasAccess = hasAccessResp[0];
-        if (!hasAccess) { throw new errors.HttpStatusError(403, 'User doesn\'t have access to the project'); }
+        const hasAccess = helper.userHasAccessToEntity(userId, hasAccessResp, REFERENCE_LOOKUPS.PROJECT);
+        if (!hasAccess && !isAdmin) {
+          throw new errors.HttpStatusError(403, 'User doesn\'t have access to the project');
+        }
 
         return db.postAttachments.findOne({ where: { id: params.attachmentId, postId: params.postId } });
       })
       .then((postAttachment) => {
-        const isAdmin = helper.isAdmin(req);
         if (!postAttachment || (!query.hardDelete && postAttachment.deletedAt && !isAdmin)) {
           // also take into account when a non admin user is trying to delete a soft deleted record, which he shouldn't
           // have access to.. return as if the attachment doesn't exist
