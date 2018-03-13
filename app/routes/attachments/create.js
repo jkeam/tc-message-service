@@ -11,6 +11,8 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 const { REFERENCE_LOOKUPS } = require('../../constants');
 
+const HttpStatusError = errors.HttpStatusError;
+
 const upload = Promise.promisify(multer({
   storage: multerS3({
     s3: new aws.S3(config.get('aws.config')),
@@ -102,7 +104,6 @@ module.exports = db =>
       })
       .catch((error) => {
         logger.error(error);
-        next(error instanceof errors.HttpStatusError ? error : new errors.HttpStatusError(
-          error.response && error.response.status ? error.response.status : 500, 'Error uploading attachment'));
+        next(error instanceof HttpStatusError ? error : new HttpStatusError(500, 'Error uploading attachment'));
       });
   };

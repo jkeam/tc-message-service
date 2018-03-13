@@ -50,6 +50,20 @@ describe('GET /v4/topics/:topicId/posts/:postId', () => {
       .expect(403, done);
   });
 
+  it('should return 403 response when user is not member of the project', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [] } } },
+    });
+    request(server)
+      .get(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .expect(403, done);
+  });
+
   it('should return 404 response if no matching topic', (done) => {
     request(server)
       .get(nonExistingTopicPath)
@@ -91,6 +105,28 @@ describe('GET /v4/topics/:topicId/posts/:postId', () => {
       .get(apiPath)
       .set({
         Authorization: `Bearer ${jwts.member}`,
+      })
+      .expect(200)
+      .end((err) => {
+        if (err) {
+          return done(err);
+        }
+        sinon.assert.calledOnce(getStub);
+        return done();
+      });
+  });
+
+  it('should return 200 response when valid post id is passed (admin access)', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [] } } },
+    });
+
+    request(server)
+      .get(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.admin}`,
       })
       .expect(200)
       .end((err) => {

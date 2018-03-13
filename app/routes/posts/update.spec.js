@@ -14,6 +14,7 @@ describe('POST /v4/topics/:topicId/posts/:postId/edit ', () => {
   const topicId = 1;
   const postId = 1;
   const apiPath = `/v4/topics/${topicId}/posts/${postId}/edit`;
+  const nonExistingTopicPath = `/v4/topics/1000/posts/${postId}/edit`;
   let expectedTopicPosts = null;
   const testBody = {
     post: 'test post - updated',
@@ -55,6 +56,37 @@ describe('POST /v4/topics/:topicId/posts/:postId/edit ', () => {
       })
       .send(testBody)
       .expect(403, done);
+  });
+
+  it('should return 403 response when user is not member of the project', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [] } } },
+    });
+    request(server)
+      .post(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .send(testBody)
+      .expect(403, done);
+  });
+
+  it('should return 404 response if no matching topic', (done) => {
+    request(server)
+      .post(nonExistingTopicPath)
+      .set({
+        Authorization: `Bearer ${jwts.admin}`,
+      })
+      .send(testBody)
+      .expect(404)
+      .end((err) => {
+        if (err) {
+          return done(err);
+        }
+        return done();
+      });
   });
 
   it('should return 200 response with valid jwt token and payload', (done) => {

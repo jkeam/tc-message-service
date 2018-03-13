@@ -148,19 +148,19 @@ describe('DELETE /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', (
           });
       });
 
-      it('should return a not found error for an admin user', (done) => {
+      it('should return a bad request error for an admin user', (done) => {
         request(server)
           .delete(apiPath)
           .set({
-            Authorization: `Bearer ${jwts.member}`,
+            Authorization: `Bearer ${jwts.admin}`,
           })
-          .expect(404)
+          .expect(400)
           .end((err, res) => {
             if (err) {
               return done(err);
             }
             res.body.should.have.propertyByPath('result', 'content', 'message')
-              .eql('Could not find the requested attachment');
+              .eql('Attachment is already soft deleted');
             return done();
           });
       });

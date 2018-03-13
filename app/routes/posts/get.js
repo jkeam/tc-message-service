@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import HelperService from '../../services/helper';
 
 const config = require('config');
@@ -45,14 +44,11 @@ module.exports = db => (req, resp, next) => {
         // return adapter.adaptPost(response);
         return post;
       })
-      .then(post => resp.status(200).send(util.wrapResponse(req.id, post)))
-      .catch((error) => {
-        logger.error(error);
-        if (error.statusCode) {
-          return next(error);
-        }
-        return next(new errors.HttpStatusError(_.get(error, 'response.status', 500), 'Error fetching post'));
-      });
+      .then(post => resp.status(200).send(util.wrapResponse(req.id, post)));
     });
+  })
+  .catch((error) => {
+    logger.error(error);
+    next(error instanceof errors.HttpStatusError ? error : new errors.HttpStatusError(500, 'Error fetching post'));
   });
 };

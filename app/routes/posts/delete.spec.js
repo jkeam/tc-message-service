@@ -13,6 +13,7 @@ describe('DELETE /v4/topics/:topicId/posts/:postId ', () => {
   const topicId = 1;
   const postId = 1;
   const apiPath = `/v4/topics/${topicId}/posts/${postId}`;
+  const nonExistingTopicPath = `/v4/topics/1000/posts/${postId}`;
 
   const memberUser = {
     handle: getDecodedToken(jwts.member).handle,
@@ -52,6 +53,35 @@ describe('DELETE /v4/topics/:topicId/posts/:postId ', () => {
       .expect(403, done);
   });
 
+  it('should return 403 response when user is not member of the project', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [] } } },
+    });
+    request(server)
+      .delete(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .expect(403, done);
+  });
+
+  it('should return 404 response if no matching topic', (done) => {
+    request(server)
+      .delete(nonExistingTopicPath)
+      .set({
+        Authorization: `Bearer ${jwts.admin}`,
+      })
+      .expect(404)
+      .end((err) => {
+        if (err) {
+          return done(err);
+        }
+        return done();
+      });
+  });
+
   it('should return 200 response with valid jwt token and payload', (done) => {
     const getStub = sandbox.stub(axios, 'get');
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
@@ -62,6 +92,27 @@ describe('DELETE /v4/topics/:topicId/posts/:postId ', () => {
       .delete(apiPath)
       .set({
         Authorization: `Bearer ${jwts.member}`,
+      })
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        res.body.result.success.should.eql(true);
+        return done();
+      });
+  });
+
+  it('should return 200 response with valid jwt token and payload (admin access)', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [] } } },
+    });
+    request(server)
+      .delete(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.admin}`,
       })
       .expect(200)
       .end((err, res) => {

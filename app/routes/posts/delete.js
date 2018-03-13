@@ -48,7 +48,6 @@ module.exports = db => (req, resp, next) => {
   })
   .catch((error) => {
     logger.error(error);
-    next(new errors.HttpStatusError(
-      error.response && error.response.status ? error.response.status : 500, 'Error deleting post'));
+    next(error instanceof errors.HttpStatusError ? error : new errors.HttpStatusError(500, 'Error deleting post'));
   });
 };

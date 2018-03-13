@@ -1,6 +1,4 @@
 
-import _ from 'lodash';
-
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
 const errors = require('common-errors');
@@ -59,9 +57,6 @@ module.exports = db => (req, resp, next) => {
   })
   .catch((error) => {
     logger.error(error);
-    if (error.statusCode) {
-      return next(error);
-    }
-    return next(new errors.HttpStatusError(_.get(error, 'response.status', 500), 'Error creating post'));
+    next(error instanceof errors.HttpStatusError ? error : new errors.HttpStatusError(500, 'Error creating post'));
   });
 };

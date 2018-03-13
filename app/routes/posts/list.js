@@ -1,6 +1,5 @@
 import HelperService from '../../services/helper';
 
-const _ = require('lodash');
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
 const errors = require('common-errors');
@@ -56,13 +55,10 @@ module.exports = db => (req, resp, next) => {
         // posts.map(post => db.posts_backup.increaseReadCount(db, logger, post, userId));
         return resp.status(200).send(util.wrapResponse(req.id, (posts || [])));
       });
-    })
-    .catch((error) => {
-      logger.error(error);
-      if (error.statusCode) {
-        return next(error);
-      }
-      return next(new errors.HttpStatusError(_.get(error, 'response.status', 500), 'Error fetching post'));
     });
+  })
+  .catch((error) => {
+    logger.error(error);
+    next(error instanceof errors.HttpStatusError ? error : new errors.HttpStatusError(500, 'Error fetching post'));
   });
 };

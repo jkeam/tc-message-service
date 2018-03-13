@@ -7,6 +7,7 @@ const Joi = require('joi');
 const { REFERENCE_LOOKUPS } = require('../../constants');
 
 const s3 = new aws.S3(config.get('aws.config'));
+const HttpStatusError = errors.HttpStatusError;
 
 /**
  * Get specific attachment
@@ -56,7 +57,6 @@ module.exports = db =>
       })
       .catch((error) => {
         logger.error(error);
-        next(error instanceof errors.HttpStatusError ? error : new errors.HttpStatusError(
-          error.response && error.response.status ? error.response.status : 500, 'Error getting attachment'));
+        next(error instanceof HttpStatusError ? error : new HttpStatusError(500, 'Error getting attachment'));
       });
   };
