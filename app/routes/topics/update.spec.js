@@ -132,7 +132,6 @@ describe('POST /v4/topics/:topicId/edit ', () => {
         res.body.result.content.should.not.be.null;
         res.body.result.content.topic.should.not.be.null;
         res.body.result.content.post.should.not.be.null;
-        console.log(res.body.result.content);
         // id of the updated topic should be same as of id passed in API path
         res.body.should.have.propertyByPath('result', 'content', 'topic', 'id').eql(topicId);
         res.body.should.have.propertyByPath('result', 'content', 'topic', 'title').eql(testBody.title);

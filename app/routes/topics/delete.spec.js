@@ -91,7 +91,6 @@ describe('DELETE /v4/topics/:topicId ', () => {
             raw: true,
           }).then((topics) => {
             topics.should.length(0);
-            console.log(topics, '');
             return done();
           });
         });

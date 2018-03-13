@@ -80,7 +80,6 @@ module.exports = (Sequelize, DataTypes) => {
   };
 
   Post.createPost = (models, postBody, topic, reqUserId) => {
-    console.log('building post object model');
     const post = models.posts_backup.build({
       topicId: topic.id,
       raw: postBody,
@@ -93,7 +92,6 @@ module.exports = (Sequelize, DataTypes) => {
       updatedAt: new Date(),
       updatedBy: reqUserId,
     });
-    console.log('calling save on model');
     return post.save();
   };
 
