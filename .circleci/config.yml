@@ -37,6 +37,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: ./workspace
+      - run: pip install awsebcli
       - run: ./ebs_deploy.sh tc-message-service DEV $CIRCLE_BUILD_NUM
 workflows:
   version: 2
