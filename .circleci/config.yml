@@ -1,0 +1,47 @@
+version: 2
+jobs:
+  test:
+    docker:
+      - image: circleci/node:8.9.4
+    environment:
+      DB_MASTER_URL: postgres://ubuntu:@127.0.0.1:5432/circle_test
+      #RABBITMQ_URL: amqp://localhost:5672
+      AUTH_SECRET: secret
+      AUTH_DOMAIN: topcoder-dev.com
+      LOG_LEVEL: debug
+      APP_VERSION: v4
+    steps:
+      - checkout
+      - restore_cache:
+          key: test-node-modules-{{ checksum "package-lock.json" }}
+      - run: npm install
+      - save_cache:
+          key: test-node-modules-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - dist
+  deployDev:
+    docker:
+      - image: cibuilds/aws
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ./workspace
+      - run: ./ebs_deploy.sh tc-message-service DEV $CIRCLE_BUILD_NUM
+workflows:
+  version: 2
+  build:
+    jobs:
+      - test
+      - deployDev:
+          requires:
+            - test
+          filters:
+            branches:
+              only: 'feature/discourse-migration'
