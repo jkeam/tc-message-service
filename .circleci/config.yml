@@ -17,10 +17,10 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: test-node-modules-{{ checksum "package-lock.json" }}
+          key: test-node-modules-{{ checksum "package.json" }}
       - run: npm install
       - save_cache:
-          key: test-node-modules-{{ checksum "package-lock.json" }}
+          key: test-node-modules-{{ checksum "package.json" }}
           paths:
             - node_modules
       - run: npm run lint
