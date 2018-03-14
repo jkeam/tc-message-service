@@ -49,9 +49,12 @@ module.exports = db => (req, resp, next) => {
           userId,
           action: 'READ',
         }).then(() => logger.debug('post_user_stats entry created for post: ', savedPost.id));
-        // emit post creation event
-        req.app.emit(EVENT.POST_CREATED, { post: savedPost, topic, req });
-        return resp.status(200).send(util.wrapResponse(req.id, adapter.adaptPost(savedPost)));
+        return adapter.adaptPost(savedPost)
+        .then((post) => {
+          // emit post creation event
+          req.app.emit(EVENT.POST_CREATED, { post: savedPost, topic, req });
+          return resp.status(200).send(util.wrapResponse(req.id, post));
+        });
       });
     });
   })

@@ -200,7 +200,7 @@ describe('POST /v4/topics/:topicId/posts/:postId/edit ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    const findByIdStub = sandbox.stub(db.topics_backup, 'findById').rejects();
+    const findTopicStub = sandbox.stub(db.topics_backup, 'findTopic').rejects();
     request(server)
       .post(apiPath)
       .set({
@@ -212,8 +212,8 @@ describe('POST /v4/topics/:topicId/posts/:postId/edit ', () => {
         if (err) {
           return done(err);
         }
-        // should call findById on posts model
-        findByIdStub.should.have.be.calledOnce;
+        // should call findTopic on posts model
+        findTopicStub.should.have.be.calledOnce;
         res.body.should.have.propertyByPath('result', 'content', 'message')
           .eql('Error updating post');
         return done();
@@ -226,7 +226,7 @@ describe('POST /v4/topics/:topicId/posts/:postId/edit ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    const findByIdStub = sandbox.stub(db.posts_backup, 'findById').rejects();
+    const findPostStub = sandbox.stub(db.posts_backup, 'findPost').rejects();
     request(server)
       .post(apiPath)
       .set({
@@ -238,8 +238,8 @@ describe('POST /v4/topics/:topicId/posts/:postId/edit ', () => {
         if (err) {
           return done(err);
         }
-        // should call findById on posts model
-        findByIdStub.should.have.be.calledOnce;
+        // should call findPost on posts model
+        findPostStub.should.have.be.calledOnce;
         res.body.should.have.propertyByPath('result', 'content', 'message')
           .eql('Error updating post');
         return done();

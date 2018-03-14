@@ -116,6 +116,7 @@ describe('POST /v4/topics/:topicId/posts ', () => {
           return done(err);
         }
         res.body.result.content.should.not.be.null;
+        res.body.should.have.propertyByPath('result', 'content', 'id').eql(3);
         return done();
       });
   });

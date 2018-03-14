@@ -177,5 +177,24 @@ module.exports = (Sequelize, DataTypes) => {
     });
   };
 
+  Topic.updateTopic = (models, adapter, updatedFields, { topicId, reqUserId }) => {
+    const where = { id: topicId, deletedAt: { [Sequelize.Op.eq]: null } };
+    return models.topics_backup.update(
+      Object.assign({}, updatedFields, { updatedBy: reqUserId }),
+      {
+        where,
+        returning: true,
+        plain: true,
+      })
+    .then((result) => {
+      console.log('topic updated...');
+      // console.log(result);
+      return adapter.adaptTopic({
+        dbTopic: result[1], // result is [x ,y] : x is number of rows affected, y is actual affected row
+        reqUserId,
+      });
+    });
+  };
+
   return Topic;
 };

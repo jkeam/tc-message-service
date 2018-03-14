@@ -130,16 +130,33 @@ module.exports = (Sequelize, DataTypes) => {
     });
   };
 
-  Post.findPost = (adapter, topicId, postId, fetchDeleted = false) => {
+  Post.findPost = (models, adapter, { topicId, postId, raw = false, fetchDeleted = false }) => {
     const where = { id: postId, topicId };
     if (!fetchDeleted) {
       where.deletedAt = { [Sequelize.Op.eq]: null };
     }
     return Post.findOne({
       where,
+      raw,
     }).then((post) => {
       if (!post) return null;
       return adapter.adaptPost(post);
+    });
+  };
+
+  Post.updatePost = (models, adapter, updatedFields, { postId, reqUserId }) => {
+    const where = { id: postId, deletedAt: { [Sequelize.Op.eq]: null } };
+    return models.posts_backup.update(
+      Object.assign({}, updatedFields, { updatedBy: reqUserId }),
+      {
+        where,
+        returning: true,
+        plain: true,
+      })
+    .then((result) => { // result is [x ,y] : x is number of rows affected, y is actual affected row
+      console.log('post updated...');
+      // console.log(result);
+      return adapter.adaptPost(result[1]);
     });
   };
 

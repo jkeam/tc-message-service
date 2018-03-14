@@ -4,6 +4,7 @@ const util = require('tc-core-library-js').util(config);
 const errors = require('common-errors');
 const Joi = require('joi');
 const { EVENT } = require('../../constants');
+const Adapter = require('../../services/adapter');
 const HelperService = require('../../services/helper');
 
 /**
@@ -13,6 +14,7 @@ const HelperService = require('../../services/helper');
  */
 module.exports = db => (req, resp, next) => {
   const logger = req.log;
+  const adapter = new Adapter(logger, db);
   const helper = HelperService(logger, db);
 
   // Validate request parameters
@@ -23,10 +25,18 @@ module.exports = db => (req, resp, next) => {
   const topicId = req.params.topicId;
   const postId = req.params.postId;
   const userId = req.authUser.userId.toString();
-  return db.topics_backup.findById(topicId)
-  .then((topic) => {
+  const promises = [
+    db.topics_backup.findTopic(db, adapter, { topicId, raw: true }),
+    db.posts_backup.findPost(db, adapter, { topicId, postId, raw: true }),
+  ];
+  return Promise.all(promises)
+  .then(([topic, post]) => {
     if (!topic) {
       const err = new errors.HttpStatusError(404, 'Topic does not exist');
+      return next(err);
+    }
+    if (!post) {
+      const err = new errors.HttpStatusError(404, 'Post does not exist');
       return next(err);
     }
     return helper.callReferenceEndpoint(req.authToken, req.id, topic.reference, topic.referenceId)

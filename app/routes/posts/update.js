@@ -7,6 +7,7 @@ const errors = require('common-errors');
 const Adapter = require('../../services/adapter');
 const Joi = require('joi');
 const { EVENT } = require('../../constants');
+const Promise = require('bluebird');
 
 /**
  * Save a post to a topic
@@ -28,10 +29,18 @@ module.exports = db => (req, resp, next) => {
   const content = req.body.post;
   const userId = req.authUser.userId.toString();
 
-  return db.topics_backup.findById(topicId)
-  .then((topic) => {
+  const promises = [
+    db.topics_backup.findTopic(db, adapter, { topicId, raw: true }),
+    db.posts_backup.findPost(db, adapter, { topicId, postId, raw: true }),
+  ];
+  return Promise.all(promises)
+  .then(([topic, post]) => {
     if (!topic) {
       const err = new errors.HttpStatusError(404, 'Topic does not exist');
+      return next(err);
+    }
+    if (!post) {
+      const err = new errors.HttpStatusError(404, 'Post does not exist');
       return next(err);
     }
     return helper.callReferenceEndpoint(req.authToken, req.id, topic.reference, topic.referenceId)
@@ -41,15 +50,10 @@ module.exports = db => (req, resp, next) => {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
 
-      return db.posts_backup.findById(postId)
-      .then((post) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["post"] }] */
-        post.raw = content;
-        post.updatedBy = userId;
-        return post.save().then(savedPost => adapter.adaptPost(savedPost));
-      })
-      .then((post) => {
+      return db.posts_backup.updatePost(db, adapter, { raw: content }, { postId, reqUserId: userId })
+      .then((updatedPost) => {
         req.app.emit(EVENT.POST_UPDATED, { post, req, topic });
-        resp.status(200).send(util.wrapResponse(req.id, post));
+        resp.status(200).send(util.wrapResponse(req.id, updatedPost));
       });
     });
   })

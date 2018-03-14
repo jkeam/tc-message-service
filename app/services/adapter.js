@@ -67,12 +67,13 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
 
   this.adaptTopics = function a({ dbTopics, topicsPostsCount, reqUserId }) {
     // console.log(topicsPostsCount, 'topicsPostsCount');
+    // console.log(dbTopics, 'dbTopics');
     const topics = _.map(dbTopics, (dbTopic) => {
       let userId = dbTopic.createdBy;
       userId = userId !== 'system' && userId !== DISCOURSE_SYSTEM_USERNAME ? parseInt(userId, 10) : userId;
       const totalPosts = _.find(topicsPostsCount, tpc => tpc.topicId === dbTopic.id).totalPosts;
       const topic = {
-        id: dbTopic.discourseTopicId,
+        id: dbTopic.id,
         dbId: dbTopic.id,
         reference: dbTopic.reference,
         referenceId: dbTopic.referenceId,
@@ -83,7 +84,7 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
         title: dbTopic.title,
         userId,
         totalPosts,
-        retrievedPosts: dbTopic.posts.length,
+        retrievedPosts: dbTopic.posts ? dbTopic.posts.length : 0,
         postIds: _.map(dbTopic.posts, p => p.id),
         posts: [],
       };
@@ -105,10 +106,14 @@ function Adapter(logger, db, _discourseClient = null) {// eslint-disable-line
           type: 'post',
         });
       });
-      topic.posts = _.orderBy(topic.posts, ['date'], ['asc']);
-      topic.read = topic.posts[0].read;
-      const lastPost = topic.posts[topic.posts.length - 1];
-      topic.lastActivityAt = lastPost.updatedDate ? lastPost.updatedDate : lastPost.date;
+      logger.debug(topic.posts, 'topic.posts');
+      if (topic.posts && topic.posts.length > 0) {
+        topic.posts = _.orderBy(topic.posts, ['date', 'id'], ['asc', 'asc']);
+        topic.read = topic.posts[0].read;
+        const lastPost = topic.posts[topic.posts.length - 1];
+        topic.lastActivityAt = lastPost.updatedDate ? lastPost.updatedDate : lastPost.date;
+      }
+      // console.log(topic, 'topic');
       return topic;
     });
     return topics;

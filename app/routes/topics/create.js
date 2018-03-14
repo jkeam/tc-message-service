@@ -56,7 +56,7 @@ module.exports = db =>
 
         return db.topics_backup.createTopic(db, pgTopic, userId).then((savedTopic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["savedTopic"] }] */
           logger.debug('topic saved in Postgres: ', savedTopic);
-          const post = db.posts_backup.build({
+          const pgPost = db.posts_backup.build({
             topicId: savedTopic.id,
             raw: params.body,
             postNumber: 1,
@@ -68,11 +68,15 @@ module.exports = db =>
             updatedAt: new Date(),
             updatedBy: userId,
           });
-          return post.save().then((savedPost) => {
-            logger.info('post saved in Postgres');
-            savedTopic.posts = [savedPost];
-            req.app.emit(EVENT.TOPIC_CREATED, { topic: savedTopic, req });
-            return resp.status(200).send(util.wrapResponse(req.id, adapter.adaptTopic({ dbTopic: savedTopic })));
+          return pgPost.save().then((savedPost) => {
+            logger.info('post saved in Postgres', savedPost);
+            const topic = savedTopic.dataValues;
+            const post = savedPost.dataValues;
+            topic.posts = [post];
+            req.app.emit(EVENT.TOPIC_CREATED, { topic, req });
+            return resp.status(200).send(util.wrapResponse(
+              req.id,
+              adapter.adaptTopic({ dbTopic: topic, totalPosts: 1 })));
           });
         });
       }).catch((error) => {

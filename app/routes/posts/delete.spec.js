@@ -124,13 +124,13 @@ describe('DELETE /v4/topics/:topicId/posts/:postId ', () => {
       });
   });
 
-  it('should return 500 response with error response', (done) => {
+  it('should return 500 response with error in fetching topic', (done) => {
     const getStub = sandbox.stub(axios, 'get');
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    const findByIdStub = sandbox.stub(db.topics_backup, 'findById').rejects();
+    const findTopicStub = sandbox.stub(db.topics_backup, 'findTopic').rejects();
     request(server)
       .delete(apiPath)
       .set({
@@ -141,8 +141,33 @@ describe('DELETE /v4/topics/:topicId/posts/:postId ', () => {
         if (err) {
           return done(err);
         }
-        // should call findById on topics model
-        findByIdStub.should.have.be.calledOnce;
+        // should call findTopic on topics model
+        findTopicStub.should.have.be.calledOnce;
+        res.body.should.have.propertyByPath('result', 'content', 'message')
+          .eql('Error deleting post');
+        return done();
+      });
+  });
+
+  it('should return 500 response with error in fetching post', (done) => {
+    const getStub = sandbox.stub(axios, 'get');
+    // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
+    getStub.withArgs('http://reftest/referenceId').resolves({
+      data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
+    });
+    const findPostStub = sandbox.stub(db.posts_backup, 'findPost').rejects();
+    request(server)
+      .delete(apiPath)
+      .set({
+        Authorization: `Bearer ${jwts.member}`,
+      })
+      .expect(500)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        // should call findPost on topics model
+        findPostStub.should.have.be.calledOnce;
         res.body.should.have.propertyByPath('result', 'content', 'message')
           .eql('Error deleting post');
         return done();

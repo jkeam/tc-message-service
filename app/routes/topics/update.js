@@ -1,4 +1,4 @@
-
+import _ from 'lodash';
 import HelperService from '../../services/helper';
 
 const config = require('config');
@@ -30,7 +30,7 @@ module.exports = db => (req, resp, next) => {
   const content = req.body.content;
   const userId = req.authUser.userId.toString();
 
-  return db.topics_backup.findById(topicId)
+  return db.topics_backup.findTopic(db, adapter, { topicId, numberOfPosts: -1, reqUserId: userId })
   .then((topic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["topic"] }] */
     if (!topic) {
       const err = new errors.HttpStatusError(404, 'Topic does not exist');
@@ -42,35 +42,30 @@ module.exports = db => (req, resp, next) => {
       if (!hasAccess && !helper.isAdmin(req)) {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
-      /* eslint-disable */
-      topic.title = title;
-      topic.updatedBy = userId;
-      /* eslint-enable */
+      const contentPost = _.get(topic, 'posts[0]', null);
+      if (!contentPost || contentPost.id !== Number(postId)) {
+        throw new errors.HttpStatusError(404, 'Post does not exist');
+      }
       const promises = [
-        topic.save().then((updatedTopic) => {
+        db.topics_backup.updateTopic(db, adapter, { title }, { topicId, reqUserId: userId })
+        .then((updatedTopic) => {
           logger.debug('Topic saved', updatedTopic);
           return updatedTopic;
         }),
-        db.posts_backup.findById(postId)
-        .then((post) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["post"] }] */
-          logger.debug(`Body post for ${topicId} found`);
-          post.raw = content;
-          post.updatedBy = userId;
-          return post.save();
-        })
+        db.posts_backup.updatePost(db, adapter, { raw: content }, { postId, reqUserId: userId })
         .then((updatedPost) => {
           logger.info('Topic Post saved', updatedPost);
-          return adapter.adaptPost(updatedPost);
+          return updatedPost;
         }),
       ];
       return Promise.all(promises)
       .then((response) => {
         const t = response[0];
         const p = response[1];
-        t.posts = [p];
-        const adaptedTopic = adapter.adaptTopic({ dbTopic: t });
+        t.posts = topic.posts;
+
         // TODO should get rid of post as seprate field in response
-        resp.status(200).send(util.wrapResponse(req.id, { topic: adaptedTopic, post: p }));
+        resp.status(200).send(util.wrapResponse(req.id, { topic: t, post: p }));
       });
     });
   })

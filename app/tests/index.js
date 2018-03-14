@@ -1,5 +1,6 @@
 const models = require('../models');
 const jwt = require('jsonwebtoken');
+const Promise = require('bluebird');
 
 
 const jwts = {
@@ -77,18 +78,20 @@ function prepareDB(done) {
           const topic = responses[2];
           const topicId = topic.id;
           // console.log(responses[2], 'topicId');
-          return Promise.all([
+          return Promise.mapSeries([
             models.posts_backup.create({
               raw: 'Mock topic body',
               topicId,
               createdBy: '123456789',
+              postNumber: 1,
             }),
             models.posts_backup.create({
               raw: 'Mock topic post - logically first post',
               topicId,
               createdBy: '123456789',
+              postNumber: 2,
             }),
-          ])
+          ], t => t)
           .then(posts => ({ topic, posts }));
         }
         return responses;
