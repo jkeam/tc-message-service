@@ -56,6 +56,13 @@ module.exports = (Sequelize, DataTypes) => {
     updatedBy: {
       type: DataTypes.STRING,
     },
+
+    // temporary field to mark topics which are managed in an old way using private messages
+    // instead of the new way using groups and categories
+    isPrivateMessage: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    },
   });
 
   return Topic;

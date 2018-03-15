@@ -2,7 +2,6 @@
 /* eslint-disable no-unused-expressions, newline-per-chained-call */
 
 import _ from 'lodash';
-import config from 'config';
 import { clearDB, prepareDB, jwts, getDecodedToken } from '../../tests';
 
 require('should-sinon');
@@ -11,11 +10,11 @@ const request = require('supertest');
 const server = require('../../app');
 const axios = require('axios');
 const sinon = require('sinon');
-const util = require('../../util');
+const db = require('../../models');
 
 const topicJson = require('../../tests/topic.json');
 
-const username = 'test1';
+// const username = 'test1';
 
 describe('POST /v4/topics ', () => {
   const apiPath = '/v4/topics';
@@ -33,34 +32,42 @@ describe('POST /v4/topics ', () => {
   //   title: 'not exist',
   //   body: 'not exist',
   // };
-  const adminUser = {
-    handle: getDecodedToken(jwts.admin).handle,
-    userId: getDecodedToken(jwts.admin).userId,
-    firstName: 'fname',
-    lastName: 'lName',
-    email: 'some@abc.com',
-  };
-  const getSearchUserResponse = user => ({
-    data: {
-      result: {
-        status: 200,
-        content: [
-          user,
-        ],
-      },
-    },
-  });
-  const getMemberAPIResponse = user => ({
-    data: {
-      result: {
-        status: 200,
-        content: user,
-      },
-    },
-  });
+  // const adminUser = {
+  //   handle: getDecodedToken(jwts.admin).handle,
+  //   userId: getDecodedToken(jwts.admin).userId,
+  //   firstName: 'fname',
+  //   lastName: 'lName',
+  //   email: 'some@abc.com',
+  // };
+  // const getSearchUserResponse = user => ({
+  //   data: {
+  //     result: {
+  //       status: 200,
+  //       content: [
+  //         user,
+  //       ],
+  //     },
+  //   },
+  // });
+  // const getMemberAPIResponse = user => ({
+  //   data: {
+  //     result: {
+  //       status: 200,
+  //       content: user,
+  //     },
+  //   },
+  // });
   let sandbox;
   beforeEach((done) => {
     sandbox = sinon.sandbox.create();
+    // always return "existent" referenceGroupCategory
+    sandbox.stub(db.referenceGroupCategory, 'findOne').resolves({
+      reference: 'project',
+      referenceId: '1',
+      groupId: 1,
+      groupName: 'project-1-G1234',
+      categoryId: 1,
+    });
     prepareDB(done);
   });
   afterEach((done) => {
@@ -175,153 +182,6 @@ describe('POST /v4/topics ', () => {
       });
   });
 
-  it('should return 500 response if 500 for topic creations and errors to get and create discourse user', (done) => {
-    // get stub for axios
-    const stub = sandbox.stub(axios, 'get');
-    // resolves call to reference endpoint in helper.userHasAccessToEntity
-    stub.withArgs('http://reftest/1').resolves({
-      data: { result: { status: 200, content: { members: [{ userId: adminUser.userId }] } } },
-    });
-    // Rejects the discourse get user call
-    stub.withArgs(`/users/${adminUser.userId}.json?api_username=${adminUser.userId}`)
-      .rejects({ message: 'DISCOURSE_USER_NOT_FOUND' });
-    // resolves the helper.lookupUserHandles call
-    stub.withArgs(`${config.memberServiceUrl}/_search`, sinon.match.any)
-      .resolves(getSearchUserResponse(adminUser));
-    // mocks getSystemUserToken call
-    sandbox.stub(util, 'getSystemUserToken').resolves('token');
-    // resolves member API call in helper.getTopcoderUser
-    stub.withArgs(`${config.memberServiceUrl}/${adminUser.handle}`, sinon.match.any)
-      .resolves(getMemberAPIResponse(adminUser));
-    // post stub for axios
-    const postStub = sandbox.stub(axios, 'post');
-    // rejects discourse API call for discourse.createPrivatePost method
-    postStub.withArgs('/posts', sinon.match.any).rejects({
-      message: 'DISCOURSE_USER_DOES_NOT_EXIST',
-      response: { status: 500 },
-    });
-    // rejects discourse API call for user creation
-    postStub.withArgs('/users', sinon.match.any).rejects({
-      message: 'DISCOURSE_USER_CREATION_ERROR',
-      response: { status: 500 },
-    });
-
-    request(server)
-      .post(apiPath)
-      .set({
-        Authorization: `Bearer ${jwts.admin}`,
-      })
-      .send(testBody)
-      .expect(500)
-      .end((err, resp) => {
-        if (err) {
-          sinon.assert.fail(err);
-          return done();
-        }
-        const errorMessage = _.get(resp, 'body.result.content.message', '');
-        sinon.assert.match(errorMessage, /.*DISCOURSE_USER_CREATION_ERROR/);
-        return done();
-      });
-  });
-
-  it('should return 500 response if 422 for topic creations and errors to get and create discourse user', (done) => {
-    // get stub for axios
-    const stub = sandbox.stub(axios, 'get');
-    // resolves call to reference endpoint in helper.userHasAccessToEntity
-    stub.withArgs('http://reftest/1').resolves({
-      data: { result: { status: 200, content: { members: [{ userId: adminUser.userId }] } } },
-    });
-    // Rejects the discourse get user call
-    stub.withArgs(`/users/${adminUser.userId}.json?api_username=${adminUser.userId}`)
-      .rejects({ message: 'DISCOURSE_USER_NOT_FOUND' });
-    // resolves the helper.lookupUserHandles call
-    stub.withArgs(`${config.memberServiceUrl}/_search`, sinon.match.any)
-      .resolves(getSearchUserResponse(adminUser));
-    // mocks getSystemUserToken call
-    sandbox.stub(util, 'getSystemUserToken').resolves('token');
-    // resolves member API call in helper.getTopcoderUser
-    stub.withArgs(`${config.memberServiceUrl}/${adminUser.handle}`, sinon.match.any)
-      .resolves(getMemberAPIResponse(adminUser));
-    // post stub for axios
-    const postStub = sandbox.stub(axios, 'post');
-    // rejects discourse API call for discourse.createPrivatePost method
-    postStub.withArgs('/posts', sinon.match.any).rejects({
-      message: 'DISCOURSE_USER_DOES_NOT_EXIST',
-      response: { status: 422 },
-    });
-    // rejects discourse API call for user creation
-    postStub.withArgs('/users', sinon.match.any).rejects({
-      message: 'DISCOURSE_USER_CREATION_ERROR',
-      response: { status: 500 },
-    });
-
-    request(server)
-      .post(apiPath)
-      .set({
-        Authorization: `Bearer ${jwts.admin}`,
-      })
-      .send(testBody)
-      .expect(500)
-      .end((err, resp) => {
-        if (err) {
-          sinon.assert.fail(err);
-          return done();
-        }
-        const errorMessage = _.get(resp, 'body.result.content.message', '');
-        sinon.assert.match(errorMessage, /.*DISCOURSE_USER_CREATION_ERROR/);
-        return done();
-      });
-  });
-
-  it('should return 500 response if 403 for topic creations and errors to get and create discourse user', (done) => {
-    // get stub for axios
-    const stub = sandbox.stub(axios, 'get');
-    // resolves call to reference endpoint in helper.userHasAccessToEntity
-    stub.withArgs('http://reftest/1').resolves({
-      data: { result: { status: 200, content: { members: [{ userId: adminUser.userId }] } } },
-    });
-    // Rejects the discourse get user call
-    stub.withArgs(`/users/${adminUser.userId}.json?api_username=${adminUser.userId}`)
-      .rejects({ message: 'DISCOURSE_USER_NOT_FOUND' });
-    // resolves the helper.lookupUserHandles call
-    stub.withArgs(`${config.memberServiceUrl}/_search`, sinon.match.any)
-      .resolves(getSearchUserResponse(adminUser));
-    // mocks getSystemUserToken call
-    sandbox.stub(util, 'getSystemUserToken').resolves('token');
-    // resolves member API call in helper.getTopcoderUser
-    stub.withArgs(`${config.memberServiceUrl}/${adminUser.handle}`, sinon.match.any)
-      .resolves(getMemberAPIResponse(adminUser));
-    // post stub for axios
-    const postStub = sandbox.stub(axios, 'post');
-    // rejects discourse API call for discourse.createPrivatePost method
-    postStub.withArgs('/posts', sinon.match.any).rejects({
-      message: 'DISCOURSE_USER_DOES_NOT_EXIST',
-      response: { status: 403 },
-    });
-    // rejects discourse API call for user creation
-    postStub.withArgs('/users', sinon.match.any).rejects({
-      message: 'DISCOURSE_USER_CREATION_ERROR',
-      response: { status: 500 },
-    });
-
-    request(server)
-      .post(apiPath)
-      .set({
-        Authorization: `Bearer ${jwts.admin}`,
-      })
-      .send(testBody)
-      .expect(500)
-      .end((err, resp) => {
-        if (err) {
-          sinon.assert.fail(err);
-          return done();
-        }
-        const errorMessage = _.get(resp, 'body.result.content.message', '');
-        sinon.assert.match(errorMessage, /.*DISCOURSE_USER_CREATION_ERROR/);
-        return done();
-      });
-  });
-
   // it('should return 200 response if error to get user and success to create discourse user', (done) => {
   //   // sample response for discourse topic calls
   //   const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 100 });
@@ -353,7 +213,7 @@ describe('POST /v4/topics ', () => {
   //   postStub.withArgs(sinon.match(/admin\/plugins\/explorer\/queries\/.*/))
   //   .resolves({ data: topicData });
 
-  //   // rejects discourse API call for discourse.createPrivatePost method
+  //   // rejects discourse API call for discourse.createPost method
   //   postStub.withArgs(sinon.match(/\/posts.*/))
   //   .onFirstCall().rejects({
   //     message: 'DISCOURSE_USER_DOES_NOT_EXIST',
@@ -424,7 +284,7 @@ describe('POST /v4/topics ', () => {
   //     });
   // });
 
-  it('should return 500 response if error to createPrivatePost with reject', (done) => {
+  it('should return 500 response if error to createPost with reject', (done) => {
     const data = {
       result: {
         status: 200,
@@ -450,7 +310,7 @@ describe('POST /v4/topics ', () => {
       });
   });
 
-  it('should return 500 response if error to createPrivatePost with invalid status', (done) => {
+  it('should return 500 response if error to createPost with invalid status', (done) => {
     const data = {
       result: {
         status: 200,
@@ -478,7 +338,7 @@ describe('POST /v4/topics ', () => {
       });
   });
 
-  it('should return 200 response if success to createPrivatePost', (done) => {
+  it('should return 200 response if success to createPost', (done) => {
     const data = {
       result: {
         status: 200,
@@ -507,82 +367,6 @@ describe('POST /v4/topics ', () => {
     .resolves({ data: topicData });
 
 
-    request(server)
-      .post(apiPath)
-      .set({
-        Authorization: `Bearer ${jwts.admin}`,
-      })
-      .send(testBody)
-      .expect(200)
-      .end((err) => {
-        if (err) {
-          return done(err);
-        }
-        return done();
-      });
-  });
-
-  // eslint-disable-next-line
-  it('should return 200 response if error on first createPrivatePost, success to create user and success on second createPrivatePost', (done) => {
-    const data = {
-      result: {
-        status: 200,
-        content: 'content',
-      },
-      topic_id: 100,
-    };
-    const stub = sandbox.stub(axios, 'get');
-    const topicData = Object.assign({}, _.cloneDeep(topicJson), { id: 100 });
-    topicData.rows[0][0] = 100;
-
-    stub.withArgs(`/users/${username}.json`, sinon.match.any)
-      .resolves({});
-    const adminUserId = getDecodedToken(jwts.admin).userId;
-    stub.withArgs('http://reftest/1').resolves({
-      data: { result: { status: 200, content: [{ userId: adminUserId }] } },
-    });
-    // resolves discourse's posts endpoint discourse.getPosts
-    stub.withArgs(sinon.match('admin/plugins/explorer/queries.json')).resolves({
-      data: { queries: [{ name: 'Connect_Topics_Query', id: 1 }] },
-    });
-
-    const postStub = sandbox.stub(axios, 'post');
-    postStub.withArgs(sinon.match(/admin\/plugins\/explorer\/queries\/.*/))
-    .resolves({ data: topicData });
-
-
-    stub.withArgs(`${config.memberServiceUrl}/${username}`, sinon.match.any)
-      .resolves({
-        data: {
-          result: {
-            status: 200,
-            content: {
-              handle: username,
-              userId: 1,
-              firstName: 'fname',
-              lastName: 'lName',
-              email: 'some@abc.com',
-            },
-          } },
-      });
-    stub.resolves({
-      data,
-    });
-
-
-    const userTokenStub = sandbox.stub(util, 'getSystemUserToken').resolves('token'); // eslint-disable-line
-    postStub.onFirstCall().returnsPromise = postStub.returnsPromise;
-    postStub.onFirstCall().rejects({
-      response: {
-        status: 403,
-      },
-    });
-    postStub.onSecondCall().resolves({
-      data,
-    });
-    postStub.onThirdCall().resolves({
-      data: topicData,
-    });
     request(server)
       .post(apiPath)
       .set({

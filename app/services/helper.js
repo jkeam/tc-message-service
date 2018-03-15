@@ -9,6 +9,8 @@ const util = require('../util');
 const Promise = require('bluebird');
 const { USER_ROLE } = require('../constants');
 
+const DISCOURSE_SYSTEM_USERNAME = config.get('discourseSystemUsername');
+
 /**
  * Returns helper service containing common functions used in route handlers
  * @param {Object} logger the logger
@@ -166,6 +168,102 @@ module.exports = (logger, db, _discourseClient = null) => {
   }
 
   /**
+   * Get users from discourse or provision users in Discourse if some doesn't exist
+   * @param {String} users user ids  to fetch
+   * @return {Promise} promise
+   */
+  function getUsersOrProvision(users) {
+    const getUserPromises = _.map(users, (user) => {
+      if (user !== DISCOURSE_SYSTEM_USERNAME) {
+        return this.getUserOrProvision(user);
+      }
+      return new Promise.resolve(); // eslint-disable-line
+    });
+    return Promise.all(getUserPromises);
+  }
+
+  /**
+   *
+   * @param {String} groupName group name
+   * @param {Array} users list of users to add ot the group
+   * @return {Promise} resolves to the object with data.basic_group property
+   */
+  function createGroupWithUsers(groupName, users) {
+    logger.info(`Creating group '${groupName}'...`);
+    return discourseClient.createGroup(groupName)
+      .then((groupResponse) => {
+        if (!users) {
+          logger.info(`No users to add to the group '${groupName}'`);
+          return groupResponse;
+        }
+
+        logger.info(`Making sure that users [${users.join(',')}] exist in the Discourse.`);
+
+        return this.getUsersOrProvision(users)
+          .then(() => {
+            logger.info(`Adding user to the new group '${groupName}'`);
+
+            return discourseClient.addUsersToGroup(groupResponse.data.basic_group.id, users)
+              .then(() => groupResponse);
+          });
+      });
+  }
+
+  /**
+   * Returns associated Discourse group and category for pair of reference and referenceId
+   * @param {String} reference   name of the reference
+   * @param {String} referenceId identifier of the reference record
+   * @param {Array}  users       usernames to add to the newly created group if it doesn't exist
+   * @return {Promise} promise
+   */
+  function getEntityGroupAndCategoryOrProvision(reference, referenceId, users) {
+    logger.debug(`Checking if entity '${reference}' '${referenceId}' already has group and category`);
+
+    return db.referenceGroupCategory.findOne({ where: { reference, referenceId: referenceId.toString() } })
+      .then((referenceGroupCategory) => {
+        if (referenceGroupCategory) {
+          logger.info(`Successfully got group and category for entity '${reference}' '${referenceId}'`);
+          return referenceGroupCategory;
+        }
+
+        logger.info(`Entity '${reference}' '${referenceId}' doesn't have group and category, creating one`);
+        // we create group and category in Discourse and save their ids in referenceGroupCategory
+        // add 5 random digits. Cannot add a lot, because Group name cannot be longer than 20 characters
+        const random = (Math.random()).toString().substring(2, 7);
+        const groupName = `${reference}-${referenceId}-G${random}`;
+        if (groupName.length > 20) {
+          throw new errors.HttpStatusError(500, 'Group name is longer than 20 characters. '
+            + 'You have to update the code to generate shorter unique group names.');
+        }
+        const categoryName = `${reference}-${referenceId}-C${random}`;
+
+        return this.createGroupWithUsers(groupName, users).then((groupResponse) => {
+          const group = groupResponse.data.basic_group;
+
+          logger.info(`Creating a category '${categoryName}' with permissions for group '${group.name}'...`);
+          return discourseClient.createCategory(categoryName, group.name).then((categoryResponse) => {
+            logger.info(`Category '${categoryName}' was successfully created.`);
+            const category = categoryResponse.data.category;
+
+            const newReferenceGroupCategory = db.referenceGroupCategory.build({
+              reference,
+              referenceId: referenceId.toString(),
+              categoryId: category.id,
+              groupId: group.id,
+              groupName: group.name,
+            });
+
+            logger.info('Saving entity group and category in Postgres...');
+            return newReferenceGroupCategory.save().then((savedReferenceGroupCategory) => {
+              logger.info('Entity group and category saved in Postgres');
+              return savedReferenceGroupCategory;
+            });
+          });
+        });
+      });
+  }
+
+  /**
    * Checks if a user has access to an entity, and if they do, provision a user in Discourse if one doesn't exist
    * @param {String} authToken user's auth token to use to call the Topcoder api to get user info for provisioning
    * @param {String} requestId request identifier
@@ -245,9 +343,12 @@ module.exports = (logger, db, _discourseClient = null) => {
     lookupUserFromId,
     userHasAccessToEntity,
     getUserOrProvision,
+    getUsersOrProvision,
     checkAccessAndProvision,
     getContentFromMatch,
     mentionUserIdToHandle,
     isAdmin,
+    getEntityGroupAndCategoryOrProvision,
+    createGroupWithUsers,
   };
 };
