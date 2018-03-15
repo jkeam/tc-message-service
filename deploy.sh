@@ -98,7 +98,7 @@ make_task_def(){
         }
       }
     }
-  ]'
+  ]}'
   DB_MASTER_URL=$(eval "echo \$${ENV}_DB_MASTER_URL")
   RABBITMQ_URL=$(eval "echo \$${ENV}_RABBITMQ_URL")
   MEMBER_SERVICE_URL=$(eval "echo \$${ENV}_MEMBER_SERVICE_URL")
