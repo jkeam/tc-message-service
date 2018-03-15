@@ -7,6 +7,7 @@ ENV=$1
 ACCOUNT_ID=$(eval "echo \$${ENV}_AWS_ACCOUNT_ID")
 AWS_ECS_CONTAINER_NAME="tc-message-service"
 AWS_ECS_CLUSTER="tc-message-service"
+family="tc-message-service"
 
 configure_aws_cli() {
   export AWS_ACCESS_KEY_ID=$(eval "echo \$${ENV}_AWS_ACCESS_KEY_ID")
@@ -17,8 +18,6 @@ configure_aws_cli() {
 }
 
 deploy_cluster() {
-
-    family="tc-message-service"
 
     make_task_def
     register_definition
@@ -111,6 +110,8 @@ make_task_def(){
   elif [ "$ENV" = "DEV" ]; then
     NODE_ENV=development
   fi
+  echo "NODE_ENV"
+  echo $NODE_ENV
 
   task_def=$(printf "$task_template" $family $ACCOUNT_ID $AWS_ECS_CONTAINER_NAME $ACCOUNT_ID $AWS_REGION $AWS_REPOSITORY $CIRCLE_SHA1 $NODE_ENV $LOG_LEVEL $CAPTURE_LOGS $LOGENTRIES_TOKEN $DB_MASTER_URL $RABBITMQ_URL $MEMBER_SERVICE_URL $IDENTITY_SERVICE_ENDPOINT $SYSTEM_USER_CLIENT_ID $SYSTEM_USER_CLIENT_SECRET $AWS_ECS_CLUSTER $AWS_REGION $NODE_ENV)
 }
