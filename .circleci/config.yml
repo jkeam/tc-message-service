@@ -45,6 +45,9 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
+      - run:
+          name: Installation of build dependencies.
+          command: apk add --no-cache bash
       - attach_workspace:
           at: ./workspace
       - run:
