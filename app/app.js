@@ -20,25 +20,25 @@ const app = express();
 
 // init logger
 let appName = 'tc-message-service';
-let domain = 'topcoder-dev.com';
+// let domain = 'topcoder-dev.com';
 if (process.env.NODE_ENV) {
   switch (process.env.NODE_ENV.toLowerCase()) {
     case 'local':
       appName += '-local';
-      domain = 'topcoder-dev.com';
+      // domain = 'topcoder-dev.com';
       break;
     case 'development':
       appName += '-dev';
-      domain = 'topcoder-dev.com';
+      // domain = 'topcoder-dev.com';
       break;
     case 'qa':
       appName += '-qa';
-      domain = 'topcoder-qa.com';
+      // domain = 'topcoder-qa.com';
       break;
     case 'production':
     default:
       appName += '-prod';
-      domain = 'topcoder.com';
+      // domain = 'topcoder.com';
       break;
   }
 }
@@ -60,14 +60,15 @@ app.use(addRequestId);
 // =======================
 // CORS ================
 // =======================
-const whitelist = [`*.${domain}`];
-const corsOptions = {
-  origin: (origin, callback) => {
-    const originIsWhitelisted = whitelist.indexOf(origin) !== -1;
-    callback(null, originIsWhitelisted);
-  },
-};
-app.use(cors(corsOptions));
+// const whitelist = [`*.${domain}`];
+// const corsOptions = {
+//   origin: (origin, callback) => {
+//     const originIsWhitelisted = whitelist.indexOf(origin) !== -1;
+//     callback(null, originIsWhitelisted);
+//   },
+// };
+// app.use(cors(corsOptions));
+app.options('*', cors());
 app.use(coreLib.middleware.logger(null, logger));
 app.use(bodyParser.json());
 app.use(cookieParser());
