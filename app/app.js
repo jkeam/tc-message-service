@@ -20,20 +20,25 @@ const app = express();
 
 // init logger
 let appName = 'tc-message-service';
+let domain = 'topcoder-dev.com';
 if (process.env.NODE_ENV) {
   switch (process.env.NODE_ENV.toLowerCase()) {
     case 'local':
       appName += '-local';
+      domain = 'topcoder-dev.com';
       break;
     case 'development':
       appName += '-dev';
+      domain = 'topcoder-dev.com';
       break;
     case 'qa':
       appName += '-qa';
+      domain = 'topcoder-qa.com';
       break;
     case 'production':
     default:
       appName += '-prod';
+      domain = 'topcoder.com';
       break;
   }
 }
@@ -52,7 +57,17 @@ const routes = Routes(logger, db);
 const addRequestId = expressRequestId();
 app.use(addRequestId);
 
-app.use(cors());
+// =======================
+// CORS ================
+// =======================
+var whitelist = ['*.' + domain];
+var corsOptions = {
+  origin: function(origin, callback){
+    var originIsWhitelisted = whitelist.indexOf(origin) !== -1;
+    callback(null, originIsWhitelisted);
+  }
+};
+app.use(cors(corsOptions));
 app.use(coreLib.middleware.logger(null, logger));
 app.use(bodyParser.json());
 app.use(cookieParser());
