@@ -24,7 +24,6 @@ if (process.env.NODE_ENV) {
   switch (process.env.NODE_ENV.toLowerCase()) {
     case 'local':
       appName += '-local';
-      app.use(cors());
       break;
     case 'development':
       appName += '-dev';
@@ -53,6 +52,7 @@ const routes = Routes(logger, db);
 const addRequestId = expressRequestId();
 app.use(addRequestId);
 
+app.use(cors());
 app.use(coreLib.middleware.logger(null, logger));
 app.use(bodyParser.json());
 app.use(cookieParser());
