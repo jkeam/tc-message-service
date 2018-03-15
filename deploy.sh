@@ -5,6 +5,8 @@ JQ="jq --raw-output --exit-status"
 
 ENV=$1
 ACCOUNT_ID=$(eval "echo \$${ENV}_AWS_ACCOUNT_ID")
+AWS_ECS_CONTAINER_NAME="tc-message-service"
+AWS_ECS_CLUSTER="tc-message-service"
 
 configure_aws_cli() {
   export AWS_ACCESS_KEY_ID=$(eval "echo \$${ENV}_AWS_ACCESS_KEY_ID")
@@ -31,9 +33,16 @@ deploy_cluster() {
 }
 
 make_task_def(){
-  task_template='[
+  task_template='{
+   "family": "%s",
+   "requiresCompatibilities": ["EC2", "FARGATE"],
+   "networkMode": "awsvpc",
+   "executionRoleArn": "arn:aws:iam::%s:role/ecsTaskExecutionRole",
+   "cpu": "1024",
+   "memory": "2048",
+   "containerDefinitions": [
     {
-      "name": "tc-message-service",
+      "name": "%s",
       "image": "%s.dkr.ecr.%s.amazonaws.com/%s:%s",
       "essential": true,
       "memory": 200,
@@ -79,7 +88,15 @@ make_task_def(){
           "name": "SYSTEM_USER_CLIENT_SECRET",
           "value": "%s"
         }
-      ]
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/aws/ecs/%s",
+          "awslogs-region": "%s",
+          "awslogs-stream-prefix": "%s"
+        }
+      }
     }
   ]'
   DB_MASTER_URL=$(eval "echo \$${ENV}_DB_MASTER_URL")
@@ -95,7 +112,7 @@ make_task_def(){
     NODE_ENV=development
   fi
 
-  task_def=$(printf "$task_template" $ACCOUNT_ID $AWS_REGION $AWS_REPOSITORY $CIRCLE_SHA1 $NODE_ENV $LOG_LEVEL $CAPTURE_LOGS $LOGENTRIES_TOKEN $DB_MASTER_URL $RABBITMQ_URL $MEMBER_SERVICE_URL $IDENTITY_SERVICE_ENDPOINT $SYSTEM_USER_CLIENT_ID $SYSTEM_USER_CLIENT_SECRET)
+  task_def=$(printf "$task_template" $family $ACCOUNT_ID $AWS_ECS_CONTAINER_NAME $ACCOUNT_ID $AWS_REGION $AWS_REPOSITORY $CIRCLE_SHA1 $NODE_ENV $LOG_LEVEL $CAPTURE_LOGS $LOGENTRIES_TOKEN $DB_MASTER_URL $RABBITMQ_URL $MEMBER_SERVICE_URL $IDENTITY_SERVICE_ENDPOINT $SYSTEM_USER_CLIENT_ID $SYSTEM_USER_CLIENT_SECRET $AWS_ECS_CLUSTER $AWS_REGION $NODE_ENV)
 }
 
 push_ecr_image(){
@@ -104,14 +121,12 @@ push_ecr_image(){
 }
 
 register_definition() {
-
-    if revision=$(aws ecs register-task-definition --container-definitions "$task_def" --family $family | $JQ '.taskDefinition.taskDefinitionArn'); then
+    if revision=$(aws ecs register-task-definition --cli-input-json "$task_def" | $JQ '.taskDefinition.taskDefinitionArn'); then
         echo "Revision: $revision"
     else
         echo "Failed to register task definition"
         return 1
     fi
-
 }
 
 configure_aws_cli
