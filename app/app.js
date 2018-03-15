@@ -60,12 +60,12 @@ app.use(addRequestId);
 // =======================
 // CORS ================
 // =======================
-var whitelist = ['*.' + domain];
-var corsOptions = {
-  origin: function(origin, callback){
-    var originIsWhitelisted = whitelist.indexOf(origin) !== -1;
+const whitelist = [`*.${domain}`];
+const corsOptions = {
+  origin: (origin, callback) => {
+    const originIsWhitelisted = whitelist.indexOf(origin) !== -1;
     callback(null, originIsWhitelisted);
-  }
+  },
 };
 app.use(cors(corsOptions));
 app.use(coreLib.middleware.logger(null, logger));
