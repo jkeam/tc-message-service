@@ -37,8 +37,8 @@ jobs:
       - checkout
       - attach_workspace:
           at: ./workspace
-      - run: pip3 install awsebcli
-      - run: ./ebs_deploy.sh tc-message-service DEV $CIRCLE_BUILD_NUM
+      - run: docker build -t $DEV_AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_REPOSITORY:$CIRCLE_SHA1 .
+      - run: ./deploy.sh DEV
   deployTest:
     docker:
       - image: cibuilds/aws
@@ -46,8 +46,8 @@ jobs:
       - checkout
       - attach_workspace:
           at: ./workspace
-      - run: pip3 install awsebcli
-      - run: ./ebs_deploy.sh tc-message-service TEST $CIRCLE_BUILD_NUM
+      - run: docker build -t $DEV_AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_REPOSITORY:$CIRCLE_SHA1 .
+      - run: ./deploy.sh DEV
 workflows:
   version: 2
   build:
