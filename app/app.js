@@ -68,7 +68,8 @@ app.use(addRequestId);
 //   },
 // };
 // app.use(cors(corsOptions));
-app.options('*', cors());
+// app.options('*', cors());
+app.use(cors());
 app.use(coreLib.middleware.logger(null, logger));
 app.use(bodyParser.json());
 app.use(cookieParser());
