@@ -41,11 +41,12 @@ jobs:
       - run: ./deploy.sh DEV
   deployTest:
     docker:
-      - image: cibuilds/aws
+      - image: docker:17.06.1-ce-git
     steps:
       - checkout
       - attach_workspace:
           at: ./workspace
+      - run: pip3 install awscli
       - run: docker build -t $DEV_AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_REPOSITORY:$CIRCLE_SHA1 .
       - run: ./deploy.sh DEV
 workflows:
