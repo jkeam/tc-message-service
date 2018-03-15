@@ -7,6 +7,7 @@ ENV=$1
 ACCOUNT_ID=$(eval "echo \$${ENV}_AWS_ACCOUNT_ID")
 AWS_ECS_CONTAINER_NAME="tc-message-service"
 AWS_ECS_CLUSTER="tc-message-service"
+AWS_ECS_SERVICE="tc-message-service"
 family="tc-message-service"
 
 configure_aws_cli() {
@@ -102,6 +103,8 @@ make_task_def(){
   RABBITMQ_URL=$(eval "echo \$${ENV}_RABBITMQ_URL")
   MEMBER_SERVICE_URL=$(eval "echo \$${ENV}_MEMBER_SERVICE_URL")
   IDENTITY_SERVICE_ENDPOINT=$(eval "echo \$${ENV}_IDENTITY_SERVICE_ENDPOINT")
+  SYSTEM_USER_CLIENT_ID=$(eval "echo \$${ENV}_SYSTEM_USER_CLIENT_ID")
+  SYSTEM_USER_CLIENT_SECRET=$(eval "echo \$${ENV}_SYSTEM_USER_CLIENT_SECRET")
   CAPTURE_LOGS=$(eval "echo \$${ENV}_CAPTURE_LOGS")
   LOGENTRIES_TOKEN=$(eval "echo \$${ENV}_LOGENTRIES_TOKEN")
   LOG_LEVEL=$(eval "echo \$${ENV}_LOG_LEVEL")
