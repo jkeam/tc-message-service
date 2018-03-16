@@ -10,6 +10,7 @@ AWS_ECS_CLUSTER="tc-message-service"
 AWS_ECS_SERVICE="tc-message-service"
 AUTH_DOMAIN=$(eval "echo \$${ENV}_AUTH_DOMAIN")
 AUTH_SECRET=$(eval "echo \$${ENV}_AUTH_SECRET")
+PORT=3000
 family="tc-message-service"
 
 configure_aws_cli() {
@@ -99,6 +100,13 @@ make_task_def(){
           "value": "%s"
         }
       ],
+      "portMappings": [
+        {
+          "hostPort": %s,
+          "protocol": "tcp",
+          "containerPort": %s
+        }
+      ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
@@ -126,7 +134,7 @@ make_task_def(){
   echo "NODE_ENV"
   echo $NODE_ENV
 
-  task_def=$(printf "$task_template" $family $ACCOUNT_ID $AWS_ECS_CONTAINER_NAME $ACCOUNT_ID $AWS_REGION $AWS_REPOSITORY $CIRCLE_SHA1 $NODE_ENV $LOG_LEVEL $CAPTURE_LOGS $LOGENTRIES_TOKEN $AUTH_DOMAIN $AUTH_SECRET $DB_MASTER_URL $RABBITMQ_URL $MEMBER_SERVICE_URL $IDENTITY_SERVICE_ENDPOINT $SYSTEM_USER_CLIENT_ID $SYSTEM_USER_CLIENT_SECRET $AWS_ECS_CLUSTER $AWS_REGION $NODE_ENV)
+  task_def=$(printf "$task_template" $family $ACCOUNT_ID $AWS_ECS_CONTAINER_NAME $ACCOUNT_ID $AWS_REGION $AWS_REPOSITORY $CIRCLE_SHA1 $NODE_ENV $LOG_LEVEL $CAPTURE_LOGS $LOGENTRIES_TOKEN $AUTH_DOMAIN $AUTH_SECRET $DB_MASTER_URL $RABBITMQ_URL $MEMBER_SERVICE_URL $IDENTITY_SERVICE_ENDPOINT $SYSTEM_USER_CLIENT_ID $SYSTEM_USER_CLIENT_SECRET $PORT $PORT $AWS_ECS_CLUSTER $AWS_REGION $NODE_ENV)
 }
 
 push_ecr_image(){
