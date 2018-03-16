@@ -37,7 +37,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: ./workspace
-      - run: docker build -t $DEV_AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_REPOSITORY:$CIRCLE_SHA1 .
+      - run: ./build.sh DEV
       - run: ./deploy.sh DEV
   deployTest:
     docker:
@@ -55,7 +55,7 @@ jobs:
           command: |
             apk add --no-cache jq py-pip sudo
             sudo pip install awscli --upgrade
-      - run: docker build -t $DEV_AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_REPOSITORY:$CIRCLE_SHA1 .
+      - run: ./build.sh DEV
       - run: ./deploy.sh DEV
 workflows:
   version: 2
