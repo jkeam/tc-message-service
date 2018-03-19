@@ -1,4 +1,5 @@
 {
+  "apiVersion": "API_VERSION",
   "aws": {
     "config": {
       "accessKeyId": "AWS_ACCESS_KEY_ID",

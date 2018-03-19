@@ -31,7 +31,7 @@ const jwt = require('jsonwebtoken');
  */
 module.exports = (logger, db) => {
   // health check
-  router.get('/_health', (req, res, next) => { // eslint-disable-line
+  router.get(`/${apiVersion}/topics/_health`, (req, res, next) => { // eslint-disable-line
     // TODO check if database connection is alive
     res.status(200).send({ message: 'All-is-well' });
   });
@@ -39,9 +39,10 @@ module.exports = (logger, db) => {
   // register discourse sso endpoint (no auth is needed)
   // router.route('/sso').get(ssoHandler(logger));
 
+  const apiVersion = config.apiVersion;
   // all project service endpoints need authentication
   const jwtAuth = tcCoreLib.middleware.jwtAuthenticator;
-  router.all('/v4/topics*', (req, res, next) => {
+  router.all(`/${apiVersion}/topics*`, (req, res, next) => {
     if (`${process.env.TC_MESSAGE_SERVICE_AUTH_LOOSE}` !== 'true') {
       jwtAuth()(req, res, next);
       return;
@@ -78,33 +79,33 @@ module.exports = (logger, db) => {
   router.use(systemUserFilter(logger));
 
   // Register all the routes
-  router.route('/v4/topics/:topicId')
+  router.route(`/${apiVersion}/topics/:topicId`)
     .get(getTopicHandler(db))
     .delete(topicDeleteHandler(db));
-  router.route('/v4/topics/:topicId/edit')
+  router.route(`/${apiVersion}/topics/:topicId/edit`)
     .post(topicUpdateHandler(db));
 
-  router.route('/v4/topics')
+  router.route(`/${apiVersion}/topics`)
     .post(topicCreateHandler(db))
     .get(topicListHandler(db));
 
 
-  router.route('/v4/topics/:topicId/posts')
+  router.route(`/${apiVersion}/topics/:topicId/posts`)
     .post(createPostHandler(db))
     .get(listPostsHandler(db));
 
-  router.route('/v4/topics/:topicId/posts/:postId')
+  router.route(`/${apiVersion}/topics/:topicId/posts/:postId`)
     .delete(deletePostHandler(db))
     .get(getPostHandler(db));
 
-  router.route('/v4/topics/:topicId/posts/:postId/attachments/:attachmentId')
+  router.route(`/${apiVersion}/topics/:topicId/posts/:postId/attachments/:attachmentId`)
     .get(getAttachmentHandler(db))
     .delete(deleteAttachmentHandler(db));
 
-  router.route('/v4/topics/:topicId/posts/:postId/attachments')
+  router.route(`/${apiVersion}/topics/:topicId/posts/:postId/attachments`)
     .post(createAttachmentHandler(db));
 
-  router.route('/v4/topics/:topicId/posts/:postId/edit')
+  router.route(`/${apiVersion}/topics/:topicId/posts/:postId/edit`)
     .post(updatePostHandler(db));
 
   // register error handler
