@@ -17,6 +17,7 @@ require('should-sinon');
 
 describe('GET /v4/topics/:topicId/posts', () => {
   const apiPath = `/${config.apiVersion}/topics/1/posts?postIds=1,2`;
+  const missingPostsIdsPath = `/${config.apiVersion}/topics/1/posts`;
   const noMatchingPostsPath = `/${config.apiVersion}/topics/1/posts?postIds=3,4`;
   const nonExistingPostsPath = `/${config.apiVersion}/topics/1/posts?postIds=1,2,3`;
   const nonExistingTopicApiPath = `/${config.apiVersion}/topics/1000/posts?postIds=1,2`;
@@ -55,7 +56,7 @@ describe('GET /v4/topics/:topicId/posts', () => {
 
   it('should return 400 response if missing postIds parameter', (done) => {
     request(server)
-      .get('/v4/topics/1/posts')
+      .get(missingPostsIdsPath)
       .set({
         Authorization: `Bearer ${jwts.admin}`,
       })

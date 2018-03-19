@@ -14,6 +14,7 @@ const config = require('config');
 describe('DELETE /v4/topics/:topicId ', () => {
   const topicId = 1;
   const apiPath = `/${config.apiVersion}/topics/${topicId}`;
+  const nonExistingTopicPath = `/${config.apiVersion}/topics/2000`;
   // let expectedTopic = null;
   // let expectedTopicPosts = null;
 
@@ -133,7 +134,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
     request(server)
-      .delete('/v4/topics/2000')
+      .delete(nonExistingTopicPath)
       .set({
         Authorization: `Bearer ${jwts.admin}`,
       })
