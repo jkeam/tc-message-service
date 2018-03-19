@@ -7,13 +7,14 @@ const server = require('../../app');
 const axios = require('axios');
 const sinon = require('sinon');
 const db = require('../../models');
+const config = require('config');
 require('should-sinon');
 
 describe('DELETE /v4/topics/:topicId/posts/:postId ', () => {
   const topicId = 1;
   const postId = 1;
-  const apiPath = `/v4/topics/${topicId}/posts/${postId}`;
-  const nonExistingTopicPath = `/v4/topics/1000/posts/${postId}`;
+  const apiPath = `/${config.apiVersion}/topics/${topicId}/posts/${postId}`;
+  const nonExistingTopicPath = `/${config.apiVersion}/topics/1000/posts/${postId}`;
 
   const memberUser = {
     handle: getDecodedToken(jwts.member).handle,

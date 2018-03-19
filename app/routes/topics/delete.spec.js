@@ -9,10 +9,11 @@ const sinon = require('sinon');
 const db = require('../../models');
 // const _ = require('lodash');
 require('should-sinon');
+const config = require('config');
 
 describe('DELETE /v4/topics/:topicId ', () => {
   const topicId = 1;
-  const apiPath = `/v4/topics/${topicId}`;
+  const apiPath = `/${config.apiVersion}/topics/${topicId}`;
   // let expectedTopic = null;
   // let expectedTopicPosts = null;
 

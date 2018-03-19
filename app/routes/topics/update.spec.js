@@ -6,6 +6,7 @@ const request = require('supertest');
 const server = require('../../app');
 const axios = require('axios');
 const sinon = require('sinon');
+const config = require('config');
 
 require('should-sinon');
 const should = require('should');
@@ -14,8 +15,8 @@ const db = require('../../models');
 describe('POST /v4/topics/:topicId/edit ', () => {
   const topicId = 1;
   const postId = 1;
-  const apiPath = `/v4/topics/${topicId}/edit`;
-  const nonExistingTopicPath = '/v4/topics/1000/edit';
+  const apiPath = `/${config.apiVersion}/topics/${topicId}/edit`;
+  const nonExistingTopicPath = `/${config.apiVersion}/topics/1000/edit`;
   let expectedTopic = null;
   let expectedTopicPosts = null;
   const testBody = {

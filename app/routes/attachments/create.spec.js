@@ -9,11 +9,12 @@ const db = require('../../models');
 const aws = require('aws-sdk');
 const s3UploadMock = require('./create.s3.upload.mock');
 const sinon = require('sinon');
+const config = require('config');
 
 require('should-sinon');
 
 describe('POST /v4/topics/:topicId/posts/:postId/attachments', () => {
-  const apiPath = '/v4/topics/1/posts/1/attachments?referenceId=1';
+  const apiPath = `/${config.apiVersion}/topics/1/posts/1/attachments?referenceId=1`;
   const memberUser = {
     handle: getDecodedToken(jwts.member).handle,
     userId: getDecodedToken(jwts.member).userId,

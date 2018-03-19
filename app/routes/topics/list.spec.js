@@ -10,6 +10,7 @@ const axios = require('axios');
 const sinon = require('sinon');
 // const _ = require('lodash');
 const Promise = require('bluebird');
+const config = require('config');
 
 const db = require('../../models');
 // const topicJson = require('../../tests/topic.json');
@@ -30,7 +31,7 @@ function assertTopicAndPost(topicId, assertCallback, done) {
 }
 
 describe('GET /v4/topics ', () => {
-  const apiPath = '/v4/topics';
+  const apiPath = `/${config.apiVersion}/topics`;
   const testQuery = {
     filter: 'tag=tag&reference=project&referenceId=referenceId',
   };

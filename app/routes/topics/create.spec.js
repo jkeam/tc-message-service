@@ -11,10 +11,11 @@ const request = require('supertest');
 const server = require('../../app');
 const axios = require('axios');
 const sinon = require('sinon');
+const config = require('config');
 
 
 describe('POST /v4/topics ', () => {
-  const apiPath = '/v4/topics';
+  const apiPath = `/${config.apiVersion}/topics`;
   const testBody = {
     reference: 'project',
     referenceId: 'referenceId',

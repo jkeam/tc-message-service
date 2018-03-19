@@ -11,13 +11,14 @@ const server = require('../../app');
 
 const axios = require('axios');
 const sinon = require('sinon');
+const config = require('config');
 
 require('should-sinon');
 
 describe('GET /v4/topics/:topicId/posts/:postId', () => {
-  const apiPath = '/v4/topics/1/posts/1';
-  const nonExistingTopicPath = '/v4/topics/1000/posts/1';
-  const nonExistingPostPath = '/v4/topics/1/posts/1000';
+  const apiPath = `/${config.apiVersion}/topics/1/posts/1`;
+  const nonExistingTopicPath = `/${config.apiVersion}/topics/1000/posts/1`;
+  const nonExistingPostPath = `/${config.apiVersion}/topics/1/posts/1000`;
   const memberUser = {
     handle: getDecodedToken(jwts.member).handle,
     userId: getDecodedToken(jwts.member).userId,

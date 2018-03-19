@@ -9,12 +9,13 @@ const sinon = require('sinon');
 require('should-sinon');
 const should = require('should');
 const db = require('../../models');
+const config = require('config');
 
 describe('POST /v4/topics/:topicId/posts/:postId/edit ', () => {
   const topicId = 1;
   const postId = 1;
-  const apiPath = `/v4/topics/${topicId}/posts/${postId}/edit`;
-  const nonExistingTopicPath = `/v4/topics/1000/posts/${postId}/edit`;
+  const apiPath = `/${config.apiVersion}/topics/${topicId}/posts/${postId}/edit`;
+  const nonExistingTopicPath = `/${config.apiVersion}/topics/1000/posts/${postId}/edit`;
   let expectedTopicPosts = null;
   const testBody = {
     post: 'test post - updated',

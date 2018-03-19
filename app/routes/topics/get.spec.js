@@ -11,6 +11,7 @@ const server = require('../../app');
 
 const axios = require('axios');
 const sinon = require('sinon');
+const config = require('config');
 
 require('should-sinon');
 
@@ -30,7 +31,7 @@ function assertTopicAndPost(topicId, assertCallback, done) {
 }
 
 describe('GET /v4/topics/:topicId', () => {
-  const apiPathPrefix = '/v4/topics/';
+  const apiPathPrefix = `/${config.apiVersion}/topics/`;
   const apiPath = `${apiPathPrefix}1`;
   const nonExistingTopicPath = `${apiPathPrefix}1000`;
 

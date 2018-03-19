@@ -9,11 +9,12 @@ const server = require('../../app');
 const db = require('../../models');
 const aws = require('aws-sdk');
 const sinon = require('sinon');
+const config = require('config');
 
 require('should-sinon');
 
 describe('DELETE /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', () => {
-  const apiPath = '/v4/topics/1/posts/1/attachments/1?referenceId=1';
+  const apiPath = `/${config.apiVersion}/topics/1/posts/1/attachments/1?referenceId=1`;
   const memberUser = {
     handle: getDecodedToken(jwts.member).handle,
     userId: getDecodedToken(jwts.member).userId,
