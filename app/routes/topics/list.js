@@ -81,6 +81,7 @@ module.exports = db =>
       .then(result => resp.status(200).send(util.wrapResponse(req.id, result)));
     })
     .catch((error) => {
+      logger.error(error);
       next(error instanceof errors.HttpStatusError ? error : new errors.HttpStatusError(500, 'Error fetching topics'));
     });
   };
