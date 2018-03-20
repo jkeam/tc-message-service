@@ -72,7 +72,7 @@ describe('GET /v4/topics/:topicId/posts', () => {
       .expect(404, done);
   });
 
-  it('should return 403 response when user does not have access to the project', (done) => {
+  it('should return 403 response when user does not have access to the project (403 in reference lookup)', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
 
     // rejects to reference endpoint in helper.callReferenceEndpoint
@@ -96,7 +96,7 @@ describe('GET /v4/topics/:topicId/posts', () => {
       });
   });
 
-  it('should return 403 response when user does not have access to the project', (done) => {
+  it('should return 403 response when user does not have access to the project (not project member)', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint

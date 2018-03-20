@@ -31,7 +31,7 @@ const jwt = require('jsonwebtoken');
  */
 module.exports = (logger, db) => {
   // health check
-  router.get(`/${apiVersion}/topics/_health`, (req, res, next) => { // eslint-disable-line
+  router.get(`/_health`, (req, res, next) => { // eslint-disable-line
     // TODO check if database connection is alive
     res.status(200).send({ message: 'All-is-well' });
   });
