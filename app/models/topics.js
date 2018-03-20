@@ -119,9 +119,11 @@ module.exports = (Sequelize, DataTypes) => {
   }) => {
     const where = filters;
     const postsWhere = {};
+    const userStatsWhere = {};
     if (!fetchDeleted) {
       where.deletedAt = { [Sequelize.Op.eq]: null };
       postsWhere.deletedAt = { [Sequelize.Op.eq]: null };
+      userStatsWhere.deletedAt = { [Sequelize.Op.eq]: null };
     }
     return Topic.findAll({
       where,
@@ -132,6 +134,13 @@ module.exports = (Sequelize, DataTypes) => {
         order: [['postNumber', 'desc']],
         where: postsWhere,
         limit: numberOfPosts !== -1 ? numberOfPosts : null,
+        include: [{
+          model: models.post_user_stats_backup,
+          as: 'userStats',
+          // order: [['postNumber', 'desc']],
+          where: userStatsWhere,
+          // limit: numberOfPosts !== -1 ? numberOfPosts : null,
+        }],
       }],
     }).then((topics) => {
       const topicIds = topics.map(t => t.id);
