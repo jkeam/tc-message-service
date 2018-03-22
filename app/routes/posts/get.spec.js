@@ -141,7 +141,7 @@ describe('GET /v4/topics/:topicId/posts/:postId', () => {
 
 
   it('should return 500 response if error to get post', (done) => {
-    const findPostStub = sandbox.stub(db.posts_backup, 'findPost').rejects();
+    const findPostStub = sandbox.stub(db.posts, 'findPost').rejects();
     request(server)
       .get(apiPath)
       .set({

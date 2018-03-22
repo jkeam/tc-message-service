@@ -12,7 +12,7 @@
  */
 module.exports = (Sequelize, DataTypes) => {
   // Topics represents the data that links topcoder entities with topics
-  const Topic = Sequelize.define('topics_backup', {
+  const Topic = Sequelize.define('topics', {
         // The primary key
     id: {
       type: DataTypes.BIGINT,
@@ -89,11 +89,11 @@ module.exports = (Sequelize, DataTypes) => {
   });
 
   Topic.associate = (models) => {
-    Topic.hasMany(models.posts_backup, { as: 'posts', foreignKey: 'topicId' });
+    Topic.hasMany(models.posts, { as: 'posts', foreignKey: 'topicId' });
   };
 
   Topic.createTopic = (models, topic, reqUserId) => {
-    const dbTopic = models.topics_backup.build({
+    const dbTopic = models.topics.build({
       reference: topic.reference,
       referenceId: topic.referenceId,
       title: topic.title,
@@ -127,13 +127,13 @@ module.exports = (Sequelize, DataTypes) => {
       where,
       raw,
       include: [{
-        model: models.posts_backup,
+        model: models.posts,
         as: 'posts',
         order: [['postNumber', 'desc']],
         where: postsWhere,
         limit: numberOfPosts !== -1 ? numberOfPosts : null,
         include: [{
-          model: models.post_user_stats_backup,
+          model: models.post_user_stats,
           as: 'userStats',
           // order: [['postNumber', 'desc']],
           // where: userStatsWhere,
@@ -142,7 +142,7 @@ module.exports = (Sequelize, DataTypes) => {
       }],
     }).then((topics) => {
       const topicIds = topics.map(t => t.id);
-      return models.posts_backup.getPostsCount(topicIds)
+      return models.posts.getPostsCount(topicIds)
       .then(topicsPostsCount => adapter.adaptTopics({
         dbTopics: topics,
         topicsPostsCount: topicsPostsCount.map(tpc => tpc.dataValues),
@@ -162,20 +162,20 @@ module.exports = (Sequelize, DataTypes) => {
       where,
       raw,
       include: [{
-        model: models.posts_backup,
+        model: models.posts,
         as: 'posts',
         order: [['postNumber', 'desc']],
         where: postsWhere,
         limit: numberOfPosts !== -1 ? numberOfPosts : null,
         include: [{
-          model: models.post_user_stats_backup,
+          model: models.post_user_stats,
           as: 'userStats',
         }],
       }],
     }).then((topic) => {
       if (!topic) return null;
       // console.log(topic, 'topic');
-      return models.posts_backup.getTopicPostsCount(topicId)
+      return models.posts.getTopicPostsCount(topicId)
       .then(totalPosts => adapter.adaptTopic({
         dbTopic: topic,
         totalPosts,
@@ -186,7 +186,7 @@ module.exports = (Sequelize, DataTypes) => {
 
   Topic.updateTopic = (models, adapter, updatedFields, { topicId, reqUserId }) => {
     const where = { id: topicId, deletedAt: { [Sequelize.Op.eq]: null } };
-    return models.topics_backup.update(
+    return models.topics.update(
       Object.assign({}, updatedFields, { updatedBy: reqUserId }),
       {
         where,

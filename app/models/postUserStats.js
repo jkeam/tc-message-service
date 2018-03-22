@@ -13,7 +13,7 @@ import _ from 'lodash';
  */
 module.exports = (Sequelize, DataTypes) => {
     // PostUserStats
-  const PostUserStats = Sequelize.define('post_user_stats_backup', {
+  const PostUserStats = Sequelize.define('post_user_stats', {
     // The primary key
     postId: {
       type: DataTypes.BIGINT,
@@ -61,7 +61,7 @@ module.exports = (Sequelize, DataTypes) => {
    */
   PostUserStats.updateUserStats = (models, logger, posts, userId, action) => {
     const postIds = posts.map(p => p.id).join(',');
-    return Sequelize.query(`UPDATE post_user_stats_backup SET "userIds"=array_append("userIds", '${userId}')
+    return Sequelize.query(`UPDATE post_user_stats SET "userIds"=array_append("userIds", '${userId}')
       WHERE "postId" IN (${postIds}) AND action='${action}' AND NOT("userIds" @> ARRAY[${userId}]::varchar[])`)
     .then((resp) => {
       logger.debug(`Updated ${resp[1].rowCount} post_user_stats for the user: `);
@@ -70,7 +70,7 @@ module.exports = (Sequelize, DataTypes) => {
 
   PostUserStats.findPostsWithoutUserAction = (models, logger, posts, userId, action) => {
     const postIds = posts.map(p => p.id).join(',');
-    return Sequelize.query(`SELECT pus."postId" as id FROM post_user_stats_backup pus
+    return Sequelize.query(`SELECT pus."postId" as id FROM post_user_stats pus
         WHERE "postId" IN (${postIds})
         AND action=${action} AND NOT("userIds" @> ARRAY[${userId}]::varchar[])`)
     .then((resp) => {

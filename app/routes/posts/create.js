@@ -24,7 +24,7 @@ module.exports = db => (req, resp, next) => {
   const postBody = req.body.post;
   const topicId = req.params.topicId;
   const userId = req.authUser.userId.toString();
-  return db.topics_backup.findById(topicId)
+  return db.topics.findById(topicId)
   .then((topic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["topic"] }] */
     if (!topic) {
       const err = new errors.HttpStatusError(404, 'Topic does not exist');
@@ -37,14 +37,14 @@ module.exports = db => (req, resp, next) => {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
 
-      return db.posts_backup.createPost(db, postBody, topic, userId).then((savedPost) => {
+      return db.posts.createPost(db, postBody, topic, userId).then((savedPost) => {
         logger.info('post created');
         topic.highestPostNumber += 1;
         topic.save().then(() => logger.debug('topic updated async for post: ', savedPost.id));
         // creates an entry in post_user_stats table for tracking user actions against this post
         // right now it only creates entry for 'READ' action, in future we may create more entries
         // when we support more actions e.g. 'LIKE', 'BOOKMARK', 'FAVORITE' etc
-        db.post_user_stats_backup.createStats(db, logger, {
+        db.post_user_stats.createStats(db, logger, {
           post: savedPost,
           userId,
           action: 'READ',

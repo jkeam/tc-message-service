@@ -163,7 +163,7 @@ describe('POST /v4/topics/:topicId/edit ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    const updateTopicStub = sandbox.stub(db.topics_backup, 'updateTopic').rejects();
+    const updateTopicStub = sandbox.stub(db.topics, 'updateTopic').rejects();
     request(server)
       .post(apiPath)
       .set({
@@ -189,7 +189,7 @@ describe('POST /v4/topics/:topicId/edit ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    const updatePostStub = sandbox.stub(db.posts_backup, 'updatePost').rejects();
+    const updatePostStub = sandbox.stub(db.posts, 'updatePost').rejects();
     request(server)
       .post(apiPath)
       .set({
@@ -215,7 +215,7 @@ describe('POST /v4/topics/:topicId/edit ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    const updatePostStub = sandbox.stub(db.posts_backup, 'updatePost').throws();
+    const updatePostStub = sandbox.stub(db.posts, 'updatePost').throws();
     request(server)
       .post(apiPath)
       .set({

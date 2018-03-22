@@ -30,7 +30,7 @@ module.exports = db => (req, resp, next) => {
   const content = req.body.content;
   const userId = req.authUser.userId.toString();
 
-  return db.topics_backup.findTopic(db, adapter, { topicId, numberOfPosts: -1, reqUserId: userId })
+  return db.topics.findTopic(db, adapter, { topicId, numberOfPosts: -1, reqUserId: userId })
   .then((topic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["topic"] }] */
     if (!topic) {
       const err = new errors.HttpStatusError(404, 'Topic does not exist');
@@ -47,12 +47,12 @@ module.exports = db => (req, resp, next) => {
         throw new errors.HttpStatusError(404, 'Post does not exist');
       }
       const promises = [
-        db.topics_backup.updateTopic(db, adapter, { title }, { topicId, reqUserId: userId })
+        db.topics.updateTopic(db, adapter, { title }, { topicId, reqUserId: userId })
         .then((updatedTopic) => {
           logger.debug('Topic saved', updatedTopic);
           return updatedTopic;
         }),
-        db.posts_backup.updatePost(db, adapter, { raw: content }, { postId, reqUserId: userId })
+        db.posts.updatePost(db, adapter, { raw: content }, { postId, reqUserId: userId })
         .then((updatedPost) => {
           logger.info('Topic Post saved', updatedPost);
           return updatedPost;

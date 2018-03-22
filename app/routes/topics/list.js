@@ -58,7 +58,7 @@ module.exports = db =>
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
       // Get topics from the Postgres database
-      return db.topics_backup.findTopics(db, adapter, { filters: filter, numberOfPosts: -1, reqUserId: userId })
+      return db.topics.findTopics(db, adapter, { filters: filter, numberOfPosts: -1, reqUserId: userId })
       .then((dbTopics) => {
         if (!dbTopics || dbTopics.length === 0) {
           // returning empty list
@@ -69,7 +69,7 @@ module.exports = db =>
         Promise.all(dbTopics.filter(topic => !topic.read).map((topic) => {
           if (topic.posts && topic.posts.length > 0) {
             // marks first post as read for the request user
-            db.post_user_stats_backup.updateUserStats(db, logger, [topic.posts[0]], userId, 'READ');
+            db.post_user_stats.updateUserStats(db, logger, [topic.posts[0]], userId, 'READ');
           }
           return Promise.resolve();
         }));

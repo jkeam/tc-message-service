@@ -162,7 +162,7 @@ describe('POST /v4/topics/:topicId/posts ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    const createPostStub = sandbox.stub(db.posts_backup, 'createPost').rejects();
+    const createPostStub = sandbox.stub(db.posts, 'createPost').rejects();
     request(server)
       .post(apiPath)
       .set({

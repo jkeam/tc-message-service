@@ -22,7 +22,7 @@ module.exports = db => (req, resp, next) => {
   });
   const topicId = req.params.topicId;
   const userId = req.authUser.userId.toString();
-  return db.topics_backup.findById(topicId)
+  return db.topics.findById(topicId)
   .then((topic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["topic"] }] */
     if (!topic) {
       const err = new errors.HttpStatusError(404, 'Topic does not exist');
@@ -34,7 +34,7 @@ module.exports = db => (req, resp, next) => {
       if (!hasAccess && !helper.isAdmin(req)) {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
-      return db.posts_backup.getTopicPostsCount(topic.id)
+      return db.posts.getTopicPostsCount(topic.id)
       .then((totalPosts) => {
         if (totalPosts > 1) {
           throw new errors.HttpStatusError(422, 'Topic has comments and can not be deleted');

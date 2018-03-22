@@ -252,7 +252,7 @@ describe('GET /v4/topics/:topicId/posts', () => {
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
     // stub for updateUserStats method of PostUserStats modal
-    const findPostsStub = sandbox.stub(db.posts_backup, 'findPosts').rejects();
+    const findPostsStub = sandbox.stub(db.posts, 'findPosts').rejects();
     request(server)
       .get(apiPath)
       .set({

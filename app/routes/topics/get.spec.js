@@ -18,8 +18,8 @@ require('should-sinon');
 function assertTopicAndPost(topicId, assertCallback, done) {
   // test topic
   return Promise.all([
-    db.topics_backup.findById(topicId),
-    db.posts_backup.findOne({ topicId }),
+    db.topics.findById(topicId),
+    db.posts.findOne({ topicId }),
   ])
   .then((response) => {
     const topic = response[0];
@@ -107,7 +107,7 @@ describe('GET /v4/topics/:topicId', () => {
   it('should return 200 response when called by project member and should mark topic read', (done) => {
     const getStub = sandbox.stub(axios, 'get');
     // stub for updateUserStats method of PostUserStats modal
-    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
+    const updateStatsStub = sandbox.stub(db.post_user_stats, 'updateUserStats').resolves();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
@@ -142,7 +142,7 @@ describe('GET /v4/topics/:topicId', () => {
   it('should return 200 response when called by admin not on project team and not mark topic as read', (done) => {
     const getStub = sandbox.stub(axios, 'get');
     // stub for updateUserStats method of PostUserStats modal
-    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
+    const updateStatsStub = sandbox.stub(db.post_user_stats, 'updateUserStats').resolves();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
@@ -176,7 +176,7 @@ describe('GET /v4/topics/:topicId', () => {
 
 
   it('should return 500 response if error to get topic', (done) => {
-    const findTopicStub = sandbox.stub(db.topics_backup, 'findTopic').rejects();
+    const findTopicStub = sandbox.stub(db.topics, 'findTopic').rejects();
     request(server)
       .get(apiPath)
       .set({

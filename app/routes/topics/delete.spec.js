@@ -75,7 +75,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    return db.sequelize.query(`Update posts_backup SET "deletedAt"=now() where "topicId"=${topicId};`)
+    return db.sequelize.query(`Update posts SET "deletedAt"=now() where "topicId"=${topicId};`)
     .then(() => {
       request(server)
         .delete(apiPath)
@@ -88,7 +88,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
             return done(err);
           }
           res.body.result.success.should.eql(true);
-          return db.topics_backup.findAll({
+          return db.topics.findAll({
             where: { deletedAt: { [db.Sequelize.Op.eq]: null } },
             raw: true,
           }).then((topics) => {
@@ -117,7 +117,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
         }
         res.body.should.have.propertyByPath('result', 'content', 'message')
                   .eql('Topic has comments and can not be deleted');
-        return db.topics_backup.findAll({
+        return db.topics.findAll({
           where: { deletedAt: { [db.Sequelize.Op.eq]: null } },
           raw: true,
         }).then((topics) => {
@@ -155,7 +155,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    const findByIdStub = sandbox.stub(db.topics_backup, 'findById').rejects();
+    const findByIdStub = sandbox.stub(db.topics, 'findById').rejects();
     request(server)
       .delete(apiPath)
       .set({
@@ -180,7 +180,7 @@ describe('DELETE /v4/topics/:topicId ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    const getTopicPostsCountStub = sandbox.stub(db.posts_backup, 'getTopicPostsCount').rejects();
+    const getTopicPostsCountStub = sandbox.stub(db.posts, 'getTopicPostsCount').rejects();
     request(server)
       .delete(apiPath)
       .set({

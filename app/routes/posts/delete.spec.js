@@ -131,7 +131,7 @@ describe('DELETE /v4/topics/:topicId/posts/:postId ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    const findTopicStub = sandbox.stub(db.topics_backup, 'findTopic').rejects();
+    const findTopicStub = sandbox.stub(db.topics, 'findTopic').rejects();
     request(server)
       .delete(apiPath)
       .set({
@@ -156,7 +156,7 @@ describe('DELETE /v4/topics/:topicId/posts/:postId ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    const findPostStub = sandbox.stub(db.posts_backup, 'findPost').rejects();
+    const findPostStub = sandbox.stub(db.posts, 'findPost').rejects();
     request(server)
       .delete(apiPath)
       .set({

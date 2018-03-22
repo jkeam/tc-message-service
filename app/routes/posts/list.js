@@ -26,7 +26,7 @@ module.exports = db => (req, resp, next) => {
   }
 
   const userId = req.authUser.userId.toString();
-  return db.topics_backup.findById(topicId)
+  return db.topics.findById(topicId)
   .then((topic) => {
     if (!topic) {
       const err = new errors.HttpStatusError(404, 'Topic does not exist');
@@ -44,15 +44,15 @@ module.exports = db => (req, resp, next) => {
       if (postIds) {
         filter.id = { [Op.in]: postIds.map(pid => Number(pid)) };
       }
-      return db.posts_backup.findPosts(adapter, filter)
+      return db.posts.findPosts(adapter, filter)
       .then((posts) => {
         if (posts && posts.length > 0) {
           // marks each post a read for the request user, however, ideally they should be marked
           // as read only after user has actually seen them in UI because UI might not be showing all posts
           // at once
-          db.post_user_stats_backup.updateUserStats(db, logger, posts, userId, 'READ');
+          db.post_user_stats.updateUserStats(db, logger, posts, userId, 'READ');
         }
-        // posts.map(post => db.posts_backup.increaseReadCount(db, logger, post, userId));
+        // posts.map(post => db.posts.increaseReadCount(db, logger, post, userId));
         return resp.status(200).send(util.wrapResponse(req.id, (posts || [])));
       });
     });

@@ -28,7 +28,7 @@ module.exports = db =>
     const userId = req.authUser.userId.toString();
 
     // Get topic from the Postgres database
-    return db.topics_backup.findTopic(db, adapter, { topicId, numberOfPosts: -1, reqUserId: userId })
+    return db.topics.findTopic(db, adapter, { topicId, numberOfPosts: -1, reqUserId: userId })
     .then((dbTopic) => {
       if (!dbTopic) {
         const err = new errors.HttpStatusError(404, 'Topic does not exist');

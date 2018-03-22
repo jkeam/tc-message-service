@@ -239,7 +239,7 @@ describe('POST /v4/topics ', () => {
     getStub.withArgs('http://reftest/referenceId').resolves({
       data: { result: { status: 200, content: { members: [{ userId: memberUser.userId }] } } },
     });
-    const createTopicStub = sandbox.stub(db.topics_backup, 'createTopic').rejects();
+    const createTopicStub = sandbox.stub(db.topics, 'createTopic').rejects();
     request(server)
       .post(apiPath)
       .set({

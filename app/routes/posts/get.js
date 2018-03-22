@@ -19,7 +19,7 @@ module.exports = db => (req, resp, next) => {
 
   // Get the posts as the system user if the logged is user is an admin
   const userId = req.authUser.userId.toString();
-  return db.topics_backup.findOne({ where: { id: topicId }, raw: true })
+  return db.topics.findOne({ where: { id: topicId }, raw: true })
   .then((topic) => {
     if (!topic) {
       const err = new errors.HttpStatusError(404, 'Topic does not exist');
@@ -31,7 +31,7 @@ module.exports = db => (req, resp, next) => {
       if (!hasAccess && !helper.isAdmin(req)) {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
-      return db.posts_backup.findPost(db, adapter, { topicId, postId, raw: true })
+      return db.posts.findPost(db, adapter, { topicId, postId, raw: true })
       .then((post) => {
         if (!post) {
           throw new errors.HttpStatusError(404, 'Post does not exist');
@@ -40,7 +40,7 @@ module.exports = db => (req, resp, next) => {
         // marks each post a read for the request user, however, ideally they should be marked
         // as read only after user has actually seen them in UI because UI might not be showing all posts
         // at once
-        db.post_user_stats_backup.updateUserStats(db, logger, [post], userId, 'READ');
+        db.post_user_stats.updateUserStats(db, logger, [post], userId, 'READ');
         // return adapter.adaptPost(response);
         return post;
       })

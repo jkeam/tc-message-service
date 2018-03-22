@@ -26,8 +26,8 @@ module.exports = db => (req, resp, next) => {
   const postId = req.params.postId;
   const userId = req.authUser.userId.toString();
   const promises = [
-    db.topics_backup.findTopic(db, adapter, { topicId, raw: true }),
-    db.posts_backup.findPost(db, adapter, { topicId, postId, raw: true }),
+    db.topics.findTopic(db, adapter, { topicId, raw: true }),
+    db.posts.findPost(db, adapter, { topicId, postId, raw: true }),
   ];
   return Promise.all(promises)
   .then(([topic, post]) => {
@@ -45,7 +45,7 @@ module.exports = db => (req, resp, next) => {
       if (!hasAccess && !helper.isAdmin(req)) {
         throw new errors.HttpStatusError(403, 'User doesn\'t have access to the entity');
       }
-      return db.posts_backup.update({
+      return db.posts.update({
         deletedAt: new Date(),
         deletedBy: userId,
       }, { where: { id: postId } })

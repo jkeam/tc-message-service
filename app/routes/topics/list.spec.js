@@ -18,8 +18,8 @@ const db = require('../../models');
 function assertTopicAndPost(topicId, assertCallback, done) {
   // test topic
   return Promise.all([
-    db.topics_backup.findById(topicId),
-    db.posts_backup.findOne({ topicId }),
+    db.topics.findById(topicId),
+    db.posts.findOne({ topicId }),
   ])
   .then((response) => {
     const topic = response[0];
@@ -192,7 +192,7 @@ describe('GET /v4/topics ', () => {
   it('should return topics even if user is not part of project team but is a manager', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
     // stub for updateUserStats method of PostUserStats modal
-    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
+    const updateStatsStub = sandbox.stub(db.post_user_stats, 'updateUserStats').resolves();
 
     // resolves call (with 403) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
@@ -227,7 +227,7 @@ describe('GET /v4/topics ', () => {
   it('should return topics even if user is not part of project team but is a manager (ref lookup error)', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
     // stub for updateUserStats method of PostUserStats modal
-    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
+    const updateStatsStub = sandbox.stub(db.post_user_stats, 'updateUserStats').resolves();
 
     // resolves call (with 403) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').rejects({
@@ -263,7 +263,7 @@ describe('GET /v4/topics ', () => {
   it('should return topics even if user is not part of project team but is a manager (not in members list)', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
     // stub for updateUserStats method of PostUserStats modal
-    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
+    const updateStatsStub = sandbox.stub(db.post_user_stats, 'updateUserStats').resolves();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     // but members list does not include the calling user's id
@@ -299,7 +299,7 @@ describe('GET /v4/topics ', () => {
   it('should return topics even if user is not part of project team but is a admin', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
     // stub for updateUserStats method of PostUserStats modal
-    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
+    const updateStatsStub = sandbox.stub(db.post_user_stats, 'updateUserStats').resolves();
 
     // rejects to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
@@ -336,7 +336,7 @@ describe('GET /v4/topics ', () => {
   it('should return topics even if user is not part of project team but is a admin (Ref lookup error)', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
     // stub for updateUserStats method of PostUserStats modal
-    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
+    const updateStatsStub = sandbox.stub(db.post_user_stats, 'updateUserStats').resolves();
 
     // rejects to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').rejects({
@@ -373,7 +373,7 @@ describe('GET /v4/topics ', () => {
   it('should return topics even if user is not part of project team but is a admin (not in members list)', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
     // stub for updateUserStats method of PostUserStats modal
-    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
+    const updateStatsStub = sandbox.stub(db.post_user_stats, 'updateUserStats').resolves();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     // but members list does not the calling user's id
@@ -411,7 +411,7 @@ describe('GET /v4/topics ', () => {
   it('should return 200 response with matching topicLookup', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
     // stub for updateUserStats method of PostUserStats modal
-    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').resolves();
+    const updateStatsStub = sandbox.stub(db.post_user_stats, 'updateUserStats').resolves();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
@@ -445,7 +445,7 @@ describe('GET /v4/topics ', () => {
   it('should return 200 response even if error in updateUserStats', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
     // stub for updateUserStats method of PostUserStats modal
-    const updateStatsStub = sandbox.stub(db.post_user_stats_backup, 'updateUserStats').rejects();
+    const updateStatsStub = sandbox.stub(db.post_user_stats, 'updateUserStats').rejects();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({
@@ -479,7 +479,7 @@ describe('GET /v4/topics ', () => {
   it('should return 500 response even if there is a runtime error', (done) => {
     const getStub = sandbox.stub(axios, 'get').resolves();
     // stub for updateUserStats method of PostUserStats modal
-    const findTopicsStub = sandbox.stub(db.topics_backup, 'findTopics').throws();
+    const findTopicsStub = sandbox.stub(db.topics, 'findTopics').throws();
 
     // resolves call (with 200) to reference endpoint in helper.callReferenceEndpoint
     getStub.withArgs('http://reftest/referenceId').resolves({

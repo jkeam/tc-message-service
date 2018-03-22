@@ -11,7 +11,7 @@
  */
 module.exports = (Sequelize, DataTypes) => {
     // Posts
-  const Post = Sequelize.define('posts_backup', {
+  const Post = Sequelize.define('posts', {
     // The primary key
     id: {
       type: DataTypes.BIGINT,
@@ -76,11 +76,11 @@ module.exports = (Sequelize, DataTypes) => {
   });
 
   Post.associate = (models) => {
-    Post.hasMany(models.post_user_stats_backup, { as: 'userStats', foreignKey: 'postId' });
+    Post.hasMany(models.post_user_stats, { as: 'userStats', foreignKey: 'postId' });
   };
 
   Post.createPost = (models, postBody, topic, reqUserId) => {
-    const post = models.posts_backup.build({
+    const post = models.posts.build({
       topicId: topic.id,
       raw: postBody,
       postNumber: topic.highestPostNumber + 1,
@@ -146,7 +146,7 @@ module.exports = (Sequelize, DataTypes) => {
 
   Post.updatePost = (models, adapter, updatedFields, { postId, reqUserId }) => {
     const where = { id: postId, deletedAt: { [Sequelize.Op.eq]: null } };
-    return models.posts_backup.update(
+    return models.posts.update(
       Object.assign({}, updatedFields, { updatedBy: reqUserId }),
       {
         where,
@@ -175,7 +175,7 @@ module.exports = (Sequelize, DataTypes) => {
       posts[i].reads += 1;
     }
     const postIds = posts.map(p => p.id).join(',');
-    return Sequelize.query(`UPDATE posts_backup set reads=reads+1 where id IN (${postIds})`)
+    return Sequelize.query(`UPDATE posts set reads=reads+1 where id IN (${postIds})`)
     .then((resp) => {
       logger.debug(`Updated ${resp[1].rowCount} posts to increase the read count`);
     });

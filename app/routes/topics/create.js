@@ -54,9 +54,9 @@ module.exports = db =>
           tag: params.tag,
         };
 
-        return db.topics_backup.createTopic(db, pgTopic, userId).then((savedTopic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["savedTopic"] }] */
+        return db.topics.createTopic(db, pgTopic, userId).then((savedTopic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["savedTopic"] }] */
           logger.debug('topic saved in Postgres: ', savedTopic);
-          const pgPost = db.posts_backup.build({
+          const pgPost = db.posts.build({
             topicId: savedTopic.id,
             raw: params.body,
             postNumber: 1,
