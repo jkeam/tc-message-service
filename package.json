@@ -25,6 +25,8 @@
     "lint:fix": "./node_modules/.bin/eslint . --fix || true",
     "build": "babel app -d dist --presets es2015",
     "prestart": "npm run -s build",
+    "migrate": "./node_modules/.bin/sequelize db:migrate",
+    "migrate:undo": "./node_modules/.bin/sequelize db:migrate:undo",
     "start": "node dist",
     "start:dev": "NODE_ENV=local PORT=8001 nodemon -w app --exec \"babel-node app --presets es2015\" | ./node_modules/.bin/bunyan",
     "xstart:dev": "NODE_ENV=local nodemon server.js | ./node_modules/.bin/bunyan",
