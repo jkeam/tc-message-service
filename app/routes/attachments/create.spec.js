@@ -182,7 +182,7 @@ describe('POST /v4/topics/:topicId/posts/:postId/attachments', () => {
         });
     });
 
-    it('should create a record in the postAttachments table with the correct url', (done) => {
+    it('should create a record in the post_attachments table with the correct url', (done) => {
       request(server)
         .post(apiPath)
         .set({
@@ -195,7 +195,7 @@ describe('POST /v4/topics/:topicId/posts/:postId/attachments', () => {
             return done(err);
           }
           // we start from an empty database, so having a non null result from this means that it works correctly
-          return db.postAttachments.findOne()
+          return db.post_attachments.findOne()
             .then((postAttachment) => {
               // check the s3 upload mock function to know where this url comes from
               postAttachment.url.should.equal('mock-location');

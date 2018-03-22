@@ -45,7 +45,7 @@ describe('GET /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', () =
         return done(err);
       }
       const auth = getDecodedToken(jwts.member);
-      return db.postAttachments.create({
+      return db.post_attachments.create({
         id: 1,
         postId: 1,
         originalFileName: 'aFileName.jpg',
@@ -112,7 +112,7 @@ describe('GET /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', () =
     });
 
     describe('for a soft deleted existing attachment', () => {
-      beforeEach(done => db.postAttachments.update({
+      beforeEach(done => db.post_attachments.update({
         deletedAt: db.sequelize.fn('NOW'), deletedBy: 'deletingUser',
       }, {
         where: { id: 1 },
@@ -137,7 +137,7 @@ describe('GET /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', () =
     });
 
     describe('for an existing attachment belonging to a different post', () => {
-      beforeEach(done => db.postAttachments.update({
+      beforeEach(done => db.post_attachments.update({
         postId: 2,
       }, {
         where: { id: 1 },

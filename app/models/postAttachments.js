@@ -7,7 +7,7 @@
  */
 module.exports = (Sequelize, DataTypes) =>
   // This table represents uploads made sent by users
-  Sequelize.define('postAttachments', {
+  Sequelize.define('post_attachments', {
     // The primary key
     id: {
       type: DataTypes.BIGINT,

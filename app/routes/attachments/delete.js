@@ -45,7 +45,7 @@ module.exports = db =>
           throw new errors.HttpStatusError(403, 'User doesn\'t have access to the project');
         }
 
-        return db.postAttachments.findOne({ where: { id: params.attachmentId, postId: params.postId } });
+        return db.post_attachments.findOne({ where: { id: params.attachmentId, postId: params.postId } });
       })
       .then((postAttachment) => {
         if (!postAttachment || (!query.hardDelete && postAttachment.deletedAt && !isAdmin)) {

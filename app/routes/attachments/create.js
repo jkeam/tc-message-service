@@ -84,7 +84,7 @@ module.exports = db =>
           sha1: Joi.string().required(),
           size: Joi.number().required(),
         }).unknown());
-        return db.postAttachments.create({
+        return db.post_attachments.create({
           postId: params.postId,
           originalFileName: req.file.originalname,
           fileSize: req.file.size,

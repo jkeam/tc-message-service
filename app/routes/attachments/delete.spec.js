@@ -60,7 +60,7 @@ describe('DELETE /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', (
         return done(err);
       }
       const auth = getDecodedToken(jwts.member);
-      return db.postAttachments.create({
+      return db.post_attachments.create({
         id: 1,
         postId: 1,
         originalFileName: 'aFileName.jpg',
@@ -127,7 +127,7 @@ describe('DELETE /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', (
     });
 
     describe('for a soft deleted existing attachment', () => {
-      beforeEach(done => db.postAttachments.update({
+      beforeEach(done => db.post_attachments.update({
         deletedAt: db.sequelize.fn('NOW'), deletedBy: 'deletingUser',
       }, {
         where: { id: 1 },
@@ -179,7 +179,7 @@ describe('DELETE /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', (
     });
 
     describe('for an existing attachment belonging to a different post', () => {
-      beforeEach(done => db.postAttachments.update({
+      beforeEach(done => db.post_attachments.update({
         postId: 2,
       }, {
         where: { id: 1 },
@@ -286,7 +286,7 @@ describe('DELETE /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', (
           });
       });
 
-      it('should soft delete a record in the postAttachments table', (done) => {
+      it('should soft delete a record in the post_attachments table', (done) => {
         request(server)
           .delete(apiPath)
           .set({
@@ -297,7 +297,7 @@ describe('DELETE /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', (
             if (err) {
               return done(err);
             }
-            return db.postAttachments.findOne({ where: { id: 1 } })
+            return db.post_attachments.findOne({ where: { id: 1 } })
               .then((postAttachment) => {
                 // check the s3 upload mock function to know where this url comes from
                 postAttachment.deletedAt.should.exist;
@@ -308,7 +308,7 @@ describe('DELETE /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', (
       });
 
       describe('when hard deleting', () => {
-        it('should hard delete a record in the postAttachments table when the user is an admin', (done) => {
+        it('should hard delete a record in the post_attachments table when the user is an admin', (done) => {
           request(server)
             .delete(`${apiPath}&hardDelete=true`)
             .set({
@@ -319,7 +319,7 @@ describe('DELETE /v4/topics/:topicId/posts/:postId/attachments/:attachmentId', (
               if (err) {
                 return done(err);
               }
-              return db.postAttachments.findOne({ where: { id: 1 } })
+              return db.post_attachments.findOne({ where: { id: 1 } })
                 .then((postAttachment) => {
                   // check the s3 upload mock function to know where this url comes from
                   expect(postAttachment).to.not.exist;
