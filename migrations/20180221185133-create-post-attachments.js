@@ -1,7 +1,7 @@
 'use strict';
 module.exports = {
   up: function(queryInterface, Sequelize) {
-    return queryInterface.createTable('postAttachments', {
+    return queryInterface.createTable('post_attachments', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -53,6 +53,6 @@ module.exports = {
     });
   },
   down: function(queryInterface, Sequelize) {
-    return queryInterface.dropTable('postAttachments');
+    return queryInterface.dropTable('post_attachments');
   }
 };

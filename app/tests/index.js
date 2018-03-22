@@ -37,7 +37,7 @@ function clearDBPromise() {
       cascade: true,
       logging: false,
     }))
-    .then(() => models.postAttachments.truncate({
+    .then(() => models.post_attachments.truncate({
       cascade: true,
       logging: false,
     }))
