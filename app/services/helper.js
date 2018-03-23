@@ -81,7 +81,7 @@ module.exports = (logger, db) => {
    * @return {Promise} promise
    */
   function callReferenceEndpoint(authToken, requestId, reference, referenceId) {
-    return db.referenceLookups.findOne({ where: { reference } })
+    return db.reference_lookups.findOne({ where: { reference } })
     .then((result) => {
       if (!result) {
         logger.debug('no result');

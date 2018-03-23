@@ -2,6 +2,24 @@
 module.exports = {
   up: function(queryInterface, Sequelize) {
     return [
+      queryInterface.dropTable('referenceLookups'),
+      queryInterface.createTable('reference_lookups', {
+          reference: {  
+            type: Sequelize.STRING,
+            primaryKey: true
+          },
+          endpoint: {  
+            type: Sequelize.STRING,
+            allowNull: false
+          },
+          createdAt: {
+            type: Sequelize.DATE
+          },
+          updatedAt: {
+            type: Sequelize.DATE
+          }
+        }
+      ),
       queryInterface.createTable('posts', {
         id: {
           type: Sequelize.BIGINT,
@@ -10,8 +28,13 @@ module.exports = {
         },
         // content of the post
         raw: {
-          type: Sequelize.STRING,
+          type: Sequelize.TEXT,
           allowNull: false,
+        },
+        // content of the post
+        cooked: {
+          type: Sequelize.TEXT,
+          allowNull: true,
         },
         // topic id
         topicId: {
@@ -28,7 +51,7 @@ module.exports = {
           type: Sequelize.BOOLEAN,
         },
         rawEmail: {
-          type: Sequelize.STRING,
+          type: Sequelize.TEXT,
         },
         hidden: {
           type: Sequelize.BOOLEAN,
@@ -135,11 +158,45 @@ module.exports = {
           type: Sequelize.BIGINT,
           allowNull: true,
         }
-      )
+      ),
+      queryInterface.addColumn(
+        'topics',
+        'deletedAt',
+        {
+          type: Sequelize.DATE
+        }
+      ),
+      queryInterface.addColumn(
+        'topics',
+        'deletedBy',
+        {
+          type: Sequelize.STRING
+        }
+      ),
     ]
   },
   down: function(queryInterface, Sequelize) {
     return [
+      queryInterface.createTable(
+          'referenceLookups',
+          {
+              reference: {  
+                  type: Sequelize.STRING,
+                  primaryKey: true
+              },
+              endpoint: {  
+                  type: Sequelize.STRING,
+                  allowNull: false
+              },
+              createdAt: {
+                  type: Sequelize.DATE
+              },
+              updatedAt: {
+                  type: Sequelize.DATE
+              }
+          }
+      ),
+      queryInterface.dropTable('reference_lookups'),
       queryInterface.dropTable('posts'),
       queryInterface.dropTable('post_user_stats'),
       queryInterface.removeColumn('topics', 'title'),
@@ -148,6 +205,8 @@ module.exports = {
       queryInterface.removeColumn('topics', 'hidden'),
       queryInterface.removeColumn('topics', 'archived'),
       queryInterface.removeColumn('topics', 'hiddenReason'),
+      queryInterface.removeColumn('topics', 'deletedAt'),
+      queryInterface.removeColumn('topics', 'deletedBy'),
       queryInterface.changeColumn(
         'topics',
         'discourseTopicId',

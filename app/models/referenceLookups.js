@@ -7,7 +7,7 @@
 module.exports = (Sequelize, DataTypes) => {
     // Reference lookup represents the api endpoint that should be used to lookup the record
     // in order to determine if the user has access to the given entity
-  const ReferenceLookup = Sequelize.define('referenceLookups', {
+  const ReferenceLookup = Sequelize.define('reference_lookups', {
     reference: {
       type: DataTypes.STRING,
       primaryKey: true,

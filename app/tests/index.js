@@ -41,7 +41,7 @@ function clearDBPromise() {
       cascade: true,
       logging: false,
     }))
-    .then(() => models.referenceLookups.truncate({
+    .then(() => models.reference_lookups.truncate({
       cascade: true,
       logging: false,
     }));
@@ -67,7 +67,7 @@ function prepareDB(done) {
           title: 'Mock topic title',
           createdBy: '123456789',
         }),
-        models.referenceLookups.create({
+        models.reference_lookups.create({
           id: 1,
           reference: 'project',
           endpoint: 'http://reftest/{id}', // eslint-disable-line
