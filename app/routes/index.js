@@ -21,6 +21,8 @@ const updatePostHandler = require('./posts/update');
 const deletePostHandler = require('./posts/delete');
 const systemUserFilter = require('../middleware/system-user-filter.js');
 
+const webhookPostHandler = require('./sendgrid/webhook');
+
 const jwt = require('jsonwebtoken');
 
 /**
@@ -107,6 +109,9 @@ module.exports = (logger, db) => {
 
   router.route(`/${apiVersion}/topics/:topicId/posts/:postId/edit`)
     .post(updatePostHandler(db));
+
+  router.route(`/${apiVersion}/webhook`)
+    .post(webhookPostHandler(db));
 
   // register error handler
   router.use((err, req, res, next) => { // eslint-disable-line

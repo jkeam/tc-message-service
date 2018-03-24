@@ -17,6 +17,33 @@ const { REFERENCE_LOOKUPS } = require('../constants');
  */
 module.exports = (logger, db) => {
   /**
+   * Lookup user handles from emails
+   * @param  {Array} userEmails user emails
+   * @return {Promise} promise
+   */
+  function lookupUserEmails(userEmails) {
+    logger.debug(`${config.get('userServiceUrl')}/`);
+    logger.debug(`Bearer ${config.get('TC_ADMIN_TOKEN')}`);
+    return axios.get(`${config.get('userServiceUrl')}/`, {
+      headers: {
+        Authorization: `Bearer ${config.get('TC_ADMIN_TOKEN')}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      params: {
+        fields: 'handle,id,email',
+        filter: _.map(userEmails, i => `email=${i}`).join(' OR '),
+      },
+    })
+    .then((response) => {
+      const data = _.get(response, 'data.result.content', null);
+      if (!data) { throw new Error('Response does not have result.content'); }
+      logger.debug('UserHandle response', data);
+      return data;
+    });
+  }
+
+  /**
    * Lookup user handles from userIds
    * @param  {Array} userIds user Identifiers
    * @return {Promise} promise
@@ -69,6 +96,16 @@ module.exports = (logger, db) => {
   function lookupUserFromId(userId) {
     return lookupUserHandles([userId])
       .then(handles => getTopcoderUser(handles[0]));
+  }
+
+    /**
+   * finds handle of user from email,
+   * @param {Number} userEmail email of user
+   * @return {Promise} promise
+   */
+  function lookupUserFromEmail(userEmail) {
+    return lookupUserEmails([userEmail])
+      .then(users => users[0]);
   }
 
   /**
@@ -209,6 +246,7 @@ module.exports = (logger, db) => {
     getTopcoderUser,
     lookupUserHandles,
     lookupUserFromId,
+    lookupUserFromEmail,
     userHasAccessToEntity,
     callReferenceEndpoint,
     checkAccessAndProvision,
