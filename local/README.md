@@ -49,7 +49,7 @@ Install the sequelize command line interface by following the instructions found
 
 ## AWS (S3)
 
-You will need a AWS account and an existing S3 bucket. The `config/default.json` file contains the following sso related properties:
+You will need a AWS account and an existing S3 bucket. The `config/default.json` file contains the following sso related properties.  Also remember to give your AWS account user admin access to both S3 and DynamoDB.
 
 - aws
  - config - configuration related to credentials and region to use
@@ -68,6 +68,8 @@ Note that all these properties have their corresponding environment variables th
   - secretAccessKey - AWS_SECRET_ACCESS_KEY
  - S3 - configuration related to S3
   - bucket - AWS_S3_BUCKET
+ - dynamo - dynamodb config
+  - tablename - the dynamodb tablename to use.  must have a key column named `Id`
 
 # Local Setup
 
@@ -169,6 +171,20 @@ curl -X PUT 'http://<docker_ip>:3002/admin/site_settings/enable_emoji?api_key=<a
 
 ```
 
+## Webhooks
+Discourse also needs webhooks enabled.  To do this, login to Discourse as an admin and go to
+
+`Settings -> API -> Webhooks`
+
+Next, set the `Payload URL` to match the url of this deployed service.
+
+`https://{hostname}/{version}/webhooks/discourse`
+
+From there, set the `Secret` field to match the `discourseWebhookSecret` config in `default.json`.  This is the shared secret that will allow the two systems to communicate.
+
+The next step is to turn on the specific webhooks that we want.  In this case, `Post Event` should be sufficient.
+
+Lastly, check the `Active` checkbox and then click `Save`.
 
 
 # Starting the Application
@@ -195,7 +211,7 @@ export AWS_SECRET_ACCESS_KEY=<<AWS secret access key>>
 export AWS_S3_BUCKET=<<AWS S3 bucket>>
 ```
 
-NOTE: 
+NOTE:
 
 - The Discourse system user's API key is obtained in the last step from Discourse setup
 - DEFAULT_DISCOURSE_PW defines the default password for users which will be created in Discourse automatically
