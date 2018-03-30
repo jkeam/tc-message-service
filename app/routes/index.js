@@ -1,4 +1,6 @@
 
+import formidable from 'express-formidable';
+
 const router = require('express').Router();
 const config = require('config');
 const util = require('tc-core-library-js').util(config);
@@ -110,6 +112,8 @@ module.exports = (logger, db) => {
   router.route(`/${apiVersion}/topics/:topicId/posts/:postId/edit`)
     .post(updatePostHandler(db));
 
+  
+  router.use(`/${apiVersion}/webhook`, formidable());
   router.route(`/${apiVersion}/webhook`)
     .post(webhookPostHandler(db));
 

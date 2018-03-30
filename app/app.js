@@ -7,7 +7,6 @@ import _ from 'lodash';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import expressRequestId from 'express-request-id';
-import formidable from 'express-formidable';
 import cors from 'cors';
 import busApi from './events/busApi';
 
@@ -74,7 +73,6 @@ app.use(cors());
 app.use(coreLib.middleware.logger(null, logger));
 app.use(bodyParser.json());
 app.use(cookieParser());
-app.use(formidable());
 app.use(routes);
 
 // =======================
