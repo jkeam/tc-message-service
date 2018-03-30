@@ -112,7 +112,6 @@ module.exports = (logger, db) => {
   router.route(`/${apiVersion}/topics/:topicId/posts/:postId/edit`)
     .post(updatePostHandler(db));
 
-  
   router.use(`/${apiVersion}/webhook`, formidable());
   router.route(`/${apiVersion}/webhook`)
     .post(webhookPostHandler(db));
