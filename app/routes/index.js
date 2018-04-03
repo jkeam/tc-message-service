@@ -50,7 +50,7 @@ module.exports = (logger, db) => {
   const jwtAuth = tcCoreLib.middleware.jwtAuthenticator;
 
   // discourse webhook with custom auth logic
-  router.route(`/${apiVersion}/topics/webhooks/discourse`).post((req, res, next) => {
+  router.route(`/${apiVersion}/webhooks/topics/discourse`).post((req, res, next) => {
     const discourseToken = req.header('x-discourse-event-signature');
     if (discourseToken) {
       const token = SecurityHelper.calculateHmac(req.rawBody, 'sha256=');
