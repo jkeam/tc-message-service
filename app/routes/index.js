@@ -1,4 +1,3 @@
-
 import formidable from 'express-formidable';
 
 const router = require('express').Router();
@@ -24,6 +23,9 @@ const deletePostHandler = require('./posts/delete');
 const systemUserFilter = require('../middleware/system-user-filter.js');
 
 const webhookPostHandler = require('./sendgrid/webhook');
+const discourseWebhookPostHandler = require('./discourse/webhook');
+
+const SecurityHelper = require('../services/security');
 
 const jwt = require('jsonwebtoken');
 
@@ -46,6 +48,21 @@ module.exports = (logger, db) => {
   const apiVersion = config.apiVersion;
   // all project service endpoints need authentication
   const jwtAuth = tcCoreLib.middleware.jwtAuthenticator;
+
+  // discourse webhook with custom auth logic
+  router.route(`/${apiVersion}/topics/webhooks/discourse`).post((req, res, next) => {
+    const discourseToken = req.header('x-discourse-event-signature');
+    if (discourseToken) {
+      const token = SecurityHelper.calculateHmac(req.rawBody, 'sha256=');
+      if (discourseToken === token) {
+        discourseWebhookPostHandler(db)(req, res, next);
+        return;
+      }
+    }
+    res.status(403).json(util.wrapErrorResponse(req.id, 403, 'Invalid token issuer.'));
+    res.send();
+  });
+
   router.all(`/${apiVersion}/topics*`, (req, res, next) => {
     if (`${process.env.TC_MESSAGE_SERVICE_AUTH_LOOSE}` !== 'true') {
       jwtAuth()(req, res, next);

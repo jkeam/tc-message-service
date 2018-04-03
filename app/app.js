@@ -71,7 +71,11 @@ app.use(addRequestId);
 // app.options('*', cors());
 app.use(cors());
 app.use(coreLib.middleware.logger(null, logger));
-app.use(bodyParser.json());
+app.use(bodyParser.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  },
+}));
 app.use(cookieParser());
 app.use(routes);
 
