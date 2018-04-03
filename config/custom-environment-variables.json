@@ -4,7 +4,11 @@
     "config": {
       "accessKeyId": "AWS_ACCESS_KEY_ID",
       "region": "AWS_REGION",
-      "secretAccessKey": "AWS_SECRET_ACCESS_KEY"
+      "secretAccessKey": "AWS_SECRET_ACCESS_KEY",
+      "table"
+    },
+    "dynamodb": {
+      "discourseWebhookLogsTable": "DDB_DISCOURSE_WEBHOOK_LOGS_TABLE"
     },
     "S3": {
       "bucket": "AWS_S3_BUCKET"

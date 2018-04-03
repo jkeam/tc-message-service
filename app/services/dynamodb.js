@@ -4,7 +4,7 @@ const Promise = require('bluebird');
 const { DISCOURSE_WEBHOOK_STATUS } = require('../constants');
 
 const dynamodb = new aws.DynamoDB(config.get('aws.config'));
-const dynamodbTablename = config.get('aws.dynamo.tablename');
+const dynamodbTablename = config.get('aws.dynamodb.discourseWebhookLogsTable');
 const putItem = Promise.promisify(dynamodb.putItem.bind(dynamodb));
 const updateItem = Promise.promisify(dynamodb.updateItem.bind(dynamodb));
 

@@ -6,6 +6,9 @@
       "region": "us-east-1",
       "secretAccessKey": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     },
+    "dynamodb": {
+      "discourseWebhookLogsTable": "message-service-discourse-webhook-logs"
+    },
     "S3": {
       "bucket": "tc-message-service-attachments"
     }
