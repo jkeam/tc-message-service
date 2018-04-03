@@ -44,10 +44,10 @@ const savePost = (req, db, post) => {
   const logger = req.log;
   const adapter = new Adapter(logger, db);
   return new Promise((resolve, reject) => {
-    db.topics.findById(post.topic_id)
+    return db.topics.findById(post.topic_id)
       .then((topic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["topic"] }] */
         if (topic) {
-          db.posts.createPost(db, post.cooked, topic, post.user_id).then((savedPost) => {
+          return db.posts.createPost(db, post.cooked, topic, post.user_id).then((savedPost) => {
             logger.debug(createLogMessage('Post created via discourse webhook.', post));
             topic.highestPostNumber += 1;
             topic.save().then(() => logger.debug(createLogMessage('Topic updated async for post.', post, savedPost)));
@@ -56,7 +56,7 @@ const savePost = (req, db, post) => {
               userId: post.user_id,
               action: 'READ',
             }).then(() => logger.debug(createLogMessage('post_user_stats entry created for post.', post, savedPost)));
-            adapter.adaptPost(savedPost)
+            return adapter.adaptPost(savedPost)
               .then((post) => {
                 req.app.emit(EVENT.POST_CREATED, { post: savedPost, topic, req });
                 resolve(post);
