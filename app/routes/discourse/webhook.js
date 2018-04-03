@@ -97,5 +97,6 @@ module.exports = db => (req, resp, next) => {
     });
   }).catch((e) => {
     logger.error(createLogMessage('Initial loading of post from discourse webhook not successful.', post));
+    logger.error(e);
   });
 };

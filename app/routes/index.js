@@ -58,6 +58,7 @@ module.exports = (logger, db) => {
         discourseWebhookPostHandler(db)(req, res, next);
         return;
       }
+      logger.warn(`Token mismatch: ${discourseToken} != ${token}`);
     }
     res.status(403).json(util.wrapErrorResponse(req.id, 403, 'Invalid token issuer.'));
     res.send();
