@@ -22,7 +22,7 @@ const createLogMessage = (message, post, savedPost = {}) =>
 * @returns {void}
 */
 const success = (resp) =>
-  resp.status(200).send('');
+  resp.status(200).send('OK');
 
 /*
 * Saves the post.
@@ -44,10 +44,10 @@ const savePost = (req, db, post) => {
   const logger = req.log;
   const adapter = new Adapter(logger, db);
   return new Promise((resolve, reject) => {
-    return db.topics.findById(post.topic_id)
+    db.topics.findById(post.topic_id)
       .then((topic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["topic"] }] */
         if (topic) {
-          return db.posts.createPost(db, post.cooked, topic, post.user_id).then((savedPost) => {
+          db.posts.createPost(db, post.cooked, topic, post.user_id).then((savedPost) => {
             logger.debug(createLogMessage('Post created via discourse webhook.', post));
             topic.highestPostNumber += 1;
             topic.save().then(() => logger.debug(createLogMessage('Topic updated async for post.', post, savedPost)));
@@ -56,7 +56,7 @@ const savePost = (req, db, post) => {
               userId: post.user_id,
               action: 'READ',
             }).then(() => logger.debug(createLogMessage('post_user_stats entry created for post.', post, savedPost)));
-            return adapter.adaptPost(savedPost)
+            adapter.adaptPost(savedPost)
               .then((post) => {
                 req.app.emit(EVENT.POST_CREATED, { post: savedPost, topic, req });
                 resolve(post);
@@ -83,9 +83,9 @@ module.exports = db => (req, resp, next) => {
   const logger = req.log;
   const post = req.body.post;
   const originalPostId = post.id;
-  DynamoService.save(post).then((data) => {
+  return DynamoService.save(post).then((data) => {
     logger.debug(createLogMessage('Initial loading of post from discourse webhook successful.', post));
-    savePost(req, db, post).then((savedPost) => {
+    return savePost(req, db, post).then((savedPost) => {
       DynamoService.updateStatus(post.id, DISCOURSE_WEBHOOK_STATUS.COMPLETED).then((data) => {
         logger.info(createLogMessage('Completed post processing from discourse webhook.', post, savedPost));
       }).catch((e) => {
@@ -93,7 +93,7 @@ module.exports = db => (req, resp, next) => {
       }).finally(() => success(resp));
     }).catch((errorMessage) => {
       logger.error(errorMessage);
-      DynamoService.updateStatus(originalPostId, DISCOURSE_WEBHOOK_STATUS.ERROR).finally(() => success(resp));
+      return DynamoService.updateStatus(originalPostId, DISCOURSE_WEBHOOK_STATUS.ERROR).finally(() => success(resp));
     });
   }).catch((e) => {
     logger.error(createLogMessage('Initial loading of post from discourse webhook not successful.', post));
