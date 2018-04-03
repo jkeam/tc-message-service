@@ -15,6 +15,7 @@
   },
   "defaultDiscoursePw": "supersecretpw",
   "discourseSystemUsername": "system",
+  "discourseWebhookSecret": "discourse",
   "memberServiceUrl": "http://local.topcoder-dev.com:3001/members",
   "discourseURL": "http://talk.topcoder-dev.com",
   "discourseApiKey": "9a4ba22aaea1def205b61d1bfddc58d7205be61ee3447b7525ce5a191b8daed7",
