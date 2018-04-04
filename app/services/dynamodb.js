@@ -123,7 +123,7 @@ const findById = (id) => {
  * @param {Number} id to find the element
  * @returns {Object} promise from the find
  */
-const findPayloadById = (id) =>
+const findPayloadById = id =>
   new Promise((resolve) => {
     findById(id).then((item) => {
       if (item.Item) {
