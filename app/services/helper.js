@@ -17,6 +17,29 @@ const { REFERENCE_LOOKUPS } = require('../constants');
  */
 module.exports = (logger, db) => {
   /**
+   * Lookup topic from previous service
+   * @param  {Number} topicId the id of the topic we want
+   * @return {Promise} promise
+   */
+  function lookupTopic(topicId) {
+    logger.debug(`${config.get('topicServiceUrl')}/`);
+    logger.debug(`Bearer ${config.get('TC_ADMIN_TOKEN')}`);
+    return axios.get(`${config.get('topicServiceUrl')}/${topicId}`, {
+      headers: {
+        Authorization: `Bearer ${config.get('TC_ADMIN_TOKEN')}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    })
+    .then((response) => {
+      const data = _.get(response, 'data.result.content', null);
+      if (!data) { throw new Error('Response does not have result.content'); }
+      logger.debug('TopicHandle response', data);
+      return data;
+    });
+  }
+
+  /**
    * Lookup user handles from emails
    * @param  {Array} userEmails user emails
    * @return {Promise} promise
@@ -257,5 +280,6 @@ module.exports = (logger, db) => {
     mentionUserIdToHandle,
     isAdmin,
     s3KeyFromUrl,
+    lookupTopic,
   };
 };
