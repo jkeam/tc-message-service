@@ -11,13 +11,14 @@ const updateItem = Promise.promisify(dynamodb.updateItem.bind(dynamodb));
 /**
  * Save record in the dynamoddb.
  *
+ * @param {String} id unique id to identify this object
  * @param {Object} payload object to save in the dynamodb
  * @returns {Object} promise from save
  */
-const save = payload =>
+const save = (id, payload) =>
   putItem({
     Item: {
-      Id: { S: payload.id.toString() },
+      Id: { S: id.toString() },
       Payload: { S: JSON.stringify(payload) },
       Status: { S: DISCOURSE_WEBHOOK_STATUS.PENDING },
     },
