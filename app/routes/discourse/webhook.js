@@ -1,6 +1,7 @@
 const Promise = require('bluebird');
 const errors = require('common-errors');
 const DynamoService = require('../../services/dynamodb');
+const HelperService = require('../../services/helper');
 const { EVENT, DISCOURSE_WEBHOOK_STATUS } = require('../../constants');
 const Adapter = require('../../services/adapter');
 
@@ -139,40 +140,47 @@ const saveTopic = (db, req, resp, topic, formatMessage) => {
   const adapter = new Adapter(logger, db);
 
   const userId = topic.user_id;
-  const pgTopic = {
-    reference: 'project',
-    referenceId: 'referenceId',
-    title: topic.title,
-  };
+  const helper = HelperService(logger, db);
 
   return new Promise((resolve, reject) => {
-    db.topics.createTopic(db, pgTopic, userId)
-      .then((savedTopic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["savedTopic"] }] */
-        req.app.emit(EVENT.TOPIC_CREATED, { topic: pgTopic, req: { authUser: { userId } } });
-        logger.debug(formatMessage('Topic saved in Postgres.', topic, savedTopic));
+    helper.lookupTopic(topic.id).then((mirrorTopic) => {
+      const referenceId = mirrorTopic.referenceId;
+      const pgTopic = {
+        reference: 'project',
+        title: topic.title,
+        referenceId,
+      };
+      db.topics.createTopic(db, pgTopic, userId)
+        .then((savedTopic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["savedTopic"] }] */
+          req.app.emit(EVENT.TOPIC_CREATED, { topic: pgTopic, req: { authUser: { userId } } });
+          logger.debug(formatMessage('Topic saved in Postgres.', topic, savedTopic));
 
-        // reprocess any failed posts that came in before the topic
-        DynamoService.findByTopicIdAndType(topic.id, 'post').then((data) => {
-          if (data.Items) {
-            data.Items.map(post => post['Id']['S']).forEach((postId) => {
-              DynamoService.findPayloadById(postId).then((post) => {
-                process(db, req, resp, null, post);
-              }).catch((e) => {
-                logger.warn(formatMessage('Unable to save post for topic', topic));
-                logger.warn(e);
-              })
-            });
-          }
-          resolve(savedTopic);
-        }).catch((error) => {
-          logger.error(formatMessage(error, topic));
-          logger.debug(formatMessage('Unable to fetch posts for new topic.', topic, savedTopic));
-          resolve(savedTopic);
+          // reprocess any failed posts that came in before the topic
+          DynamoService.findByTopicIdAndType(topic.id, 'post').then((data) => {
+            if (data.Items) {
+              data.Items.map(post => post['Id']['S']).forEach((postId) => {
+                DynamoService.findPayloadById(postId).then((post) => {
+                  process(db, req, resp, null, post);
+                }).catch((e) => {
+                  logger.warn(formatMessage('Unable to save post for topic', topic));
+                  logger.warn(e);
+                })
+              });
+            }
+            resolve(savedTopic);
+          }).catch((error) => {
+            logger.error(formatMessage(error, topic));
+            logger.debug(formatMessage('Unable to fetch posts for new topic.', topic, savedTopic));
+            resolve(savedTopic);
+          });
+        }).catch((errorMessage) => {
+          logger.error(formatMessage(errorMessage, topic));
+          reject(formatMessage('Error while saving topic.', topic));
         });
-      }).catch((errorMessage) => {
-        logger.error(formatMessage(errorMessage, topic));
-        reject(formatMessage('Error while saving topic.', topic));
-      });
+    }).catch((errorMessage) => {
+      logger.error(formatMessage(errorMessage, topic));
+      reject(formatMessage('Error while fetching referenceId.', topic));
+    });
   });
 };
 
