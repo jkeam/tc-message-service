@@ -13,7 +13,7 @@ const Adapter = require('../../services/adapter');
 * @returns {void}
 */
 const createPostLogMessage = (message, post, savedPost = {}) =>
-  `Discourse Webhook :: ${message}  -  { postId: ${post.id}, topicId: ${post.topic_id || post.topicId}, savedPostId: ${savedPost.id} }`
+  `Discourse Webhook :: ${message}  -  { postId: ${post.id}, topicId: ${post.topicId}, savedPostId: ${savedPost.id} }`
 
 /*
 * Create standard log message for topic discource webhook.
@@ -34,6 +34,12 @@ const createTopicLogMessage = (message, topic, savedTopic = {}) =>
 */
 const success = (resp) =>
   resp.status(200).send('OK');
+
+/*
+* Generate the id used for log entry
+*
+*/
+const generateId = (type, id) => `${type}_${id}`;
 
 /*
 * Saves the post.
@@ -58,45 +64,55 @@ const savePost = (db, req, resp, post, formatMessage) => {
   const adapter = new Adapter(logger, db);
   const userId = post.user_id;
   return new Promise((resolve, reject) => {
-    db.topics.findById(post.topic_id)
-      .then((topic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["topic"] }] */
-        if (topic) {
-          db.posts.createPost(db, post.cooked, topic, userId).then((savedPost) => {
-            logger.debug(formatMessage('Post created via discourse webhook.', post));
-            topic.highestPostNumber += 1;
-            topic.save().then(() => logger.debug(formatMessage('Topic updated async for post.', post, savedPost)));
-            db.post_user_stats.createStats(db, logger, {
-              post: savedPost,
-              userId: post.user_id,
-              action: 'READ',
-            }).then(() => logger.debug(formatMessage('post_user_stats entry created for post.', post, savedPost)));
-            adapter.adaptPost(savedPost)
-              .then((adaptedPost) => {
-                req.app.emit(EVENT.POST_CREATED, {
-                  post: {
-                    topicId: post.topic_id,
-                    id: post.id,
-                    postContent: post.raw
-                  },
-                  topic,
-                  req: {
-                    authUser: {
-                      userId
+    // get new topic id
+    DynamoService.findById(generateId('topic', post.topicId)).then((data) => {
+      const topicId = (data.Item && data.Item.NewId) ? data.Item.NewId.S : '';
+      if (!topicId.trim()) {
+        reject(formatMessage('Unable to find matching topic for post.', post));
+      }
+      db.topics.findById(topicId)
+        .then((topic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["topic"] }] */
+          if (topic) {
+            db.posts.createPost(db, post.cooked, topic, userId).then((savedPost) => {
+              logger.debug(formatMessage('Post created via discourse webhook.', post));
+              topic.highestPostNumber += 1;
+              topic.save().then(() => logger.debug(formatMessage('Topic updated async for post.', post, savedPost)));
+              db.post_user_stats.createStats(db, logger, {
+                post: savedPost,
+                userId: post.user_id,
+                action: 'READ',
+              }).then(() => logger.debug(formatMessage('post_user_stats entry created for post.', post, savedPost)));
+              adapter.adaptPost(savedPost)
+                .then((adaptedPost) => {
+                  req.app.emit(EVENT.POST_CREATED, {
+                    post: {
+                      topicId,
+                      id: post.id,
+                      postContent: post.raw
+                    },
+                    topic,
+                    req: {
+                      authUser: {
+                        userId
+                      }
                     }
-                  }
+                  });
+                  resolve(adaptedPost);
+                }).catch((e) => {
+                  logger.error(e);
+                  reject(formatMessage('Unable to adapt post for emit.', post, savedPost));
                 });
-                resolve(adaptedPost);
-              }).catch((e) => {
-                logger.error(e);
-                reject(formatMessage('Unable to adapt post for emit.', post, savedPost));
-              });
-          });
-        } else {
-          reject(formatMessage('No topic found.', post));
-        }
-      }).catch((e) => {
-        reject(formatMessage('Error while finding topic.', post));
-      });
+            });
+          } else {
+            reject(formatMessage('No topic found.', post));
+          }
+        }).catch((e) => {
+          reject(formatMessage('Error while finding topic from system.', post));
+        });
+    }).catch((e) => {
+      logger.warn(formatMessage('Error while finding topic from logs.', post));
+      logger.warn(e);
+    })
   });
 };
 
@@ -134,13 +150,15 @@ const saveTopic = (db, req, resp, topic, formatMessage) => {
       .then((savedTopic) => { /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["savedTopic"] }] */
         req.app.emit(EVENT.TOPIC_CREATED, { topic: pgTopic, req: { authUser: { userId } } });
         logger.debug(formatMessage('Topic saved in Postgres.', topic, savedTopic));
+
+        // reprocess any failed posts that came in before the topic
         DynamoService.findByTopicIdAndType(topic.id, 'post').then((data) => {
           if (data.Items) {
             data.Items.map(post => post['Id']['S']).forEach((postId) => {
-              DynamoService.findById(postId).then((post) => {
-                process(db, req, resp, null, Object.assign({}, post, {topic_id: savedTopic.id}));
+              DynamoService.findPayloadById(postId).then((post) => {
+                process(db, req, resp, null, post);
               }).catch((e) => {
-                logger.warn(formatMesage('Unable to save post for topic', topic));
+                logger.warn(formatMessage('Unable to save post for topic', topic));
                 logger.warn(e);
               })
             });
@@ -176,8 +194,8 @@ const process = (db, req, resp, topic, post) => {
   const type = topic ? 'topic' : 'post';
 
   // ids
-  const id = `${type}_${obj.id}`;
-  const topicId = topic ? topic.id : post.topic_id;
+  const id = generateId(type, obj.id);
+  const topicId = topic ? topic.id : post.topicId;
 
   // specific functions
   const formatMessage = topic ? createTopicLogMessage : createPostLogMessage;
@@ -215,7 +233,7 @@ const process = (db, req, resp, topic, post) => {
  */
 module.exports = db => (req, resp, next) => {
   const logger = req.log;
-  const post = req.body.post;
+  const post = req.body.post ? Object.assign({}, req.body.post, { topicId: req.body.post.topic_id }) : null;
   const topic = req.body.topic;
 
   if (topic || post) {

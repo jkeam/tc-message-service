@@ -100,7 +100,7 @@ const findByTopicIdAndType = (topicId, type) => {
 };
 
 /**
- * Find elements in dynamodb by id.
+ * Find element in dynamodb by id.  Returns the raw dynamo data.
  *
  * @param {Number} id to find the element
  * @returns {Object} promise from the find
@@ -114,9 +114,18 @@ const findById = (id) => {
     },
     TableName: dynamodbTablename,
   };
+  return getItem(payload);
+};
 
-  return new Promise((resolve) => {
-    getItem(payload).then((item) => {
+/**
+ * Find element in dynamodb by id.  Then will parse the payload and return the object.
+ *
+ * @param {Number} id to find the element
+ * @returns {Object} promise from the find
+ */
+const findPayloadById = (id) =>
+  new Promise((resolve) => {
+    findById(id).then((item) => {
       if (item.Item) {
         try {
           const existing = JSON.parse(item.Item.Payload.S);
@@ -130,7 +139,6 @@ const findById = (id) => {
       resolve(null);
     });
   });
-};
 
 /**
  * Find or create the new element
@@ -143,7 +151,7 @@ const findById = (id) => {
  */
 const findOrCreate = (id, topicId, type, payload) =>
   new Promise((resolve, reject) => {
-    findById(id).then((item) => {
+    findPayloadById(id).then((item) => {
       if (item) {
         resolve(item);
       } else {
@@ -161,6 +169,7 @@ module.exports = {
   updateStatus,
   findByTopicIdAndType,
   findOrCreate,
+  findPayloadById,
   findById,
   updateNewId,
 };
