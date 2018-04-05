@@ -37,6 +37,5 @@
   "validIssuers": "VALID_ISSUERS",
   "jwksUri": "JWKS_URI",
   "busApiUrl": "BUS_API_URL",
-  "busApiToken": "BUS_API_TOKEN",
-  "TC_ADMIN_TOKEN": "TC_ADMIN_TOKEN"
+  "busApiToken": "BUS_API_TOKEN"
 }

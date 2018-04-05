@@ -47,6 +47,5 @@
   "validIssuers": "[\"https:\/\/topcoder-newauth.auth0.com\/\",\"https:\/\/api.topcoder-dev.com\"]",
   "jwksUri": "",
   "busApiUrl": "https://api.topcoder-dev.com",
-  "busApiToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoibWVzc2FnZS1zZXJ2aWNlIiwiaWF0IjoxNTEyNzQ3MDgyLCJleHAiOjE1MjEzODcwODJ9.yhdebtGrFWO_ltv0IycOosyU0WbQREtPSaiQyllX444",
-  "TC_ADMIN_TOKEN": ""
+  "busApiToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoibWVzc2FnZS1zZXJ2aWNlIiwiaWF0IjoxNTEyNzQ3MDgyLCJleHAiOjE1MjEzODcwODJ9.yhdebtGrFWO_ltv0IycOosyU0WbQREtPSaiQyllX444"
 }
