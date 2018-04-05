@@ -22,11 +22,11 @@ module.exports = (logger, db) => {
    * @return {Promise} promise
    */
   function lookupUserEmails(userEmails) {
-    logger.debug(`${config.get('identityServiceEndpoint')}/`);
+    logger.debug(`${config.get('identityServiceEndpoint')}`);
     return util.getSystemUserToken(logger)
     .then((token) => {
       logger.debug(`Bearer ${token}`);
-      return axios.get(`${config.get('identityServiceEndpoint')}/`, {
+      return axios.get(`${config.get('identityServiceEndpoint')}users`, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: 'application/json',
