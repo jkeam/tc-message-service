@@ -11,9 +11,7 @@ const { EVENT } = require('../../constants');
 module.exports = db => (req, resp, next) => {
   const logger = req.log;
   logger.debug('Entered Sendgrid webhook handler');
-  console.log('Entered Sendgrid webhook handler');
   logger.debug(req.fields);
-  console.log(req.fields);
   const payload = req.fields;
   const rawText = payload.text;
   const subject = payload.subject;
@@ -47,7 +45,6 @@ module.exports = db => (req, resp, next) => {
   }
 
   const helper = HelperService(logger, db);
-  logger.debug(`Processing email from ${fromAddress} to ${toAddress} with token ${token} and topic id ${topicId}`);
   logger.debug(`Processing email from ${fromAddress} to ${toAddress} with token ${token} and topic id ${topicId}`);
   helper.lookupUserFromEmail(fromAddress).then((user) => {
     logger.debug(`Got user by email ${user}`);

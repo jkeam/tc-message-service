@@ -22,24 +22,27 @@ module.exports = (logger, db) => {
    * @return {Promise} promise
    */
   function lookupUserEmails(userEmails) {
-    logger.debug(`${config.get('userServiceUrl')}/`);
-    logger.debug(`Bearer ${config.get('TC_ADMIN_TOKEN')}`);
-    return axios.get(`${config.get('userServiceUrl')}/`, {
-      headers: {
-        Authorization: `Bearer ${config.get('TC_ADMIN_TOKEN')}`,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      params: {
-        fields: 'handle,id,email',
-        filter: _.map(userEmails, i => `email=${i}`).join(' OR '),
-      },
-    })
-    .then((response) => {
-      const data = _.get(response, 'data.result.content', null);
-      if (!data) { throw new Error('Response does not have result.content'); }
-      logger.debug('UserHandle response', data);
-      return data;
+    logger.debug(`${config.get('identityServiceEndpoint')}/`);
+    return util.getSystemUserToken(logger)
+    .then((token) => {
+      logger.debug(`Bearer ${token}`);
+      return axios.get(`${config.get('identityServiceEndpoint')}/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        params: {
+          fields: 'handle,id,email',
+          filter: _.map(userEmails, i => `email=${i}`).join(' OR '),
+        },
+      })
+      .then((response) => {
+        const data = _.get(response, 'data.result.content', null);
+        if (!data) { throw new Error('Response does not have result.content'); }
+        logger.debug('UserHandle response', data);
+        return data;
+      });
     });
   }
 
