@@ -10,8 +10,10 @@ const { EVENT } = require('../../constants');
  */
 module.exports = db => (req, resp, next) => {
   const logger = req.log;
-  logger.info('Entered Sendgrid webhook handler');
-  logger.info(req.fields);
+  logger.debug('Entered Sendgrid webhook handler');
+  console.log('Entered Sendgrid webhook handler');
+  logger.debug(req.fields);
+  console.log(req.fields);
   const payload = req.fields;
   const rawText = payload.text;
   const subject = payload.subject;
@@ -20,8 +22,8 @@ module.exports = db => (req, resp, next) => {
   let fromAddress;
   let toAddress;
   let status = 'success';
-  logger.info('Payload');
-  logger.info(payload);
+  logger.debug('Payload');
+  logger.debug(payload);
   if (payload.envelope) {
     envelope = JSON.parse(payload.envelope);
   }
@@ -32,7 +34,7 @@ module.exports = db => (req, resp, next) => {
   let emailInfo = null;
   let topicId = null;
   let token = null;
-  logger.info('Envelope parsed successfully');
+  logger.debug('Envelope parsed successfully');
   try {
     emailInfo = toAddress.substring(toAddress.indexOf('+') + 1, toAddress.indexOf('@'));
     topicId = parseInt(emailInfo.substring(0, emailInfo.indexOf('/')), 10);
@@ -45,7 +47,7 @@ module.exports = db => (req, resp, next) => {
   }
 
   const helper = HelperService(logger, db);
-  logger.info(`Processing email from ${fromAddress} to ${toAddress} with token ${token} and topic id ${topicId}`);
+  logger.debug(`Processing email from ${fromAddress} to ${toAddress} with token ${token} and topic id ${topicId}`);
   logger.debug(`Processing email from ${fromAddress} to ${toAddress} with token ${token} and topic id ${topicId}`);
   helper.lookupUserFromEmail(fromAddress).then((user) => {
     logger.debug(`Got user by email ${user}`);
