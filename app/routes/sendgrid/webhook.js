@@ -10,7 +10,7 @@ const { EVENT } = require('../../constants');
  */
 module.exports = db => (req, resp, next) => {
   const logger = req.log;
-  logger.info("Entered Sendgrid webhook handler");
+  logger.info('Entered Sendgrid webhook handler');
   logger.info(req.fields);
   const payload = req.fields;
   const rawText = payload.text;
@@ -20,7 +20,7 @@ module.exports = db => (req, resp, next) => {
   let fromAddress;
   let toAddress;
   let status = 'success';
-  logger.info("Payload");
+  logger.info('Payload');
   logger.info(payload);
   if (payload.envelope) {
     envelope = JSON.parse(payload.envelope);
@@ -32,7 +32,7 @@ module.exports = db => (req, resp, next) => {
   let emailInfo = null;
   let topicId = null;
   let token = null;
-  logger.info("Envelope parsed successfully");
+  logger.info('Envelope parsed successfully');
   try {
     emailInfo = toAddress.substring(toAddress.indexOf('+') + 1, toAddress.indexOf('@'));
     topicId = parseInt(emailInfo.substring(0, emailInfo.indexOf('/')), 10);
