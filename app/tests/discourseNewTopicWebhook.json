@@ -1,0 +1,141 @@
+{
+  "topic": {
+    "suggested_topics": [
+      {
+        "id": 8,
+        "title": "Welcome to Discourse",
+        "fancy_title": "Welcome to Discourse",
+        "slug": "welcome-to-discourse",
+        "posts_count": 1,
+        "reply_count": 0,
+        "highest_post_number": 1,
+        "image_url": "//discourse.keam.co/images/welcome/discourse-edit-post-animated.gif",
+        "created_at": "2018-04-03T05:10:14.389Z",
+        "last_posted_at": "2018-04-03T05:10:14.457Z",
+        "bumped": true,
+        "bumped_at": "2018-04-03T06:03:21.805Z",
+        "unseen": false,
+        "last_read_post_number": 1,
+        "unread": 0,
+        "new_posts": 0,
+        "pinned": true,
+        "unpinned": null,
+        "excerpt": "You can talk about anything. \nThe first paragraph of this pinned topic will be visible as a welcome message to all new visitors on your homepage. It’s important! \nEdit this into a brief description of your community: \n\nW&hellip;",
+        "visible": true,
+        "closed": false,
+        "archived": false,
+        "notification_level": 3,
+        "bookmarked": false,
+        "liked": false,
+        "archetype": "regular",
+        "like_count": 0,
+        "views": 0,
+        "category_id": 1,
+        "featured_link": null,
+        "posters": [
+          {
+            "extras": "latest single",
+            "description": "Original Poster, Most Recent Poster",
+            "user": {
+              "id": -1,
+              "username": "system",
+              "avatar_template": "/user_avatar/discourse.keam.co/system/{size}/2_1.png"
+            }
+          }
+        ]
+      }
+    ],
+    "id": 15,
+    "title": "New Topic",
+    "fancy_title": "New Topic",
+    "posts_count": 1,
+    "created_at": "2018-04-04T02:18:25.246Z",
+    "views": 0,
+    "reply_count": 0,
+    "like_count": 0,
+    "last_posted_at": "2018-04-04T02:18:25.588Z",
+    "visible": true,
+    "closed": false,
+    "archived": false,
+    "has_summary": false,
+    "archetype": "regular",
+    "slug": "new-topic",
+    "category_id": 1,
+    "word_count": 1,
+    "deleted_at": null,
+    "pending_posts_count": 0,
+    "user_id": 1,
+    "pm_with_non_human_user": false,
+    "featured_link": null,
+    "pinned_globally": false,
+    "pinned_at": null,
+    "pinned_until": null,
+    "unpinned": null,
+    "pinned": false,
+    "details": {
+      "created_by": {
+        "id": 1,
+        "username": "JonKeam",
+        "avatar_template": "/user_avatar/discourse.keam.co/jonkeam/{size}/3_1.png"
+      },
+      "last_poster": {
+        "id": 1,
+        "username": "JonKeam",
+        "avatar_template": "/user_avatar/discourse.keam.co/jonkeam/{size}/3_1.png"
+      },
+      "participants": [
+        {
+          "id": 1,
+          "username": "JonKeam",
+          "avatar_template": "/user_avatar/discourse.keam.co/jonkeam/{size}/3_1.png",
+          "post_count": 1,
+          "primary_group_name": null,
+          "primary_group_flair_url": null,
+          "primary_group_flair_color": null,
+          "primary_group_flair_bg_color": null
+        }
+      ],
+      "notification_level": 1,
+      "can_move_posts": true,
+      "can_edit": true,
+      "can_delete": true,
+      "can_remove_allowed_users": true,
+      "can_remove_self_id": -1,
+      "can_invite_to": true,
+      "can_invite_via_email": true,
+      "can_create_post": true,
+      "can_reply_as_new_topic": true,
+      "can_flag_topic": true,
+      "can_convert_topic": true
+    },
+    "current_post_number": 1,
+    "highest_post_number": 1,
+    "deleted_by": null,
+    "has_deleted": false,
+    "actions_summary": [
+      {
+        "id": 4,
+        "count": 0,
+        "hidden": false,
+        "can_act": true
+      },
+      {
+        "id": 8,
+        "count": 0,
+        "hidden": false,
+        "can_act": true
+      },
+      {
+        "id": 7,
+        "count": 0,
+        "hidden": false,
+        "can_act": true
+      }
+    ],
+    "chunk_size": 20,
+    "bookmarked": null,
+    "topic_timer": null,
+    "private_topic_timer": null,
+    "participant_count": 1
+  }
+}
