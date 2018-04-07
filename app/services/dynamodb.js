@@ -3,12 +3,97 @@ const config = require('config');
 const Promise = require('bluebird');
 const { DISCOURSE_WEBHOOK_STATUS } = require('../constants');
 
-const dynamodb = new aws.DynamoDB(config.get('aws.config'));
-const dynamodbTablename = config.get('aws.dynamodb.discourseWebhookLogsTable');
-const putItem = Promise.promisify(dynamodb.putItem.bind(dynamodb));
-const updateItem = Promise.promisify(dynamodb.updateItem.bind(dynamodb));
-const query = Promise.promisify(dynamodb.query.bind(dynamodb));
-const getItem = Promise.promisify(dynamodb.getItem.bind(dynamodb));
+let adapter = null;
+let tableName = null;
+
+/*
+*  Lazily instantiate the dynamodb adapter.
+*/
+const getSingleton = () => {
+  if (!adapter) {
+    tableName = config.get('aws.dynamodb.discourseWebhookLogsTable');
+
+    const dynamodb = new aws.DynamoDB(config.get('aws.config'));
+    const putItem = Promise.promisify(dynamodb.putItem.bind(dynamodb));
+    const updateItem = Promise.promisify(dynamodb.updateItem.bind(dynamodb));
+    const query = Promise.promisify(dynamodb.query.bind(dynamodb));
+    const getItem = Promise.promisify(dynamodb.getItem.bind(dynamodb));
+
+    const find = (id) => {
+      const payload = {
+        Key: {
+          Id: {
+            S: id.toString(),
+          },
+        },
+        TableName: tableName,
+      };
+      return getItem(payload);
+    };
+
+    const save = ({ id, topicId, type, payload }) =>
+      putItem({
+        Item: {
+          Id: { S: id.toString() },
+          TopicId: { S: topicId.toString() },
+          Type: { S: type },
+          Payload: { S: JSON.stringify(payload) },
+          Status: { S: DISCOURSE_WEBHOOK_STATUS.PENDING },
+          NewId: { S: ' ' },
+        },
+        ReturnConsumedCapacity: 'TOTAL',
+        TableName: tableName,
+      });
+
+    const updateStatus = (id, status) =>
+      updateItem({
+        ExpressionAttributeNames: { '#S': 'Status' },
+        ExpressionAttributeValues: { ':s': { S: status } },
+        Key: { Id: { S: id.toString() } },
+        ReturnValues: 'ALL_NEW',
+        TableName: tableName,
+        UpdateExpression: 'SET #S = :s',
+      });
+
+    const updateNewId = (id, newId) =>
+      updateItem({
+        ExpressionAttributeNames: { '#S': 'NewId' },
+        ExpressionAttributeValues: { ':s': { S: newId.toString() } },
+        Key: { Id: { S: id.toString() } },
+        ReturnValues: 'ALL_NEW',
+        TableName: tableName,
+        UpdateExpression: 'SET #S = :s',
+      });
+
+    const findByTopicIdAndType = (topicId, type) => {
+      const payload = {
+        IndexName: 'TopicId-Type-index',
+        ConsistentRead: false,
+        KeyConditionExpression: '#topicId = :topicId AND #type = :type',
+        ExpressionAttributeNames: {
+          '#topicId': 'TopicId',
+          '#type': 'Type',
+        },
+        ExpressionAttributeValues: {
+          ':topicId': { S: topicId.toString() },
+          ':type': { S: type },
+        },
+        TableName: tableName,
+      };
+
+      return query(payload);
+    };
+
+    adapter = {
+      save,
+      updateStatus,
+      updateNewId,
+      findByTopicIdAndType,
+      find,
+    };
+  }
+  return adapter;
+};
 
 /**
  * Save record in the dynamoddb.
@@ -20,18 +105,7 @@ const getItem = Promise.promisify(dynamodb.getItem.bind(dynamodb));
  * @returns {Object} promise from save
  */
 const save = (id, topicId, type, payload) =>
-  putItem({
-    Item: {
-      Id: { S: id.toString() },
-      TopicId: { S: topicId.toString() },
-      Type: { S: type },
-      Payload: { S: JSON.stringify(payload) },
-      Status: { S: DISCOURSE_WEBHOOK_STATUS.PENDING },
-      NewId: { S: ' ' },
-    },
-    ReturnConsumedCapacity: 'TOTAL',
-    TableName: dynamodbTablename,
-  });
+  getSingleton().save({ id, topicId, type, payload });
 
 /**
  * Update status of the entry in dynamodb.
@@ -40,18 +114,8 @@ const save = (id, topicId, type, payload) =>
  * @param {String} status to update on the dynamodb record
  * @returns {Object} promise from the update
  */
-const updateStatus = (id, status) => {
-  const payload = {
-    ExpressionAttributeNames: { '#S': 'Status' },
-    ExpressionAttributeValues: { ':s': { S: status } },
-    Key: { Id: { S: id.toString() } },
-    ReturnValues: 'ALL_NEW',
-    TableName: dynamodbTablename,
-    UpdateExpression: 'SET #S = :s',
-  };
-
-  return updateItem(payload);
-};
+const updateStatus = (id, status) =>
+  getSingleton().updateStatus(id, status);
 
 /**
  * Update status of the entry in dynamodb.
@@ -60,18 +124,8 @@ const updateStatus = (id, status) => {
  * @param {String} newId new id stored in postgres
  * @returns {Object} promise from the update
  */
-const updateNewId = (id, newId) => {
-  const payload = {
-    ExpressionAttributeNames: { '#S': 'NewId' },
-    ExpressionAttributeValues: { ':s': { S: newId.toString() } },
-    Key: { Id: { S: id.toString() } },
-    ReturnValues: 'ALL_NEW',
-    TableName: dynamodbTablename,
-    UpdateExpression: 'SET #S = :s',
-  };
-
-  return updateItem(payload);
-};
+const updateNewId = (id, newId) =>
+  getSingleton().updateNewId(id, newId);
 
 /**
  * Find elements in dynamodb by topic id and type.
@@ -80,24 +134,8 @@ const updateNewId = (id, newId) => {
  * @param {String} type object type to find
  * @returns {Object} promise from the find
  */
-const findByTopicIdAndType = (topicId, type) => {
-  const payload = {
-    IndexName: 'TopicId-Type-index',
-    ConsistentRead: false,
-    KeyConditionExpression: '#topicId = :topicId AND #type = :type',
-    ExpressionAttributeNames: {
-      '#topicId': 'TopicId',
-      '#type': 'Type',
-    },
-    ExpressionAttributeValues: {
-      ':topicId': { S: topicId.toString() },
-      ':type': { S: type },
-    },
-    TableName: dynamodbTablename,
-  };
-
-  return query(payload);
-};
+const findByTopicIdAndType = (topicId, type) =>
+  getSingleton().findByTopicIdAndType(topicId, type);
 
 /**
  * Find element in dynamodb by id.  Returns the raw dynamo data.
@@ -105,17 +143,7 @@ const findByTopicIdAndType = (topicId, type) => {
  * @param {Number} id to find the element
  * @returns {Object} promise from the find
  */
-const findById = (id) => {
-  const payload = {
-    Key: {
-      Id: {
-        S: id.toString(),
-      },
-    },
-    TableName: dynamodbTablename,
-  };
-  return getItem(payload);
-};
+const findById = id => getSingleton().find(id);
 
 /**
  * Find element in dynamodb by id.  Then will parse the payload and return the object.
@@ -126,7 +154,7 @@ const findById = (id) => {
 const findPayloadById = id =>
   new Promise((resolve) => {
     findById(id).then((item) => {
-      if (item.Item) {
+      if (item && item.Item && item.Item.Payload && item.Item.Payload.S) {
         try {
           const existing = JSON.parse(item.Item.Payload.S);
           resolve(existing);

@@ -157,7 +157,7 @@ const saveTopic = (db, req, resp, topic, formatMessage) => {
 
           // reprocess any failed posts that came in before the topic
           DynamoService.findByTopicIdAndType(topic.id, 'post').then((data) => {
-            if (data.Items) {
+            if (data && data.Items) {
               data.Items.map(post => post['Id']['S']).forEach((postId) => {
                 DynamoService.findPayloadById(postId).then((post) => {
                   process(db, req, resp, null, post);

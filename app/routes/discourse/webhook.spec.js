@@ -1,16 +1,16 @@
 import { clearDB, prepareDB } from '../../tests';
 
-const db = require('../../models');
-const request = require('supertest');
-// const postJson = require('../../tests/post.json');
-const server = require('../../app');
-
+const aws = require('aws-sdk');
+const AWS = require('aws-sdk-mock');
+const proxyquire = require('proxyquire');
+const Promise = require('bluebird');
 const axios = require('axios');
 const config = require('config');
-
+const request = require('supertest');
 const sinon = require('sinon');
 const should = require('should');
 require('should-sinon');
+const s3Mock = require('./webhook.s3.dynamodb.mock');
 
 const topicJson = require('../../tests/discourseNewTopicWebhook.json');
 const postJson = require('../../tests/discourseNewPostWebhook.json');
@@ -22,7 +22,26 @@ const postHash = 'sha256=52921b7fe74a31ea2c3805c9cddacb2e889a85182c636b6a56c8f86
 describe('POST /v4/webhooks/topics/discourse', () => {
   const apiPath = `/${config.apiVersion}/webhooks/topics/discourse`;
 
+  const server = require('../../app');
   let sandbox;
+
+  let stubGetItem = sinon.stub();
+  let stubPutItem = sinon.stub();
+  let stubQuery = sinon.stub();
+  let stubUpdateItem = sinon.stub();
+
+  AWS.mock('DynamoDB', 'getItem', stubGetItem);
+  AWS.mock('DynamoDB', 'putItem', stubPutItem);
+  AWS.mock('DynamoDB', 'query', stubQuery);
+  AWS.mock('DynamoDB', 'updateItem', stubUpdateItem);
+
+  const resetDynamoStubs = () => {
+    stubGetItem.reset();
+    stubPutItem.reset();
+    stubQuery.reset();
+    stubUpdateItem.reset();
+  };
+
   beforeEach((done) => {
     sandbox = sinon.sandbox.create();
     prepareDB(done);
@@ -30,6 +49,7 @@ describe('POST /v4/webhooks/topics/discourse', () => {
   afterEach((done) => {
     sandbox.restore();
     clearDB(done);
+
   });
 
   it('should return 403 response without a token header', (done) => {
@@ -59,7 +79,7 @@ describe('POST /v4/webhooks/topics/discourse', () => {
       .expect(403, done);
   });
 
-  it('should return 200 if validate topic payload and will ignore if do not care about webhook', (done) => {
+  it('should return 200 will ignore if do not care about webhook event', (done) => {
     request(server)
       .post(apiPath)
       .set({
@@ -71,19 +91,33 @@ describe('POST /v4/webhooks/topics/discourse', () => {
   });
 
   it('should return 200 and process topic', (done) => {
-    request(server)
-      .post(apiPath)
-      .set({
-        'x-discourse-event-signature': topicHash,
-        'x-discourse-event': 'topic_created',
-      })
-      .send(topicJson)
-      .expect(200, done)
-  });
-
-  it('should return 200 and process topic', (done) => {
     const getStub = sandbox.stub(axios, 'get');
     getStub.withArgs(`${config.get('topicServiceUrl')}/15`).resolves(existingTopicJson);
+
+    // see if exists
+    stubGetItem.callsFake((params, cb) => {
+      cb(null, null);
+    });
+
+    // create
+    const mockedSavedTopic = {
+      id: 1,
+      user_id: 2,
+      topic: 'hi!',
+    };
+    stubPutItem.callsFake((params, cb) => {
+      cb(null, mockedSavedTopic);
+    });
+
+    // find all matching posts
+    stubQuery.callsFake((params, cb) => {
+      cb(null, null);
+    });
+
+    // update
+    stubUpdateItem.callsFake((params, cb) => {
+      cb(null, null);
+    });
 
     request(server)
       .post(apiPath)
@@ -94,12 +128,43 @@ describe('POST /v4/webhooks/topics/discourse', () => {
       .send(topicJson)
       .expect(200)
       .end((err, res) => {
-        getStub.should.have.be.calledOnce;
+        resetDynamoStubs();
         done();
       });
   });
 
   it('should return 200 and process post', (done) => {
+    stubGetItem.onFirstCall().callsFake((params, cb) => {
+      // see if exists
+      cb(null, null);
+    }).onSecondCall().callsFake((params, cb) => {
+      // find associated topic
+      const existingTopic = {
+        Item: {
+          NewId: {
+            S: '1'
+          },
+        },
+      };
+      cb(null, existingTopic);
+    });
+
+    // create
+    stubPutItem.callsFake((params, cb) => {
+      cb(null, {
+        id: 1,
+        user_id: 2,
+        topicId: 1,
+        cooked: 'hi',
+        raw: 'hi',
+      });
+    });
+
+    // update
+    stubUpdateItem.callsFake((params, cb) => {
+      cb(null, null);
+    });
+
     request(server)
       .post(apiPath)
       .set({
@@ -107,12 +172,11 @@ describe('POST /v4/webhooks/topics/discourse', () => {
         'x-discourse-event': 'topic_created',
       })
       .send(postJson)
-      .expect(200, done)
+      .expect(200)
+      .end((err, res) => {
+        resetDynamoStubs();
+        done();
+      });
   });
-
-
-  // .then(response => {
-      //     should(response.body.token).be.exactly('foo@bar.com')
-      // })
 
 });
