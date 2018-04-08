@@ -4,14 +4,13 @@ const Promise = require('bluebird');
 const { DISCOURSE_WEBHOOK_STATUS } = require('../constants');
 
 let adapter = null;
-let tableName = null;
 
 /*
 *  Lazily instantiate the dynamodb adapter.
 */
-const getSingleton = () => {
+const getAdapter = () => {
   if (!adapter) {
-    tableName = config.get('aws.dynamodb.discourseWebhookLogsTable');
+    const tableName = config.get('aws.dynamodb.discourseWebhookLogsTable');
 
     const dynamodb = new aws.DynamoDB(config.get('aws.config'));
     const putItem = Promise.promisify(dynamodb.putItem.bind(dynamodb));
@@ -19,7 +18,33 @@ const getSingleton = () => {
     const query = Promise.promisify(dynamodb.query.bind(dynamodb));
     const getItem = Promise.promisify(dynamodb.getItem.bind(dynamodb));
 
-    const find = (id) => {
+    const buildQuery = (queryObject, update = false) => {
+      const conjunction = update ? ', ' : ' AND ';
+      const prefix = update ? 'SET ' : '';
+      const keys = Object.keys(queryObject);
+      const nameToNameKey = {};
+      const nameToValueKey = {};
+      const attributeNames = keys.reduce((acc, key, i) => {
+        const valueKey = `#S${i}`;
+        nameToNameKey[key] = valueKey;
+        acc[valueKey] = key;
+        return acc;
+      }, {});
+      const attributeValues = keys.reduce((acc, key, i) => {
+        const valueKey = `:s${i}`;
+        nameToValueKey[key] = valueKey;
+        acc[valueKey] = { S: queryObject[key].toString() };
+        return acc;
+      }, {});
+      const expression = keys.map(key => `${nameToNameKey[key]} = ${nameToValueKey[key]}`).join(conjunction);
+      return {
+        attributeNames,
+        attributeValues,
+        expression: `${prefix}${expression}`,
+      };
+    };
+
+    const findById = (id) => {
       const payload = {
         Key: {
           Id: {
@@ -45,39 +70,26 @@ const getSingleton = () => {
         TableName: tableName,
       });
 
-    const updateStatus = (id, status) =>
-      updateItem({
-        ExpressionAttributeNames: { '#S': 'Status' },
-        ExpressionAttributeValues: { ':s': { S: status } },
+    const update = (id, updatedObject) => {
+      const { attributeNames, attributeValues, expression } = buildQuery(updatedObject, true);
+      return updateItem({
+        ExpressionAttributeNames: attributeNames,
+        ExpressionAttributeValues: attributeValues,
         Key: { Id: { S: id.toString() } },
         ReturnValues: 'ALL_NEW',
         TableName: tableName,
-        UpdateExpression: 'SET #S = :s',
+        UpdateExpression: expression,
       });
+    };
 
-    const updateNewId = (id, newId) =>
-      updateItem({
-        ExpressionAttributeNames: { '#S': 'NewId' },
-        ExpressionAttributeValues: { ':s': { S: newId.toString() } },
-        Key: { Id: { S: id.toString() } },
-        ReturnValues: 'ALL_NEW',
-        TableName: tableName,
-        UpdateExpression: 'SET #S = :s',
-      });
-
-    const findByTopicIdAndType = (topicId, type) => {
+    const find = (queryObject) => {
+      const { attributeNames, attributeValues, expression } = buildQuery(queryObject);
       const payload = {
         IndexName: 'TopicId-Type-index',
         ConsistentRead: false,
-        KeyConditionExpression: '#topicId = :topicId AND #type = :type',
-        ExpressionAttributeNames: {
-          '#topicId': 'TopicId',
-          '#type': 'Type',
-        },
-        ExpressionAttributeValues: {
-          ':topicId': { S: topicId.toString() },
-          ':type': { S: type },
-        },
+        KeyConditionExpression: expression,
+        ExpressionAttributeNames: attributeNames,
+        ExpressionAttributeValues: attributeValues,
         TableName: tableName,
       };
 
@@ -86,10 +98,9 @@ const getSingleton = () => {
 
     adapter = {
       save,
-      updateStatus,
-      updateNewId,
-      findByTopicIdAndType,
+      update,
       find,
+      findById,
     };
   }
   return adapter;
@@ -105,27 +116,28 @@ const getSingleton = () => {
  * @returns {Object} promise from save
  */
 const save = (id, topicId, type, payload) =>
-  getSingleton().save({ id, topicId, type, payload });
+  getAdapter().save({ id, topicId, type, payload });
 
 /**
  * Update status of the entry in dynamodb.
  *
  * @param {String} id used to find records in dynamodb
- * @param {String} status to update on the dynamodb record
+ * @param {String} status to update on the dynamodb document
  * @returns {Object} promise from the update
  */
 const updateStatus = (id, status) =>
-  getSingleton().updateStatus(id, status);
+  getAdapter().update(id, { Status: status });
 
 /**
- * Update status of the entry in dynamodb.
+ * Update new id and status of the entry in dynamodb.
  *
  * @param {String} id used to find records in dynamodb
  * @param {String} newId new id stored in postgres
+ * @param {String} status to update on the dynamodb document
  * @returns {Object} promise from the update
  */
-const updateNewId = (id, newId) =>
-  getSingleton().updateNewId(id, newId);
+const updateNewIdAndStatus = (id, newId, status) =>
+  getAdapter().update(id, { NewId: newId.toString(), Status: status });
 
 /**
  * Find elements in dynamodb by topic id and type.
@@ -135,7 +147,7 @@ const updateNewId = (id, newId) =>
  * @returns {Object} promise from the find
  */
 const findByTopicIdAndType = (topicId, type) =>
-  getSingleton().findByTopicIdAndType(topicId, type);
+  getAdapter().find({ TopicId: topicId, Type: type });
 
 /**
  * Find element in dynamodb by id.  Returns the raw dynamo data.
@@ -143,7 +155,7 @@ const findByTopicIdAndType = (topicId, type) =>
  * @param {Number} id to find the element
  * @returns {Object} promise from the find
  */
-const findById = id => getSingleton().find(id);
+const findById = id => getAdapter().findById(id);
 
 /**
  * Find element in dynamodb by id.  Then will parse the payload and return the object.
@@ -199,5 +211,5 @@ module.exports = {
   findOrCreate,
   findPayloadById,
   findById,
-  updateNewId,
+  updateNewIdAndStatus,
 };

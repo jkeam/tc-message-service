@@ -212,13 +212,8 @@ const process = (db, req, resp, topic, post) => {
   return DynamoService.findOrCreate(id, topicId, type, obj).then((data) => {
     logger.debug(formatMessage(`Initial loading of ${type} from discourse webhook successful.`, obj));
     return save(db, req, resp, obj, formatMessage).then((saved) => {
-      return DynamoService.updateStatus(id, DISCOURSE_WEBHOOK_STATUS.COMPLETED).then((data) => {
-        return DynamoService.updateNewId(id, saved.id).then((data) => {
-          logger.info(formatMessage(`Completed ${type} processing from discourse webhook.`, obj, saved));
-        }).catch((e) => {
-          logger.error(formatMessage(`Unable to update ${type} from discourse webhook with new id.`, obj));
-          logger.error(e);
-        })
+      return DynamoService.updateNewIdAndStatus(id, saved.id, DISCOURSE_WEBHOOK_STATUS.COMPLETED).then((data) => {
+        logger.info(formatMessage(`Completed ${type} processing from discourse webhook.`, obj, saved));
       }).catch((e) => {
         logger.error(formatMessage(`Unable to mark ${type} from discourse webhook as completed.`, obj));
         logger.error(e);

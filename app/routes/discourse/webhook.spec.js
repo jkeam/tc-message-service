@@ -2,7 +2,6 @@ import { clearDB, prepareDB } from '../../tests';
 
 const aws = require('aws-sdk');
 const AWS = require('aws-sdk-mock');
-const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
 const axios = require('axios');
 const config = require('config');
