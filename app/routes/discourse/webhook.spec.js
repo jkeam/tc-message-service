@@ -14,6 +14,7 @@ const s3Mock = require('./webhook.s3.dynamodb.mock');
 const topicJson = require('../../tests/discourseNewTopicWebhook.json');
 const postJson = require('../../tests/discourseNewPostWebhook.json');
 const existingTopicJson = require('../../tests/discourseReferenceLookup.json');
+const models = require('../../models');
 
 const topicHash = 'sha256=d02971ffe4f66f63024f3b55ac1c6d765e663b0fdf8496bdaec0e70c5563efee';
 const postHash = 'sha256=52921b7fe74a31ea2c3805c9cddacb2e889a85182c636b6a56c8f86824989cdf';
@@ -40,6 +41,18 @@ describe('POST /v4/webhooks/topics/discourse', () => {
     stubQuery.reset();
     stubUpdateItem.reset();
   };
+
+  const findLast = (model) =>
+    new Promise((resolve, reject) => {
+      model.findAll({
+        limit: 1,
+        order: [[ 'createdAt', 'DESC' ]]
+      }).then((entries) => {
+        resolve(entries[0]);
+      }).catch((e) => {
+        reject(e);
+      });
+    });
 
   beforeEach((done) => {
     sandbox = sinon.sandbox.create();
@@ -90,92 +103,109 @@ describe('POST /v4/webhooks/topics/discourse', () => {
   });
 
   it('should return 200 and process topic', (done) => {
-    const getStub = sandbox.stub(axios, 'get');
-    getStub.withArgs(`${config.get('topicServiceUrl')}/15`).resolves(existingTopicJson);
+    models.topics.count().then(initialCount => {
 
-    // see if exists
-    stubGetItem.callsFake((params, cb) => {
-      cb(null, null);
-    });
+      const getStub = sandbox.stub(axios, 'get');
+      getStub.withArgs(`${config.get('topicServiceUrl')}/15`).resolves(existingTopicJson);
 
-    // create
-    const mockedSavedTopic = {
-      id: 1,
-      user_id: 2,
-      topic: 'hi!',
-    };
-    stubPutItem.callsFake((params, cb) => {
-      cb(null, mockedSavedTopic);
-    });
-
-    // find all matching posts
-    stubQuery.callsFake((params, cb) => {
-      cb(null, null);
-    });
-
-    // update
-    stubUpdateItem.callsFake((params, cb) => {
-      cb(null, null);
-    });
-
-    request(server)
-      .post(apiPath)
-      .set({
-        'x-discourse-event-signature': topicHash,
-        'x-discourse-event': 'topic_created',
-      })
-      .send(topicJson)
-      .expect(200)
-      .end((err, res) => {
-        resetDynamoStubs();
-        done();
+      // see if exists
+      stubGetItem.callsFake((params, cb) => {
+        cb(null, null);
       });
+
+      // create
+      const mockedSavedTopic = {
+        id: 1,
+        user_id: 2,
+        topic: 'hi!',
+      };
+      stubPutItem.callsFake((params, cb) => {
+        cb(null, mockedSavedTopic);
+      });
+
+      // find all matching posts
+      stubQuery.callsFake((params, cb) => {
+        cb(null, null);
+      });
+
+      // update
+      stubUpdateItem.callsFake((params, cb) => {
+        cb(null, null);
+      });
+
+      request(server)
+        .post(apiPath)
+        .set({
+          'x-discourse-event-signature': topicHash,
+          'x-discourse-event': 'topic_created',
+        })
+        .send(topicJson)
+        .expect(200)
+        .end((err, res) => {
+          resetDynamoStubs();
+          models.topics.count().then(afterCount => {
+            afterCount.should.be.eql(initialCount + 1);
+            findLast(models.topics).then((topic) => {
+              topic.title.should.be.eql('New Topic');
+              done();
+            });
+          });
+        });
+    });
   });
 
   it('should return 200 and process post', (done) => {
-    stubGetItem.onFirstCall().callsFake((params, cb) => {
-      // see if exists
-      cb(null, null);
-    }).onSecondCall().callsFake((params, cb) => {
-      // find associated topic
-      const existingTopic = {
-        Item: {
-          NewId: {
-            S: '1'
+    models.posts.count().then(initialCount => {
+      stubGetItem.onFirstCall().callsFake((params, cb) => {
+        // see if exists
+        cb(null, null);
+      }).onSecondCall().callsFake((params, cb) => {
+        // find associated topic
+        const existingTopic = {
+          Item: {
+            NewId: {
+              S: '1'
+            },
           },
-        },
-      };
-      cb(null, existingTopic);
-    });
-
-    // create
-    stubPutItem.callsFake((params, cb) => {
-      cb(null, {
-        id: 1,
-        user_id: 2,
-        topicId: 1,
-        cooked: 'hi',
-        raw: 'hi',
+        };
+        cb(null, existingTopic);
       });
-    });
 
-    // update
-    stubUpdateItem.callsFake((params, cb) => {
-      cb(null, null);
-    });
-
-    request(server)
-      .post(apiPath)
-      .set({
-        'x-discourse-event-signature': postHash,
-        'x-discourse-event': 'topic_created',
-      })
-      .send(postJson)
-      .expect(200)
-      .end((err, res) => {
-        resetDynamoStubs();
-        done();
+      // create
+      stubPutItem.callsFake((params, cb) => {
+        cb(null, {
+          id: 1,
+          user_id: 2,
+          topicId: 1,
+          cooked: 'hi',
+          raw: 'hi',
+        });
       });
+
+      // update
+      stubUpdateItem.callsFake((params, cb) => {
+        cb(null, null);
+      });
+
+      request(server)
+        .post(apiPath)
+        .set({
+          'x-discourse-event-signature': postHash,
+          'x-discourse-event': 'topic_created',
+        })
+        .send(postJson)
+        .expect(200)
+        .end((err, res) => {
+          resetDynamoStubs();
+          models.posts.count().then(afterCount => {
+            afterCount.should.be.eql(initialCount + 1);
+            findLast(models.posts).then((post) => {
+              post.raw.should.be.eql('<p>Hi!</p>');
+              done();
+            });
+          });
+        });
+    });
   });
 
 });
