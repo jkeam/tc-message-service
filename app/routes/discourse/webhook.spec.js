@@ -59,9 +59,9 @@ describe('POST /v4/webhooks/topics/discourse', () => {
     prepareDB(done);
   });
   afterEach((done) => {
+    resetDynamoStubs();
     sandbox.restore();
     clearDB(done);
-
   });
 
   it('should return 403 response without a token header', (done) => {
@@ -109,9 +109,7 @@ describe('POST /v4/webhooks/topics/discourse', () => {
       getStub.withArgs(`${config.get('topicServiceUrl')}/15`).resolves(existingTopicJson);
 
       // see if exists
-      stubGetItem.callsFake((params, cb) => {
-        cb(null, null);
-      });
+      stubGetItem.yields(null, null);
 
       // create
       const mockedSavedTopic = {
@@ -119,19 +117,13 @@ describe('POST /v4/webhooks/topics/discourse', () => {
         user_id: 2,
         topic: 'hi!',
       };
-      stubPutItem.callsFake((params, cb) => {
-        cb(null, mockedSavedTopic);
-      });
+      stubPutItem.yields(null, mockedSavedTopic);
 
       // find all matching posts
-      stubQuery.callsFake((params, cb) => {
-        cb(null, null);
-      });
+      stubQuery.yields(null, null);
 
       // update
-      stubUpdateItem.callsFake((params, cb) => {
-        cb(null, null);
-      });
+      stubUpdateItem.yields(null, null);
 
       request(server)
         .post(apiPath)
@@ -142,7 +134,10 @@ describe('POST /v4/webhooks/topics/discourse', () => {
         .send(topicJson)
         .expect(200)
         .end((err, res) => {
-          resetDynamoStubs();
+          stubGetItem.calledOnce.should.be.true();
+          stubPutItem.calledOnce.should.be.true();
+          stubQuery.calledOnce.should.be.true();
+          stubUpdateItem.calledOnce.should.be.true();
           models.topics.count().then(afterCount => {
             afterCount.should.be.eql(initialCount + 1);
             findLast(models.topics).then((topic) => {
@@ -156,36 +151,28 @@ describe('POST /v4/webhooks/topics/discourse', () => {
 
   it('should return 200 and process post', (done) => {
     models.posts.count().then(initialCount => {
-      stubGetItem.onFirstCall().callsFake((params, cb) => {
-        // see if exists
-        cb(null, null);
-      }).onSecondCall().callsFake((params, cb) => {
-        // find associated topic
-        const existingTopic = {
-          Item: {
-            NewId: {
-              S: '1'
-            },
+      const existingTopic = {
+        Item: {
+          NewId: {
+            S: '1'
           },
-        };
-        cb(null, existingTopic);
-      });
+        },
+      };
+      stubGetItem.onFirstCall().yields(null, null);
+      stubGetItem.onSecondCall().yields(null, existingTopic);
 
       // create
-      stubPutItem.callsFake((params, cb) => {
-        cb(null, {
-          id: 1,
-          user_id: 2,
-          topicId: 1,
-          cooked: 'hi',
-          raw: 'hi',
-        });
-      });
+      const savedPost = {
+        id: 1,
+        user_id: 2,
+        topicId: 1,
+        cooked: 'hi',
+        raw: 'hi',
+      };
+      stubPutItem.yields(null, savedPost);
 
       // update
-      stubUpdateItem.callsFake((params, cb) => {
-        cb(null, null);
-      });
+      stubUpdateItem.yields(null, null);
 
       request(server)
         .post(apiPath)
@@ -196,7 +183,10 @@ describe('POST /v4/webhooks/topics/discourse', () => {
         .send(postJson)
         .expect(200)
         .end((err, res) => {
-          resetDynamoStubs();
+          stubGetItem.calledTwice.should.be.true();
+          stubPutItem.calledOnce.should.be.true();
+          stubQuery.notCalled.should.be.true();
+          stubUpdateItem.calledOnce.should.be.true();
           models.posts.count().then(afterCount => {
             afterCount.should.be.eql(initialCount + 1);
             findLast(models.posts).then((post) => {
