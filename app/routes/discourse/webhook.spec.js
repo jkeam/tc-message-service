@@ -1,4 +1,4 @@
-import { clearDB, prepareDB } from '../../tests';
+import { clearDB, prepareDB, findLast } from '../../tests';
 
 const aws = require('aws-sdk');
 const AWS = require('aws-sdk-mock');
@@ -15,6 +15,7 @@ const topicJson = require('../../tests/discourseNewTopicWebhook.json');
 const postJson = require('../../tests/discourseNewPostWebhook.json');
 const existingTopicJson = require('../../tests/discourseReferenceLookup.json');
 const models = require('../../models');
+const server = require('../../app');
 
 const topicHash = 'sha256=d02971ffe4f66f63024f3b55ac1c6d765e663b0fdf8496bdaec0e70c5563efee';
 const postHash = 'sha256=52921b7fe74a31ea2c3805c9cddacb2e889a85182c636b6a56c8f86824989cdf';
@@ -22,7 +23,6 @@ const postHash = 'sha256=52921b7fe74a31ea2c3805c9cddacb2e889a85182c636b6a56c8f86
 describe('POST /v4/webhooks/topics/discourse', () => {
   const apiPath = `/${config.apiVersion}/webhooks/topics/discourse`;
 
-  const server = require('../../app');
   let sandbox;
 
   let stubGetItem = sinon.stub();
@@ -41,18 +41,6 @@ describe('POST /v4/webhooks/topics/discourse', () => {
     stubQuery.reset();
     stubUpdateItem.reset();
   };
-
-  const findLast = (model) =>
-    new Promise((resolve, reject) => {
-      model.findAll({
-        limit: 1,
-        order: [[ 'createdAt', 'DESC' ]]
-      }).then((entries) => {
-        resolve(entries[0]);
-      }).catch((e) => {
-        reject(e);
-      });
-    });
 
   beforeEach((done) => {
     sandbox = sinon.sandbox.create();
@@ -103,7 +91,7 @@ describe('POST /v4/webhooks/topics/discourse', () => {
   });
 
   it('should return 200 and process topic', (done) => {
-    models.topics.count().then(initialCount => {
+    models.topics.count().then((initialCount) => {
 
       const getStub = sandbox.stub(axios, 'get');
       getStub.withArgs(`${config.get('topicServiceUrl')}/15`).resolves(existingTopicJson);
@@ -133,12 +121,13 @@ describe('POST /v4/webhooks/topics/discourse', () => {
         })
         .send(topicJson)
         .expect(200)
-        .end((err, res) => {
+        .end((err) => {
+          should.not.exist(err);
           stubGetItem.calledOnce.should.be.true();
           stubPutItem.calledOnce.should.be.true();
           stubQuery.calledOnce.should.be.true();
           stubUpdateItem.calledOnce.should.be.true();
-          models.topics.count().then(afterCount => {
+          models.topics.count().then((afterCount) => {
             afterCount.should.be.eql(initialCount + 1);
             findLast(models.topics).then((topic) => {
               topic.title.should.be.eql('New Topic');
@@ -150,7 +139,7 @@ describe('POST /v4/webhooks/topics/discourse', () => {
   });
 
   it('should return 200 and process post', (done) => {
-    models.posts.count().then(initialCount => {
+    models.posts.count().then((initialCount) => {
       const existingTopic = {
         Item: {
           NewId: {
@@ -182,12 +171,13 @@ describe('POST /v4/webhooks/topics/discourse', () => {
         })
         .send(postJson)
         .expect(200)
-        .end((err, res) => {
+        .end((err) => {
+          should.not.exist(err);
           stubGetItem.calledTwice.should.be.true();
           stubPutItem.calledOnce.should.be.true();
           stubQuery.notCalled.should.be.true();
           stubUpdateItem.calledOnce.should.be.true();
-          models.posts.count().then(afterCount => {
+          models.posts.count().then((afterCount) => {
             afterCount.should.be.eql(initialCount + 1);
             findLast(models.posts).then((post) => {
               post.raw.should.be.eql('<p>Hi!</p>');
@@ -197,5 +187,4 @@ describe('POST /v4/webhooks/topics/discourse', () => {
         });
     });
   });
-
 });
