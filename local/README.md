@@ -68,8 +68,8 @@ Note that all these properties have their corresponding environment variables th
   - secretAccessKey - AWS_SECRET_ACCESS_KEY
  - S3 - configuration related to S3
   - bucket - AWS_S3_BUCKET
- - dynamo - dynamodb config
-  - tablename - the dynamodb tablename to use.  must have a key column named `Id`
+ - dynamodb - dynamodb config
+  - discourseWebhookLogsTable - log table for discourse webhooks
 
 # Local Setup
 
@@ -182,7 +182,7 @@ Next, set the `Payload URL` to match the url of this deployed service.
 
 From there, set the `Secret` field to match the `discourseWebhookSecret` config in `default.json`.  This is the shared secret that will allow the two systems to communicate.
 
-The next step is to turn on the specific webhooks that we want.  In this case, `Post Event` should be sufficient.
+The next step is to turn on the specific webhooks that we want.  In this case, `Post Event` and `Topic Event` should be sufficient.
 
 Lastly, check the `Active` checkbox and then click `Save`.
 
@@ -241,6 +241,12 @@ We use sequelize to create and manage the database schema, to create the schema 
 ```shell
 NODE_ENV=development sequelize db:migrate
 NODE_ENV=test sequelize db:migrate
+```
+
+We will also need to create the dynamodb log table for the discourse webhooks.  To create this table, make sure you are at the project root and run:
+
+```shell
+node ./scripts/createDiscourseWebhookLogTable.js
 ```
 
 ## Running the Service

@@ -105,9 +105,23 @@ function prepareDB(done) {
     });
 }
 
+function findLast(model) {
+  return new Promise((resolve, reject) => {
+    model.findAll({
+      limit: 1,
+      order: [['createdAt', 'DESC']],
+    }).then((entries) => {
+      resolve(entries[0]);
+    }).catch((e) => {
+      reject(e);
+    });
+  });
+}
+
 module.exports = {
   prepareDB,
   clearDB,
   jwts,
   getDecodedToken,
+  findLast,
 };

@@ -51,17 +51,30 @@ module.exports = (logger, db) => {
 
   // discourse webhook with custom auth logic
   router.route(`/${apiVersion}/webhooks/topics/discourse`).post((req, res, next) => {
+    const markUnauthorized = (request, response, message) => {
+      logger.warn(message);
+      response.status(403).json(util.wrapErrorResponse(request.id, 403, 'Invalid token issuer.'));
+      response.send();
+    };
     const discourseToken = req.header('x-discourse-event-signature');
+    const discourseEvent = req.header('x-discourse-event');
+    const allowedEvents = (discourseEvent === 'post_created' || discourseEvent === 'topic_created');
+
     if (discourseToken) {
-      const token = SecurityHelper.calculateHmac(req.rawBody, 'sha256=');
+      const token = SecurityHelper.calculateHmac(req.rawBody || '', 'sha256=');
       if (discourseToken === token) {
-        discourseWebhookPostHandler(db)(req, res, next);
-        return;
+        if (allowedEvents) {
+          discourseWebhookPostHandler(db)(req, res, next);
+        } else {
+          logger.info(`Discourse Webhook Event Ignored: { event: ${discourseEvent} }`);
+          res.status(200).send();
+        }
+      } else {
+        markUnauthorized(req, res, 'Invalid token.');
       }
-      logger.warn(`Token mismatch: ${discourseToken} != ${token}`);
+    } else {
+      markUnauthorized(req, res, 'Missing token.');
     }
-    res.status(403).json(util.wrapErrorResponse(req.id, 403, 'Invalid token issuer.'));
-    res.send();
   });
 
   router.all(`/${apiVersion}/topics*`, (req, res, next) => {
